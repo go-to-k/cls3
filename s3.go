@@ -33,7 +33,7 @@ func (s3 *S3) ClearS3Objects(bucketName string, forceMode bool) error {
 	}
 
 	if len(versions) > 0 {
-		errors, err := s3.client.DeleteObjects(aws.String(bucketName), versions, sleepTimeSecForS3)
+		errors, err := s3.client.DeleteObjects(aws.String(bucketName), versions, SleepTimeSecForS3)
 		if err != nil {
 			return err
 		}
