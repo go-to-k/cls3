@@ -1,5 +1,7 @@
 # cls3
 
+The description in **Japanese** is available on the following blog page. -> [Blog](https://go-to-k.hatenablog.com/entry/cls3)
+
 ## What is
 
 CLI tool to clear (so delete all objects in) S3 Buckets. The bucket itself can also be deleted by the option.
