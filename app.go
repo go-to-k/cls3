@@ -48,7 +48,7 @@ func NewApp(version string) *App {
 			},
 			&cli.BoolFlag{
 				Name:        "force",
-				Aliases:     []string{"i"},
+				Aliases:     []string{"f"},
 				Value:       false,
 				Usage:       "Delete a bucket together",
 				Destination: &app.ForceMode,
