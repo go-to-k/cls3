@@ -3,7 +3,7 @@ module github.com/go-to-k/cls3
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.16.16
+	github.com/aws/aws-sdk-go-v2 v1.17.0
 	github.com/aws/aws-sdk-go-v2/config v1.17.8
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.27.5
 	github.com/go-to-k/delstack v0.3.0
