@@ -49,14 +49,13 @@ func (s3 *S3) ClearS3Objects(bucketName string, forceMode bool) error {
 		}
 	}
 
-	if !forceMode {
-		return nil
+	if forceMode {
+		Logger.Info().Msgf("[ForceMode] Delete the bucket as well: %v", bucketName)
+		if err := s3.client.DeleteBucket(aws.String(bucketName)); err != nil {
+			return err
+		}
 	}
 
-	Logger.Info().Msgf("[ForceMode] Delete the bucket as well: %v", bucketName)
-	if err := s3.client.DeleteBucket(aws.String(bucketName)); err != nil {
-		return err
-	}
-
+	Logger.Info().Msg("Finished.")
 	return nil
 }
