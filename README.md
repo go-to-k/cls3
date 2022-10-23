@@ -4,7 +4,7 @@ The description in **Japanese** is available on the following blog page. -> [Blo
 
 ## What is
 
-CLI tool to clear (so delete all objects in) S3 Buckets. The bucket itself can also be deleted by the option.
+CLI tool to clear (so delete all objects in) Amazon S3 Buckets(AWS). The bucket itself can also be deleted by the option.
 
 ## Install
 
