@@ -2,7 +2,7 @@
 
 ## What is
 
-CLI tool to clear S3 Buckets. The bucket itself can also be deleted by the option.
+CLI tool to clear (so delete all objects in) S3 Buckets. The bucket itself can also be deleted by the option.
 
 ## Install
 
