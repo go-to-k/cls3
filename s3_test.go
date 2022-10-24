@@ -417,7 +417,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "clear objects failure for delete objects output errors after zero length",
+			name: "clear objects successfully for delete objects output errors after zero length",
 			args: args{
 				ctx:        ctx,
 				bucketName: "test",
