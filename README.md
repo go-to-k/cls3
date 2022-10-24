@@ -28,7 +28,7 @@ CLI tool to clear (so delete all objects and versions/delete-markers in) Amazon 
   ```
 
 - -b, --bucketName: **required**
-  - CloudFormation stack name
+  - Bucket name
 - -p, --profile: optional
   - AWS profile name
 - -r, --region: optional(default: `ap-northeast-1`)
