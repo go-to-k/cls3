@@ -470,7 +470,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 				forceMode:  false,
 				client:     listObjectVersionsIncorrectRegionMock,
 			},
-			want:    fmt.Errorf("ListObjectVersionsError: Are you sure you are specifying the correct region?"),
+			want:    fmt.Errorf("PermanentRedirectError: Are you sure you are specifying the correct region?"),
 			wantErr: true,
 		},
 	}
