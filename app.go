@@ -77,9 +77,9 @@ func (app *App) getAction() func(c *cli.Context) error {
 		client := client.NewS3(
 			s3.NewFromConfig(config),
 		)
-		s3 := NewS3(client)
+		s3Wrapper := NewS3Wrapper(client)
 
-		if err := s3.ClearS3Objects(app.BucketName, app.ForceMode); err != nil {
+		if err := s3Wrapper.ClearS3Objects(app.BucketName, app.ForceMode); err != nil {
 			return err
 		}
 

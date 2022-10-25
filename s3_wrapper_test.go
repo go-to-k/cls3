@@ -442,7 +442,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			s3 := NewS3(tt.args.client)
+			s3 := NewS3Wrapper(tt.args.client)
 
 			err := s3.ClearS3Objects(tt.args.bucketName, tt.args.forceMode)
 			if (err != nil) != tt.wantErr {

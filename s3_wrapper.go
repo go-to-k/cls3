@@ -7,18 +7,18 @@ import (
 	"github.com/go-to-k/delstack/client"
 )
 
-type S3 struct {
+type S3Wrapper struct {
 	client client.IS3
 }
 
-func NewS3(client client.IS3) *S3 {
-	return &S3{
+func NewS3Wrapper(client client.IS3) *S3Wrapper {
+	return &S3Wrapper{
 		client: client,
 	}
 }
 
-func (s3 *S3) ClearS3Objects(bucketName string, forceMode bool) error {
-	exists, err := s3.client.CheckBucketExists(aws.String(bucketName))
+func (s3Wrapper *S3Wrapper) ClearS3Objects(bucketName string, forceMode bool) error {
+	exists, err := s3Wrapper.client.CheckBucketExists(aws.String(bucketName))
 	if err != nil {
 		return err
 	}
@@ -27,13 +27,13 @@ func (s3 *S3) ClearS3Objects(bucketName string, forceMode bool) error {
 		return nil
 	}
 
-	versions, err := s3.client.ListObjectVersions(aws.String(bucketName))
+	versions, err := s3Wrapper.client.ListObjectVersions(aws.String(bucketName))
 	if err != nil {
 		return err
 	}
 
 	if len(versions) > 0 {
-		errors, err := s3.client.DeleteObjects(aws.String(bucketName), versions, SleepTimeSecForS3)
+		errors, err := s3Wrapper.client.DeleteObjects(aws.String(bucketName), versions, SleepTimeSecForS3)
 		if err != nil {
 			return err
 		}
@@ -51,7 +51,7 @@ func (s3 *S3) ClearS3Objects(bucketName string, forceMode bool) error {
 
 	if forceMode {
 		Logger.Info().Msgf("[ForceMode] Delete the bucket as well: %v", bucketName)
-		if err := s3.client.DeleteBucket(aws.String(bucketName)); err != nil {
+		if err := s3Wrapper.client.DeleteBucket(aws.String(bucketName)); err != nil {
 			return err
 		}
 	}
