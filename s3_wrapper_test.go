@@ -19,6 +19,7 @@ var _ client.IS3 = (*ListObjectVersionsErrorMockS3)(nil)
 var _ client.IS3 = (*DeleteBucketErrorMockS3)(nil)
 var _ client.IS3 = (*CheckBucketExistsErrorMockS3)(nil)
 var _ client.IS3 = (*CheckBucketNotExistsMockS3)(nil)
+var _ client.IS3 = (*ListObjectVersionsIncorrectRegionMockS3)(nil)
 
 /*
 	Mocks for client
@@ -299,6 +300,28 @@ func (m *CheckBucketNotExistsMockS3) CheckBucketExists(bucketName *string) (bool
 	return false, nil
 }
 
+type ListObjectVersionsIncorrectRegionMockS3 struct{}
+
+func NewListObjectVersionsIncorrectRegionMockS3() *ListObjectVersionsIncorrectRegionMockS3 {
+	return &ListObjectVersionsIncorrectRegionMockS3{}
+}
+
+func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteBucket(bucketName *string) error {
+	return nil
+}
+
+func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+	return []types.Error{}, nil
+}
+
+func (m *ListObjectVersionsIncorrectRegionMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+	return nil, fmt.Errorf("api error PermanentRedirect")
+}
+
+func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+	return true, nil
+}
+
 /*
 	Test Cases
 */
@@ -314,6 +337,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 	listObjectVersionsErrorMock := NewListObjectVersionsErrorMockS3()
 	checkBucketExistsErrorMock := NewCheckBucketExistsErrorMockS3()
 	checkBucketNotExistsMock := NewCheckBucketNotExistsMockS3()
+	listObjectVersionsIncorrectRegionMock := NewListObjectVersionsIncorrectRegionMockS3()
 
 	type args struct {
 		ctx        context.Context
@@ -436,6 +460,17 @@ func TestS3_DeleteBucket(t *testing.T) {
 				client:     deleteBucketErrorMock,
 			},
 			want:    fmt.Errorf("DeleteBucketError"),
+			wantErr: true,
+		},
+		{
+			name: "clear objects failure for list object versions invalid region errors",
+			args: args{
+				ctx:        ctx,
+				bucketName: "test",
+				forceMode:  false,
+				client:     listObjectVersionsIncorrectRegionMock,
+			},
+			want:    fmt.Errorf("ListObjectVersionsError: Are you sure you are specifying the correct region?"),
 			wantErr: true,
 		},
 	}
