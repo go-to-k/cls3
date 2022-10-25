@@ -43,7 +43,7 @@ func NewApp(version string) *App {
 				Name:        "region",
 				Aliases:     []string{"r"},
 				Value:       "ap-northeast-1",
-				Usage:       "CloudFormation stack name",
+				Usage:       "AWS region",
 				Destination: &app.Region,
 			},
 			&cli.BoolFlag{
