@@ -1,6 +1,6 @@
 module github.com/go-to-k/cls3
 
-go 1.17
+go 1.18
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.17.0
