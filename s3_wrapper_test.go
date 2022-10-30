@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/go-to-k/delstack/client"
+	"github.com/go-to-k/delstack/pkg/client"
 )
 
 var _ client.IS3 = (*MockS3)(nil)
