@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/go-to-k/delstack/client"
+	"github.com/go-to-k/delstack/pkg/client"
 )
 
 type S3Wrapper struct {
