@@ -8,6 +8,8 @@ import (
 	"github.com/go-to-k/delstack/pkg/client"
 )
 
+const sleepTimeSecForS3 = 10
+
 type S3Wrapper struct {
 	client client.IS3
 }
@@ -37,7 +39,7 @@ func (s3Wrapper *S3Wrapper) ClearS3Objects(bucketName string, forceMode bool) er
 	}
 
 	if len(versions) > 0 {
-		errors, err := s3Wrapper.client.DeleteObjects(aws.String(bucketName), versions, SleepTimeSecForS3)
+		errors, err := s3Wrapper.client.DeleteObjects(aws.String(bucketName), versions, sleepTimeSecForS3)
 		if err != nil {
 			return err
 		}
