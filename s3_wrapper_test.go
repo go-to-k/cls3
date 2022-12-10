@@ -325,7 +325,7 @@ func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(bucketName *
 /*
 	Test Cases
 */
-func TestS3_DeleteBucket(t *testing.T) {
+func TestS3Wrapper_DeleteBucket(t *testing.T) {
 	NewLogger(false)
 	ctx := context.TODO()
 	mock := NewMockS3()
