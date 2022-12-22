@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.17.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.0
-	github.com/go-to-k/delstack v0.5.0
+	github.com/go-to-k/delstack v0.6.0
 	github.com/rs/zerolog v1.28.0
 	github.com/urfave/cli/v2 v2.23.0
 )
@@ -19,7 +19,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.19 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.26 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.15 // indirect
-	github.com/aws/aws-sdk-go-v2/service/backup v1.17.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/backup v1.18.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.24.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.17.18 // indirect
 	github.com/aws/aws-sdk-go-v2/service/iam v1.18.15 // indirect
