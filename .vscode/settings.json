@@ -1,0 +1,19 @@
+{
+    "cSpell.words": [
+        "delstack",
+        "errgroup",
+        "zerolog",
+        "Msgf",
+        "tablewriter",
+        "ldflags",
+        "goreleaser",
+        "Unshallow",
+        "unshallow",
+        "gomod",
+    ],
+    "gopls": {
+        "analyses": {
+            "shadow": true
+        }
+    },
+}
