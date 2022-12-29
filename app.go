@@ -69,7 +69,7 @@ func (app *App) Run(ctx context.Context) error {
 
 func (app *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		config, err := app.loadAwsConfig()
+		config, err := app.loadAwsConfig(c.Context)
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func (app *App) getAction() func(c *cli.Context) error {
 		)
 		s3Wrapper := NewS3Wrapper(client)
 
-		if err := s3Wrapper.ClearS3Objects(app.BucketName, app.ForceMode); err != nil {
+		if err := s3Wrapper.ClearS3Objects(c.Context, app.BucketName, app.ForceMode); err != nil {
 			return err
 		}
 
@@ -87,16 +87,16 @@ func (app *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (app *App) loadAwsConfig() (aws.Config, error) {
+func (app *App) loadAwsConfig(ctx context.Context) (aws.Config, error) {
 	var (
 		cfg aws.Config
 		err error
 	)
 
 	if app.Profile != "" {
-		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(app.Region), config.WithSharedConfigProfile(app.Profile))
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(app.Region), config.WithSharedConfigProfile(app.Profile))
 	} else {
-		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(app.Region))
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(app.Region))
 	}
 
 	return cfg, err
