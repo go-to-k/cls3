@@ -12,7 +12,6 @@ CLI tool to clear (so delete all objects and versions/delete-markers in) Amazon 
 
 - Homebrew
   ```
-  brew tap go-to-k/tap
   brew install go-to-k/tap/cls3
   ```
 - Binary
