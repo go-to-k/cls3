@@ -30,15 +30,15 @@ func NewMockS3() *MockS3 {
 	return &MockS3{}
 }
 
-func (m *MockS3) DeleteBucket(bucketName *string) error {
+func (m *MockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *MockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *MockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
-func (m *MockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *MockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{
 		{
 			Key:       aws.String("KeyForVersions"),
@@ -52,7 +52,7 @@ func (m *MockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifie
 	return output, nil
 }
 
-func (m *MockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *MockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -62,15 +62,15 @@ func NewDeleteBucketErrorMockS3() *DeleteBucketErrorMockS3 {
 	return &DeleteBucketErrorMockS3{}
 }
 
-func (m *DeleteBucketErrorMockS3) DeleteBucket(bucketName *string) error {
+func (m *DeleteBucketErrorMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return fmt.Errorf("DeleteBucketError")
 }
 
-func (m *DeleteBucketErrorMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteBucketErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
-func (m *DeleteBucketErrorMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *DeleteBucketErrorMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{
 		{
 			Key:       aws.String("KeyForVersions"),
@@ -84,7 +84,7 @@ func (m *DeleteBucketErrorMockS3) ListObjectVersions(bucketName *string) ([]type
 	return output, nil
 }
 
-func (m *DeleteBucketErrorMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *DeleteBucketErrorMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -94,15 +94,15 @@ func NewDeleteObjectsErrorMockS3() *DeleteObjectsErrorMockS3 {
 	return &DeleteObjectsErrorMockS3{}
 }
 
-func (m *DeleteObjectsErrorMockS3) DeleteBucket(bucketName *string) error {
+func (m *DeleteObjectsErrorMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *DeleteObjectsErrorMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, fmt.Errorf("DeleteObjectsError")
 }
 
-func (m *DeleteObjectsErrorMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *DeleteObjectsErrorMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{
 		{
 			Key:       aws.String("KeyForVersions"),
@@ -116,7 +116,7 @@ func (m *DeleteObjectsErrorMockS3) ListObjectVersions(bucketName *string) ([]typ
 	return output, nil
 }
 
-func (m *DeleteObjectsErrorMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *DeleteObjectsErrorMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -126,20 +126,20 @@ func NewDeleteObjectsErrorAfterZeroLengthMockS3() *DeleteObjectsErrorAfterZeroLe
 	return &DeleteObjectsErrorAfterZeroLengthMockS3{}
 }
 
-func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteBucket(bucketName *string) error {
+func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, fmt.Errorf("DeleteObjectsErrorAfterZeroLength")
 }
 
-func (m *DeleteObjectsErrorAfterZeroLengthMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *DeleteObjectsErrorAfterZeroLengthMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{}
 	return output, nil
 }
 
-func (m *DeleteObjectsErrorAfterZeroLengthMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *DeleteObjectsErrorAfterZeroLengthMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -149,11 +149,11 @@ func NewDeleteObjectsOutputErrorMockS3() *DeleteObjectsOutputErrorMockS3 {
 	return &DeleteObjectsOutputErrorMockS3{}
 }
 
-func (m *DeleteObjectsOutputErrorMockS3) DeleteBucket(bucketName *string) error {
+func (m *DeleteObjectsOutputErrorMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *DeleteObjectsOutputErrorMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsOutputErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	output := []types.Error{
 		{
 			Key:       aws.String("Key"),
@@ -165,7 +165,7 @@ func (m *DeleteObjectsOutputErrorMockS3) DeleteObjects(bucketName *string, objec
 	return output, nil
 }
 
-func (m *DeleteObjectsOutputErrorMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *DeleteObjectsOutputErrorMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{
 		{
 			Key:       aws.String("KeyForVersions"),
@@ -179,7 +179,7 @@ func (m *DeleteObjectsOutputErrorMockS3) ListObjectVersions(bucketName *string) 
 	return output, nil
 }
 
-func (m *DeleteObjectsOutputErrorMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *DeleteObjectsOutputErrorMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -189,11 +189,11 @@ func NewDeleteObjectsOutputErrorAfterZeroLengthMockS3() *DeleteObjectsOutputErro
 	return &DeleteObjectsOutputErrorAfterZeroLengthMockS3{}
 }
 
-func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteBucket(bucketName *string) error {
+func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	output := []types.Error{
 		{
 			Key:       aws.String("Key"),
@@ -205,12 +205,12 @@ func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteObjects(bucketName
 	return output, nil
 }
 
-func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{}
 	return output, nil
 }
 
-func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -220,19 +220,19 @@ func NewListObjectVersionsErrorMockS3() *ListObjectVersionsErrorMockS3 {
 	return &ListObjectVersionsErrorMockS3{}
 }
 
-func (m *ListObjectVersionsErrorMockS3) DeleteBucket(bucketName *string) error {
+func (m *ListObjectVersionsErrorMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *ListObjectVersionsErrorMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *ListObjectVersionsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
-func (m *ListObjectVersionsErrorMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *ListObjectVersionsErrorMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	return nil, fmt.Errorf("ListObjectVersionsError")
 }
 
-func (m *ListObjectVersionsErrorMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *ListObjectVersionsErrorMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -242,15 +242,15 @@ func NewCheckBucketExistsErrorMockS3() *CheckBucketExistsErrorMockS3 {
 	return &CheckBucketExistsErrorMockS3{}
 }
 
-func (m *CheckBucketExistsErrorMockS3) DeleteBucket(bucketName *string) error {
+func (m *CheckBucketExistsErrorMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *CheckBucketExistsErrorMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *CheckBucketExistsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
-func (m *CheckBucketExistsErrorMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *CheckBucketExistsErrorMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{
 		{
 			Key:       aws.String("KeyForVersions"),
@@ -264,7 +264,7 @@ func (m *CheckBucketExistsErrorMockS3) ListObjectVersions(bucketName *string) ([
 	return output, nil
 }
 
-func (m *CheckBucketExistsErrorMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *CheckBucketExistsErrorMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return false, fmt.Errorf("ListBucketsError")
 }
 
@@ -274,15 +274,15 @@ func NewCheckBucketNotExistsMockS3() *CheckBucketNotExistsMockS3 {
 	return &CheckBucketNotExistsMockS3{}
 }
 
-func (m *CheckBucketNotExistsMockS3) DeleteBucket(bucketName *string) error {
+func (m *CheckBucketNotExistsMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *CheckBucketNotExistsMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *CheckBucketNotExistsMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
-func (m *CheckBucketNotExistsMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *CheckBucketNotExistsMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	output := []types.ObjectIdentifier{
 		{
 			Key:       aws.String("KeyForVersions"),
@@ -296,7 +296,7 @@ func (m *CheckBucketNotExistsMockS3) ListObjectVersions(bucketName *string) ([]t
 	return output, nil
 }
 
-func (m *CheckBucketNotExistsMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *CheckBucketNotExistsMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return false, nil
 }
 
@@ -306,19 +306,19 @@ func NewListObjectVersionsIncorrectRegionMockS3() *ListObjectVersionsIncorrectRe
 	return &ListObjectVersionsIncorrectRegionMockS3{}
 }
 
-func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteBucket(bucketName *string) error {
+func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteObjects(bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
-func (m *ListObjectVersionsIncorrectRegionMockS3) ListObjectVersions(bucketName *string) ([]types.ObjectIdentifier, error) {
+func (m *ListObjectVersionsIncorrectRegionMockS3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
 	return nil, fmt.Errorf("api error PermanentRedirect")
 }
 
-func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(bucketName *string) (bool, error) {
+func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
 	return true, nil
 }
 
@@ -327,7 +327,7 @@ func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(bucketName *
 */
 func TestS3Wrapper_DeleteBucket(t *testing.T) {
 	NewLogger(false)
-	ctx := context.TODO()
+	ctx := context.Background()
 	mock := NewMockS3()
 	deleteBucketErrorMock := NewDeleteBucketErrorMockS3()
 	deleteObjectsErrorMock := NewDeleteObjectsErrorMockS3()
@@ -479,7 +479,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s3 := NewS3Wrapper(tt.args.client)
 
-			err := s3.ClearS3Objects(tt.args.bucketName, tt.args.forceMode)
+			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
