@@ -9,7 +9,7 @@ import (
 
 func main() {
 	cls3.NewLogger(cls3.IsDebug())
-	ctx := context.TODO()
+	ctx := context.Background()
 	app := cls3.NewApp(cls3.GetVersion())
 
 	if err := app.Run(ctx); err != nil {
