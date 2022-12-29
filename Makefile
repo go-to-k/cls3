@@ -23,6 +23,8 @@ test_view:
 	go tool cover -html=cover_file.out -o cover_file.html
 shadow:
 	find . -type f -name '*.go' | sed -e "s/\/[^\.\/]*\.go//g" | uniq | xargs shadow
+cognit:
+	gocognit -top 10 ./
 run:
 	go mod tidy
 	go run -ldflags "$(LDFLAGS)" cmd/cls3/main.go $${OPT}
