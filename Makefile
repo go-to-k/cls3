@@ -24,7 +24,7 @@ test_view:
 shadow:
 	find . -type f -name '*.go' | sed -e "s/\/[^\.\/]*\.go//g" | uniq | xargs shadow
 cognit:
-	gocognit -top 10 ./
+	gocognit -top 10 ./ | grep -v "_test.go"
 run:
 	go mod tidy
 	go run -ldflags "$(LDFLAGS)" cmd/cls3/main.go $${OPT}
