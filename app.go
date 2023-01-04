@@ -4,8 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-to-k/delstack/pkg/client"
 	"github.com/urfave/cli/v2"
@@ -42,7 +40,6 @@ func NewApp(version string) *App {
 			&cli.StringFlag{
 				Name:        "region",
 				Aliases:     []string{"r"},
-				Value:       "ap-northeast-1",
 				Usage:       "AWS region",
 				Destination: &app.Region,
 			},
@@ -69,7 +66,7 @@ func (app *App) Run(ctx context.Context) error {
 
 func (app *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		config, err := app.loadAwsConfig(c.Context)
+		config, err := LoadAWSConfig(c.Context, app.Region, app.Profile)
 		if err != nil {
 			return err
 		}
@@ -85,19 +82,4 @@ func (app *App) getAction() func(c *cli.Context) error {
 
 		return nil
 	}
-}
-
-func (app *App) loadAwsConfig(ctx context.Context) (aws.Config, error) {
-	var (
-		cfg aws.Config
-		err error
-	)
-
-	if app.Profile != "" {
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(app.Region), config.WithSharedConfigProfile(app.Profile))
-	} else {
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(app.Region))
-	}
-
-	return cfg, err
 }
