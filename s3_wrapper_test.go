@@ -326,6 +326,8 @@ func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(ctx context.
 	Test Cases
 */
 func TestS3Wrapper_DeleteBucket(t *testing.T) {
+	t.Parallel()
+
 	NewLogger(false)
 	ctx := context.Background()
 	mock := NewMockS3()
@@ -477,6 +479,8 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			s3 := NewS3Wrapper(tt.args.client)
 
 			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode)
