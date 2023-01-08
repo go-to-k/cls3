@@ -327,7 +327,6 @@ func (m *ListObjectVersionsIncorrectRegionMockS3) CheckBucketExists(ctx context.
 */
 func TestS3Wrapper_DeleteBucket(t *testing.T) {
 	NewLogger(false)
-	ctx := context.Background()
 	mock := NewMockS3()
 	deleteBucketErrorMock := NewDeleteBucketErrorMockS3()
 	deleteObjectsErrorMock := NewDeleteObjectsErrorMockS3()
@@ -355,7 +354,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects successfully",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     mock,
@@ -366,7 +365,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "delete bucket successfully",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  true,
 				client:     mock,
@@ -377,7 +376,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects failure for check bucket exists errors",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     checkBucketExistsErrorMock,
@@ -388,7 +387,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects successfully for bucket not exists",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     checkBucketNotExistsMock,
@@ -399,7 +398,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects failure for list object versions errors",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     listObjectVersionsErrorMock,
@@ -410,7 +409,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects failure for delete objects errors",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     deleteObjectsErrorMock,
@@ -421,7 +420,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects successfully for delete objects errors after zero length",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     deleteObjectsErrorAfterZeroLengthMock,
@@ -432,7 +431,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects failure for delete objects output errors",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     deleteObjectsOutputErrorMock,
@@ -443,7 +442,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects successfully for delete objects output errors after zero length",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     deleteObjectsOutputErrorAfterZeroLengthMock,
@@ -454,7 +453,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "delete bucket failure for delete objects errors",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  true,
 				client:     deleteBucketErrorMock,
@@ -465,7 +464,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 		{
 			name: "clear objects failure for list object versions invalid region errors",
 			args: args{
-				ctx:        ctx,
+				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
 				client:     listObjectVersionsIncorrectRegionMock,
