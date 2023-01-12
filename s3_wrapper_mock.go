@@ -9,6 +9,10 @@ import (
 	"github.com/go-to-k/delstack/pkg/client"
 )
 
+/*
+	Mocks for client
+*/
+
 var _ client.IS3 = (*MockS3)(nil)
 var _ client.IS3 = (*DeleteObjectsErrorMockS3)(nil)
 var _ client.IS3 = (*DeleteObjectsErrorAfterZeroLengthMockS3)(nil)
@@ -19,10 +23,6 @@ var _ client.IS3 = (*DeleteBucketErrorMockS3)(nil)
 var _ client.IS3 = (*CheckBucketExistsErrorMockS3)(nil)
 var _ client.IS3 = (*CheckBucketNotExistsMockS3)(nil)
 var _ client.IS3 = (*ListObjectVersionsIncorrectRegionMockS3)(nil)
-
-/*
-	Mocks for client
-*/
 
 type MockS3 struct{}
 
