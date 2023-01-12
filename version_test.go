@@ -4,6 +4,10 @@ import (
 	"testing"
 )
 
+/*
+	Test Cases
+*/
+
 func Test_IsDebug(t *testing.T) {
 	type args struct {
 		Version  string
