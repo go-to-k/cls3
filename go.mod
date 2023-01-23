@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.0
 	github.com/go-to-k/delstack v0.7.0
 	github.com/rs/zerolog v1.28.0
-	github.com/urfave/cli/v2 v2.23.0
+	github.com/urfave/cli/v2 v2.24.1
 )
 
 require (
