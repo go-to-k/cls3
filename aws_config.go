@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
-const defaultAwsRegion = "us-east-1"
+const DefaultAwsRegion = "us-east-1"
 
 func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Config, error) {
 	var (
@@ -29,7 +29,7 @@ func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Conf
 		cfg.Region = region
 	}
 	if cfg.Region == "" {
-		cfg.Region = defaultAwsRegion
+		cfg.Region = DefaultAwsRegion
 	}
 
 	return cfg, nil
