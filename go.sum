@@ -60,8 +60,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/go-to-k/delstack v0.7.0 h1:jBHeqEdO/H6sozjyU25WBrI/6PWMNwAvqFDhudNr7pA=
-github.com/go-to-k/delstack v0.7.0/go.mod h1:UL/TONa9O7EAoutcaX80yUaNtimS+juZ8a6QlZZlK0E=
+github.com/go-to-k/delstack v0.8.0 h1:Utuk28VOCVLeKZo3Uc1sYpNdzN4C8ERrSbYQ6Cj0Uc4=
+github.com/go-to-k/delstack v0.8.0/go.mod h1:UCvfF/sJAp1m5/JmXls9rovyT2ZLEi/Hd/dqZVAxZvI=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
