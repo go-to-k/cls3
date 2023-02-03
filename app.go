@@ -4,10 +4,13 @@ import (
 	"context"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-to-k/delstack/pkg/client"
 	"github.com/urfave/cli/v2"
 )
+
+const awsSDKRetryMaxAttempts = 3
 
 type App struct {
 	Cli        *cli.App
@@ -72,7 +75,10 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		client := client.NewS3(
-			s3.NewFromConfig(config),
+			s3.NewFromConfig(config, func(o *s3.Options) {
+				o.RetryMaxAttempts = awsSDKRetryMaxAttempts
+				o.RetryMode = aws.RetryModeStandard
+			}),
 		)
 		s3Wrapper := NewS3Wrapper(client)
 
