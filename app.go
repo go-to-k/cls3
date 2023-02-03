@@ -63,13 +63,13 @@ func NewApp(version string) *App {
 	return &app
 }
 
-func (app *App) Run(ctx context.Context) error {
-	return app.Cli.RunContext(ctx, os.Args)
+func (a *App) Run(ctx context.Context) error {
+	return a.Cli.RunContext(ctx, os.Args)
 }
 
-func (app *App) getAction() func(c *cli.Context) error {
+func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		config, err := LoadAWSConfig(c.Context, app.Region, app.Profile)
+		config, err := LoadAWSConfig(c.Context, a.Region, a.Profile)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (app *App) getAction() func(c *cli.Context) error {
 		)
 		s3Wrapper := NewS3Wrapper(client)
 
-		if err := s3Wrapper.ClearS3Objects(c.Context, app.BucketName, app.ForceMode); err != nil {
+		if err := s3Wrapper.ClearS3Objects(c.Context, a.BucketName, a.ForceMode); err != nil {
 			return err
 		}
 
