@@ -21,5 +21,6 @@
 go.work
 
 dist/
-cover_file.html
+cover.out.tmp
+cover.html
 /cls3
