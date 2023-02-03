@@ -4,10 +4,13 @@ import (
 	"context"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-to-k/delstack/pkg/client"
 	"github.com/urfave/cli/v2"
 )
+
+const awsSDKRetryMaxAttempts = 3
 
 type App struct {
 	Cli        *cli.App
@@ -60,23 +63,26 @@ func NewApp(version string) *App {
 	return &app
 }
 
-func (app *App) Run(ctx context.Context) error {
-	return app.Cli.RunContext(ctx, os.Args)
+func (a *App) Run(ctx context.Context) error {
+	return a.Cli.RunContext(ctx, os.Args)
 }
 
-func (app *App) getAction() func(c *cli.Context) error {
+func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
-		config, err := LoadAWSConfig(c.Context, app.Region, app.Profile)
+		config, err := LoadAWSConfig(c.Context, a.Region, a.Profile)
 		if err != nil {
 			return err
 		}
 
 		client := client.NewS3(
-			s3.NewFromConfig(config),
+			s3.NewFromConfig(config, func(o *s3.Options) {
+				o.RetryMaxAttempts = awsSDKRetryMaxAttempts
+				o.RetryMode = aws.RetryModeStandard
+			}),
 		)
 		s3Wrapper := NewS3Wrapper(client)
 
-		if err := s3Wrapper.ClearS3Objects(c.Context, app.BucketName, app.ForceMode); err != nil {
+		if err := s3Wrapper.ClearS3Objects(c.Context, a.BucketName, a.ForceMode); err != nil {
 			return err
 		}
 

@@ -34,7 +34,7 @@ func (m *MockS3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (m *MockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *MockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
@@ -66,7 +66,7 @@ func (m *DeleteBucketErrorMockS3) DeleteBucket(ctx context.Context, bucketName *
 	return fmt.Errorf("DeleteBucketError")
 }
 
-func (m *DeleteBucketErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteBucketErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
@@ -98,7 +98,7 @@ func (m *DeleteObjectsErrorMockS3) DeleteBucket(ctx context.Context, bucketName 
 	return nil
 }
 
-func (m *DeleteObjectsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, fmt.Errorf("DeleteObjectsError")
 }
 
@@ -130,7 +130,7 @@ func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteBucket(ctx context.Conte
 	return nil
 }
 
-func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsErrorAfterZeroLengthMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, fmt.Errorf("DeleteObjectsErrorAfterZeroLength")
 }
 
@@ -153,7 +153,7 @@ func (m *DeleteObjectsOutputErrorMockS3) DeleteBucket(ctx context.Context, bucke
 	return nil
 }
 
-func (m *DeleteObjectsOutputErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsOutputErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	output := []types.Error{
 		{
 			Key:       aws.String("Key"),
@@ -193,7 +193,7 @@ func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteBucket(ctx context
 	return nil
 }
 
-func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *DeleteObjectsOutputErrorAfterZeroLengthMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	output := []types.Error{
 		{
 			Key:       aws.String("Key"),
@@ -224,7 +224,7 @@ func (m *ListObjectVersionsErrorMockS3) DeleteBucket(ctx context.Context, bucket
 	return nil
 }
 
-func (m *ListObjectVersionsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *ListObjectVersionsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
@@ -246,7 +246,7 @@ func (m *CheckBucketExistsErrorMockS3) DeleteBucket(ctx context.Context, bucketN
 	return nil
 }
 
-func (m *CheckBucketExistsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *CheckBucketExistsErrorMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
@@ -278,7 +278,7 @@ func (m *CheckBucketNotExistsMockS3) DeleteBucket(ctx context.Context, bucketNam
 	return nil
 }
 
-func (m *CheckBucketNotExistsMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *CheckBucketNotExistsMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 
@@ -310,7 +310,7 @@ func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteBucket(ctx context.Conte
 	return nil
 }
 
-func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, sleepTimeSec int) ([]types.Error, error) {
+func (m *ListObjectVersionsIncorrectRegionMockS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
 	return []types.Error{}, nil
 }
 

@@ -9,8 +9,6 @@ import (
 	"github.com/go-to-k/delstack/pkg/client"
 )
 
-const sleepTimeSecForS3 = 10
-
 type S3Wrapper struct {
 	client client.IS3
 }
@@ -21,8 +19,8 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s3Wrapper *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool) error {
-	exists, err := s3Wrapper.client.CheckBucketExists(ctx, aws.String(bucketName))
+func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool) error {
+	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
 		return err
 	}
@@ -31,7 +29,7 @@ func (s3Wrapper *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName strin
 		return nil
 	}
 
-	versions, err := s3Wrapper.client.ListObjectVersions(ctx, aws.String(bucketName))
+	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName))
 	if err != nil && strings.Contains(err.Error(), "api error PermanentRedirect") {
 		return fmt.Errorf("PermanentRedirectError: Are you sure you are specifying the correct region?")
 	}
@@ -40,7 +38,7 @@ func (s3Wrapper *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName strin
 	}
 
 	if len(versions) > 0 {
-		errors, err := s3Wrapper.client.DeleteObjects(ctx, aws.String(bucketName), versions, sleepTimeSecForS3)
+		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions)
 		if err != nil {
 			return err
 		}
@@ -58,7 +56,7 @@ func (s3Wrapper *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName strin
 
 	if forceMode {
 		Logger.Info().Msgf("[ForceMode] Delete the bucket as well: %v", bucketName)
-		if err := s3Wrapper.client.DeleteBucket(ctx, aws.String(bucketName)); err != nil {
+		if err := s.client.DeleteBucket(ctx, aws.String(bucketName)); err != nil {
 			return err
 		}
 	}
