@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const awsSDKRetryMaxAttempts = 3
+const SDKRetryMaxAttempts = 3
 
 type App struct {
 	Cli        *cli.App
@@ -76,7 +76,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 
 		client := client.NewS3(
 			s3.NewFromConfig(config, func(o *s3.Options) {
-				o.RetryMaxAttempts = awsSDKRetryMaxAttempts
+				o.RetryMaxAttempts = SDKRetryMaxAttempts
 				o.RetryMode = aws.RetryModeStandard
 			}),
 		)
