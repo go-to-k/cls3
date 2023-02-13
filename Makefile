@@ -13,14 +13,17 @@ LDFLAGS := -s -w \
 GO_FILES := $(shell find . -type f -name '*.go' -print)
 
 TEST_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./...)"
-TEST_COV_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./... -coverprofile=cover_file.out)"
+TEST_COV_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./... -coverprofile=cover.out.tmp)"
 FAIL_CHECK := "^[^\s\t]*FAIL[^\s\t]*$$"
 
 test:
 	@! echo $(TEST_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
 test_view:
 	@! echo $(TEST_COV_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
-	go tool cover -html=cover_file.out -o cover_file.html
+	cat cover.out.tmp | grep -v "**_mock.go" > cover.out
+	rm cover.out.tmp
+	go tool cover -func=cover.out
+	go tool cover -html=cover.out -o cover.html
 shadow:
 	find . -type f -name '*.go' | sed -e "s/\/[^\.\/]*\.go//g" | uniq | xargs shadow
 cognit:
