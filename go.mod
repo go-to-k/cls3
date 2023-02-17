@@ -7,8 +7,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.18.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.29.0
 	github.com/go-to-k/delstack v0.9.0
+	github.com/golang/mock v1.6.0
 	github.com/rs/zerolog v1.28.0
-	github.com/urfave/cli/v2 v2.23.0
+	github.com/urfave/cli/v2 v2.24.4
 )
 
 require (
@@ -33,7 +34,6 @@ require (
 	github.com/aws/smithy-go v1.13.4 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
