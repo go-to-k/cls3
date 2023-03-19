@@ -12,12 +12,18 @@ LDFLAGS := -s -w \
 			-X 'github.com/go-to-k/cls3.Revision=$(REVISION)'
 GO_FILES := $(shell find . -type f -name '*.go' -print)
 
-TEST_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./...)"
+DIFF_FILE := "$$(git diff --name-only --diff-filter=ACMRT | grep .go$ | xargs -I{} dirname {} | sort | uniq | xargs -I{} echo ./{})"
+
+TEST_DIFF_RESULT := "$$(go test -race -cover -v $$(echo $(DIFF_FILE)) -coverpkg=./...)"
+TEST_FULL_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./...)"
 TEST_COV_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./... -coverprofile=cover.out.tmp)"
+
 FAIL_CHECK := "^[^\s\t]*FAIL[^\s\t]*$$"
 
+test_diff:
+	@! echo $(TEST_DIFF_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
 test:
-	@! echo $(TEST_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
+	@! echo $(TEST_FULL_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
 test_view:
 	@! echo $(TEST_COV_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
 	cat cover.out.tmp | grep -v "**_mock.go" > cover.out
