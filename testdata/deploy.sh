@@ -32,6 +32,7 @@ fi
 
 if [ -z "$(aws s3 ls ${profile_option} | grep ${lower_bucket_name})" ]; then
 	aws s3 mb s3://${lower_bucket_name} ${profile_option}
+	aws s3api put-bucket-versioning --bucket ${lower_bucket_name} --versioning-configuration Status=Enabled
 fi
 
 dir="./testfiles"
