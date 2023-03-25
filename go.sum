@@ -56,8 +56,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/go-to-k/delstack v0.13.1 h1:FQRt/JW/UKStZz0SdjR6D4Bz7/mHNr2EO6A8lRBjGDo=
-github.com/go-to-k/delstack v0.13.1/go.mod h1:c8INJ4CWGT0Sm4Qbrr3ctGB1tv5Bro3VxhaQf4SkS7k=
+github.com/go-to-k/delstack v0.13.2 h1:4WXb4bNiT/ziffcUDomz/8Px4UV3TYMsikz6UlNQ4n8=
+github.com/go-to-k/delstack v0.13.2/go.mod h1:Kxjk2TbYfGG6wDF9Iz3iImmC2HqmrIS9DcrkHfBGRMY=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/golang/mock v1.6.0 h1:ErTB+efbowRARo13NNdxyJji2egdxLGQhRaY+DUumQc=
 github.com/golang/mock v1.6.0/go.mod h1:p6yTPP+5HYm5mzsMV8JkE6ZKdX+/wYM6Hr+LicevLPs=
