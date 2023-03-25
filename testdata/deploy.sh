@@ -34,15 +34,15 @@ if [ -z "$(aws s3 ls ${profile_option} | grep ${lower_bucket_name})" ]; then
 	aws s3 mb s3://${lower_bucket_name} ${profile_option}
 fi
 
+aws s3api put-bucket-versioning --bucket ${lower_bucket_name} --versioning-configuration Status=Enabled
+
 dir="./testfiles"
 mkdir -p ${dir}
 
-# 9,000,000 versions
-for i in $(seq 1 3000); do
-	# 1,000 files
+# about 400,000 versions
+for i in $(seq 1 100); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
-	# 3 versions
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null
 	aws s3 rm s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null        # delete marker
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null # version
