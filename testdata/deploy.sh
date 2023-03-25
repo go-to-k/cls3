@@ -37,8 +37,8 @@ fi
 dir="./testfiles"
 mkdir -p ${dir}
 
-# 9,000,000 versions
-for i in $(seq 1 3000); do
+# 300,000 versions
+for i in $(seq 1 100); do
 	# 1,000 files
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
