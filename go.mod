@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.17.7
 	github.com/aws/aws-sdk-go-v2/config v1.18.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.31.0
-	github.com/go-to-k/delstack v0.13.1
+	github.com/go-to-k/delstack v0.13.2
 	github.com/golang/mock v1.6.0
 	github.com/rs/zerolog v1.29.0
 	github.com/urfave/cli/v2 v2.25.0
