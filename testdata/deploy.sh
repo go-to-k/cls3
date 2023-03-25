@@ -41,7 +41,6 @@ mkdir -p ${dir}
 
 # about 400,000 versions
 for i in $(seq 1 100); do
-	# 1,000 files
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null
