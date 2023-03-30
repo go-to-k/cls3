@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
-const DefaultAwsRegion = "us-east-1"
+const DefaultAwsRegion = "ap-northeast-1"
 
 func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Config, error) {
 	var (
