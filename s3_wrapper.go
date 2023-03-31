@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/go-to-k/delstack/pkg/client"
 )
 
 type S3Wrapper struct {
-	client client.IS3
+	client IS3
 }
 
-func NewS3Wrapper(client client.IS3) *S3Wrapper {
+func NewS3Wrapper(client IS3) *S3Wrapper {
 	return &S3Wrapper{
 		client: client,
 	}
@@ -54,13 +53,34 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		}
 	}
 
+	Logger.Info().Msgf("%v Cleared.", bucketName)
+
 	if forceMode {
-		Logger.Info().Msgf("[ForceMode] Delete the bucket as well: %v", bucketName)
 		if err := s.client.DeleteBucket(ctx, aws.String(bucketName)); err != nil {
 			return err
 		}
+		Logger.Info().Msgf("%v Deleted.", bucketName)
 	}
 
-	Logger.Info().Msg("Finished.")
 	return nil
+}
+
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
+	filteredBucketNames := []string{}
+
+	buckets, err := s.client.ListBuckets(ctx)
+	if err != nil {
+		return filteredBucketNames, err
+	}
+
+	for _, bucket := range buckets {
+		// for case-insensitive
+		lowerBucketName := strings.ToLower(*bucket.Name)
+		lowerKeyword := strings.ToLower(*keyword)
+		if strings.Contains(lowerBucketName, lowerKeyword) {
+			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
+		}
+	}
+
+	return filteredBucketNames, nil
 }
