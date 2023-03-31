@@ -9,12 +9,15 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 )
 
+const SelectionPageSize = 20
+
 func GetCheckboxes(label string, opts []string) []string {
 	res := []string{}
 
 	prompt := &survey.MultiSelect{
-		Message: label,
-		Options: opts,
+		Message:  label,
+		Options:  opts,
+		PageSize: SelectionPageSize,
 	}
 	survey.AskOne(prompt, &res)
 
