@@ -4,16 +4,18 @@ import (
 	"context"
 	"os"
 
-	"github.com/go-to-k/cls3"
+	"github.com/go-to-k/cls3/internal/app"
+	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/internal/version"
 )
 
 func main() {
-	cls3.NewLogger(cls3.IsDebug())
+	io.NewLogger(version.IsDebug())
 	ctx := context.Background()
-	app := cls3.NewApp(cls3.GetVersion())
+	app := app.NewApp(version.GetVersion())
 
 	if err := app.Run(ctx); err != nil {
-		cls3.Logger.Error().Msg(err.Error())
+		io.Logger.Error().Msg(err.Error())
 		os.Exit(1)
 	}
 }

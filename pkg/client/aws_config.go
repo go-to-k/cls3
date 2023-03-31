@@ -1,4 +1,4 @@
-package cls3
+package client
 
 import (
 	"context"

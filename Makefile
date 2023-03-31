@@ -24,6 +24,8 @@ test_view:
 	rm cover.out.tmp
 	go tool cover -func=cover.out
 	go tool cover -html=cover.out -o cover.html
+mockgen:
+	go generate ./...
 shadow:
 	find . -type f -name '*.go' | sed -e "s/\/[^\.\/]*\.go//g" | uniq | xargs shadow
 cognit:
