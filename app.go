@@ -128,7 +128,7 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *S3Wrapper) ([]st
 	var checkboxes []string
 	var keyword string
 
-	BucketNameLabel := "Filter a keyword of bucket names(case-insensitive): "
+	BucketNameLabel := "Filter a keyword of bucket names: "
 	keyword = InputKeywordForFilter(BucketNameLabel)
 
 	label := "Select buckets." + "\n"

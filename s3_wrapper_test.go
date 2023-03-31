@@ -336,30 +336,6 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "list buckets filtered by case-insensitive keyword successfully",
-			args: args{
-				ctx:     context.Background(),
-				keyword: "TEST",
-			},
-			prepareMockFn: func(m *MockIS3) {
-				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
-					{Name: aws.String("test1")},
-					{Name: aws.String("TEST2")},
-					{Name: aws.String("Test3")},
-					{Name: aws.String("other")},
-				}, nil)
-			},
-			want: want{
-				output: []string{
-					"test1",
-					"TEST2",
-					"Test3",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-		{
 			name: "list buckets filtered by keyword successfully when keyword is empty",
 			args: args{
 				ctx:     context.Background(),
