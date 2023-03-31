@@ -1,4 +1,4 @@
-package cls3
+package wrapper
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/go-to-k/delstack/pkg/client"
+	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/pkg/client"
 )
 
 type S3Wrapper struct {
@@ -25,7 +26,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 	if !exists {
-		Logger.Info().Msgf("A bucket does not exist: %v", bucketName)
+		io.Logger.Info().Msgf("A bucket does not exist: %v", bucketName)
 		return nil
 	}
 
@@ -54,13 +55,33 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		}
 	}
 
+	io.Logger.Info().Msgf("%v Cleared.", bucketName)
+
 	if forceMode {
-		Logger.Info().Msgf("[ForceMode] Delete the bucket as well: %v", bucketName)
 		if err := s.client.DeleteBucket(ctx, aws.String(bucketName)); err != nil {
 			return err
 		}
+		io.Logger.Info().Msgf("%v Deleted.", bucketName)
 	}
 
-	Logger.Info().Msg("Finished.")
 	return nil
+}
+
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
+	filteredBucketNames := []string{}
+
+	buckets, err := s.client.ListBuckets(ctx)
+	if err != nil {
+		return filteredBucketNames, err
+	}
+
+	// To be series to avoid throttling of S3 API
+	for _, bucket := range buckets {
+		// Bucket names are lowercase only so need not be case-insensitive
+		if strings.Contains(*bucket.Name, *keyword) {
+			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
+		}
+	}
+
+	return filteredBucketNames, nil
 }

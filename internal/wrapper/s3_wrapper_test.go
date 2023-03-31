@@ -1,13 +1,15 @@
-package cls3
+package wrapper
 
 import (
 	"context"
 	"fmt"
+	reflect "reflect"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/go-to-k/delstack/pkg/client"
+	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/golang/mock/gomock"
 )
 
@@ -16,7 +18,7 @@ import (
 */
 
 func TestS3Wrapper_DeleteBucket(t *testing.T) {
-	NewLogger(false)
+	io.NewLogger(false)
 
 	type args struct {
 		ctx        context.Context
@@ -269,6 +271,180 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 			if tt.wantErr && err.Error() != tt.want.Error() {
 				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.Error())
 				return
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
+	io.NewLogger(false)
+
+	type args struct {
+		ctx     context.Context
+		keyword string
+	}
+
+	type want struct {
+		output []string
+		err    error
+	}
+
+	cases := []struct {
+		name          string
+		args          args
+		prepareMockFn func(m *client.MockIS3)
+		want          want
+		wantErr       bool
+	}{
+		{
+			name: "list a bucket filtered by keyword successfully",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "test",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
+					{Name: aws.String("test1")},
+				}, nil)
+			},
+			want: want{
+				output: []string{
+					"test1",
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword successfully",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "test",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
+					{Name: aws.String("test1")},
+					{Name: aws.String("test2")},
+					{Name: aws.String("other")},
+				}, nil)
+			},
+			want: want{
+				output: []string{
+					"test1",
+					"test2",
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword successfully when keyword is empty",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
+					{Name: aws.String("test1")},
+					{Name: aws.String("test2")},
+					{Name: aws.String("other")},
+				}, nil)
+			},
+			want: want{
+				output: []string{
+					"test1",
+					"test2",
+					"other",
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword successfully but not match",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "test",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
+					{Name: aws.String("other1")},
+					{Name: aws.String("other2")},
+					{Name: aws.String("other3")},
+				}, nil)
+			},
+			want: want{
+				output: []string{},
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword successfully but not return buckets",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "test",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, nil)
+			},
+			want: want{
+				output: []string{},
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword successfully but not return buckets when keyword is empty",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, nil)
+			},
+			want: want{
+				output: []string{},
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword failure",
+			args: args{
+				ctx:     context.Background(),
+				keyword: "test",
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, fmt.Errorf("ListBucketsError"))
+			},
+			want: want{
+				output: []string{},
+				err:    fmt.Errorf("ListBucketsError"),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			s3Mock := client.NewMockIS3(ctrl)
+			tt.prepareMockFn(s3Mock)
+
+			s3 := NewS3Wrapper(s3Mock)
+
+			output, err := s3.ListBucketNamesFilteredByKeyword(tt.args.ctx, aws.String(tt.args.keyword))
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err, tt.want)
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.output) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.output)
 			}
 		})
 	}
