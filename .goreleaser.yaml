@@ -9,7 +9,7 @@ builds:
     binary: cls3
     ldflags:
       - -s -w
-      - -X github.com/go-to-k/cls3.Version={{.Version}}
+      - -X github.com/go-to-k/cls3/internal/version.Version={{.Version}}
     env:
       - CGO_ENABLED=0
     goos:
