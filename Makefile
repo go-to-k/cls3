@@ -8,8 +8,8 @@ COLORIZE_FAIL = sed "s/^\([- ]*\)\(FAIL\)/\1$$(printf "$(RED)")\2$$(printf "$(RE
 VERSION := $(shell git describe --tags --abbrev=0)
 REVISION := $(shell git rev-parse --short HEAD)
 LDFLAGS := -s -w \
-			-X 'github.com/go-to-k/cls3.Version=$(VERSION)' \
-			-X 'github.com/go-to-k/cls3.Revision=$(REVISION)'
+			-X 'github.com/go-to-k/cls3/internal/version.Version=$(VERSION)' \
+			-X 'github.com/go-to-k/cls3/internal/version.Revision=$(REVISION)'
 GO_FILES := $(shell find . -type f -name '*.go' -print)
 
 TEST_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./...)"
