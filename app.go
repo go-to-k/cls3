@@ -31,7 +31,7 @@ func NewApp(version string) *App {
 		Usage: "A CLI tool to clear all objects in a S3 Bucket.",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:        "bucketNames",
+				Name:        "bucketName",
 				Aliases:     []string{"b"},
 				Usage:       "S3 bucket names(one or more)",
 				Destination: app.BucketNames,
