@@ -1,4 +1,4 @@
-package cls3
+package app
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/internal/wrapper"
+	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
 )
 
@@ -87,18 +90,18 @@ func (a *App) getAction() func(c *cli.Context) error {
 			return fmt.Errorf("InvalidOptionError: %v", errMsg)
 		}
 
-		config, err := LoadAWSConfig(c.Context, a.Region, a.Profile)
+		config, err := client.LoadAWSConfig(c.Context, a.Region, a.Profile)
 		if err != nil {
 			return err
 		}
 
-		client := NewS3(
+		client := client.NewS3(
 			s3.NewFromConfig(config, func(o *s3.Options) {
 				o.RetryMaxAttempts = SDKRetryMaxAttempts
 				o.RetryMode = aws.RetryModeStandard
 			}),
 		)
-		s3Wrapper := NewS3Wrapper(client)
+		s3Wrapper := wrapper.NewS3Wrapper(client)
 
 		if a.InteractiveMode {
 			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
@@ -124,12 +127,12 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *S3Wrapper) ([]string, bool, error) {
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
 	var checkboxes []string
 	var keyword string
 
 	BucketNameLabel := "Filter a keyword of bucket names: "
-	keyword = InputKeywordForFilter(BucketNameLabel)
+	keyword = io.InputKeywordForFilter(BucketNameLabel)
 
 	label := "Select buckets." + "\n"
 	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
@@ -142,19 +145,19 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *S3Wrapper) ([]st
 	}
 
 	for {
-		checkboxes = GetCheckboxes(label, bucketNames)
+		checkboxes = io.GetCheckboxes(label, bucketNames)
 
 		if len(checkboxes) == 0 {
 			// The case for interruption(Ctrl + C)
-			ok := GetYesNo("Do you want to finish?")
+			ok := io.GetYesNo("Do you want to finish?")
 			if ok {
-				Logger.Info().Msg("Finished...")
+				io.Logger.Info().Msg("Finished...")
 				return checkboxes, false, nil
 			}
 			continue
 		}
 
-		ok := GetYesNo("OK?")
+		ok := io.GetYesNo("OK?")
 		if ok {
 			return checkboxes, true, nil
 		}

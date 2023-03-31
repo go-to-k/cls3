@@ -1,4 +1,4 @@
-package cls3
+package wrapper
 
 import (
 	"context"
@@ -6,13 +6,15 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/pkg/client"
 )
 
 type S3Wrapper struct {
-	client IS3
+	client client.IS3
 }
 
-func NewS3Wrapper(client IS3) *S3Wrapper {
+func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	return &S3Wrapper{
 		client: client,
 	}
@@ -24,7 +26,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 	if !exists {
-		Logger.Info().Msgf("A bucket does not exist: %v", bucketName)
+		io.Logger.Info().Msgf("A bucket does not exist: %v", bucketName)
 		return nil
 	}
 
@@ -53,13 +55,13 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		}
 	}
 
-	Logger.Info().Msgf("%v Cleared.", bucketName)
+	io.Logger.Info().Msgf("%v Cleared.", bucketName)
 
 	if forceMode {
 		if err := s.client.DeleteBucket(ctx, aws.String(bucketName)); err != nil {
 			return err
 		}
-		Logger.Info().Msgf("%v Deleted.", bucketName)
+		io.Logger.Info().Msgf("%v Deleted.", bucketName)
 	}
 
 	return nil

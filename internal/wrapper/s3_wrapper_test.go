@@ -1,4 +1,4 @@
-package cls3
+package wrapper
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/golang/mock/gomock"
 )
 
@@ -16,7 +18,7 @@ import (
 */
 
 func TestS3Wrapper_DeleteBucket(t *testing.T) {
-	NewLogger(false)
+	io.NewLogger(false)
 
 	type args struct {
 		ctx        context.Context
@@ -27,7 +29,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 	cases := []struct {
 		name          string
 		args          args
-		prepareMockFn func(m *MockIS3)
+		prepareMockFn func(m *client.MockIS3)
 		want          error
 		wantErr       bool
 	}{
@@ -38,7 +40,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(
 					[]types.ObjectIdentifier{
@@ -63,7 +65,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  true,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(
 					[]types.ObjectIdentifier{
@@ -89,7 +91,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(false, fmt.Errorf("ListBucketsError"))
 			},
 			want:    fmt.Errorf("ListBucketsError"),
@@ -102,7 +104,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(false, nil)
 			},
 			want:    nil,
@@ -115,7 +117,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(nil, fmt.Errorf("ListObjectVersionsError"))
 			},
@@ -129,7 +131,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(
 					[]types.ObjectIdentifier{
@@ -154,7 +156,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(
 					[]types.ObjectIdentifier{
@@ -188,7 +190,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  true,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(
 					[]types.ObjectIdentifier{
@@ -214,7 +216,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  true,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return([]types.ObjectIdentifier{}, nil)
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test")).Return(nil)
@@ -229,7 +231,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  true,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return([]types.ObjectIdentifier{}, nil)
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test")).Return(fmt.Errorf("DeleteBucketError"))
@@ -244,7 +246,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 				bucketName: "test",
 				forceMode:  false,
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test")).Return(nil, fmt.Errorf("api error PermanentRedirect"))
 			},
@@ -256,7 +258,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			s3Mock := NewMockIS3(ctrl)
+			s3Mock := client.NewMockIS3(ctrl)
 			tt.prepareMockFn(s3Mock)
 
 			s3 := NewS3Wrapper(s3Mock)
@@ -275,7 +277,7 @@ func TestS3Wrapper_DeleteBucket(t *testing.T) {
 }
 
 func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
-	NewLogger(false)
+	io.NewLogger(false)
 
 	type args struct {
 		ctx     context.Context
@@ -290,7 +292,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 	cases := []struct {
 		name          string
 		args          args
-		prepareMockFn func(m *MockIS3)
+		prepareMockFn func(m *client.MockIS3)
 		want          want
 		wantErr       bool
 	}{
@@ -300,7 +302,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "test",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
 					{Name: aws.String("test1")},
 				}, nil)
@@ -319,7 +321,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "test",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
 					{Name: aws.String("test1")},
 					{Name: aws.String("test2")},
@@ -341,7 +343,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
 					{Name: aws.String("test1")},
 					{Name: aws.String("test2")},
@@ -364,7 +366,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "test",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
 					{Name: aws.String("other1")},
 					{Name: aws.String("other2")},
@@ -383,7 +385,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "test",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, nil)
 			},
 			want: want{
@@ -398,7 +400,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, nil)
 			},
 			want: want{
@@ -413,7 +415,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				ctx:     context.Background(),
 				keyword: "test",
 			},
-			prepareMockFn: func(m *MockIS3) {
+			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, fmt.Errorf("ListBucketsError"))
 			},
 			want: want{
@@ -427,7 +429,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			s3Mock := NewMockIS3(ctrl)
+			s3Mock := client.NewMockIS3(ctrl)
 			tt.prepareMockFn(s3Mock)
 
 			s3 := NewS3Wrapper(s3Mock)

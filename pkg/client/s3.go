@@ -1,5 +1,5 @@
 //go:generate mockgen -source=$GOFILE -destination=s3_mock.go -package=$GOPACKAGE -write_package_comment=false
-package cls3
+package client
 
 import (
 	"context"
