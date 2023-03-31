@@ -49,7 +49,7 @@ This tool allows you to delete **multiple buckets** while **searching for bucket
 
 ### BucketName Selection
 
-In the interactive mode(`-i` option), you can search bucket names and select a bucket.
+In the interactive mode(`-i` option), you can search bucket names and select buckets.
 
 It can be **empty**.
 
