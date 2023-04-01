@@ -39,6 +39,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 	type args struct {
 		ctx                context.Context
 		bucketName         *string
+		region             string
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -53,6 +54,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -75,6 +77,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -111,7 +114,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			err = s3Client.DeleteBucket(tt.args.ctx, tt.args.bucketName)
+			err = s3Client.DeleteBucket(tt.args.ctx, tt.args.bucketName, tt.args.region)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err, tt.wantErr)
 				return
@@ -137,6 +140,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 	type args struct {
 		ctx                context.Context
 		bucketName         *string
+		region             string
 		objects            []types.ObjectIdentifier
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
@@ -157,6 +161,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -191,6 +196,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				objects:    []types.ObjectIdentifier{},
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
@@ -220,6 +226,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				objects:    objectsOverLimit,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
@@ -249,6 +256,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -286,6 +294,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -326,6 +335,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -385,7 +395,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.DeleteObjects(tt.args.ctx, tt.args.bucketName, tt.args.objects)
+			output, err := s3Client.DeleteObjects(tt.args.ctx, tt.args.bucketName, tt.args.objects, tt.args.region)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -405,6 +415,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 	type args struct {
 		ctx                context.Context
 		bucketName         *string
+		region             string
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -424,6 +435,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -471,6 +483,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -499,6 +512,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -527,6 +541,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -565,6 +580,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -603,6 +619,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
@@ -705,6 +722,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
@@ -787,7 +805,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.ListObjectVersions(tt.args.ctx, tt.args.bucketName)
+			output, err := s3Client.ListObjectVersions(tt.args.ctx, tt.args.bucketName, tt.args.region)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -1084,6 +1102,138 @@ func TestS3_ListBuckets(t *testing.T) {
 			}
 			if !reflect.DeepEqual(output, tt.want.buckets) {
 				t.Errorf("output = %#v, want %#v", output, tt.want.buckets)
+			}
+		})
+	}
+}
+
+func TestS3_GetBucketLocation(t *testing.T) {
+	type args struct {
+		ctx                context.Context
+		bucketName         *string
+		withAPIOptionsFunc func(*middleware.Stack) error
+	}
+
+	type want struct {
+		region string
+		err    error
+	}
+
+	cases := []struct {
+		name    string
+		args    args
+		want    want
+		wantErr bool
+	}{
+		{
+			name: "get bucket location successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"GetBucketLocationMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.GetBucketLocationOutput{
+										LocationConstraint: "ap-northeast-1",
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				region: "ap-northeast-1",
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "get bucket location successfully for us-east-1(empty)",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"GetBucketLocationMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.GetBucketLocationOutput{
+										LocationConstraint: "",
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				region: "us-east-1",
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "get bucket location failure",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"GetBucketLocationErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: nil,
+								}, middleware.Metadata{}, fmt.Errorf("GetBucketLocationError")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				region: "",
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: GetBucketLocation, GetBucketLocationError"),
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.LoadDefaultConfig(
+				tt.args.ctx,
+				config.WithRegion("ap-northeast-1"),
+				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := s3.NewFromConfig(cfg)
+			s3Client := NewS3(client)
+
+			output, err := s3Client.GetBucketLocation(tt.args.ctx, tt.args.bucketName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.region) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.region)
 			}
 		})
 	}
