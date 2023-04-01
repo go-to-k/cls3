@@ -36,9 +36,6 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 	}
 
 	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region)
-	if err != nil && strings.Contains(err.Error(), "api error PermanentRedirect") {
-		return fmt.Errorf("PermanentRedirectError: Are you sure you are specifying the correct region?")
-	}
 	if err != nil {
 		return err
 	}

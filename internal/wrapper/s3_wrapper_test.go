@@ -113,6 +113,20 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "clear objects failure for get bucket location errors",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "test",
+				forceMode:  false,
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("", fmt.Errorf("GetBucketLocationError"))
+			},
+			want:    fmt.Errorf("GetBucketLocationError"),
+			wantErr: true,
+		},
+		{
 			name: "clear objects failure for list object versions errors",
 			args: args{
 				ctx:        context.Background(),
@@ -245,21 +259,6 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(fmt.Errorf("DeleteBucketError"))
 			},
 			want:    fmt.Errorf("DeleteBucketError"),
-			wantErr: true,
-		},
-		{
-			name: "clear objects failure for list object versions invalid region errors",
-			args: args{
-				ctx:        context.Background(),
-				bucketName: "test",
-				forceMode:  false,
-			},
-			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(nil, fmt.Errorf("api error PermanentRedirect"))
-			},
-			want:    fmt.Errorf("PermanentRedirectError: Are you sure you are specifying the correct region?"),
 			wantErr: true,
 		},
 	}
