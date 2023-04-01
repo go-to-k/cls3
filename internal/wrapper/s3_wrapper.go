@@ -30,16 +30,18 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return nil
 	}
 
-	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName))
-	if err != nil && strings.Contains(err.Error(), "api error PermanentRedirect") {
-		return fmt.Errorf("PermanentRedirectError: Are you sure you are specifying the correct region?")
+	region, err := s.client.GetBucketLocation(ctx, aws.String(bucketName))
+	if err != nil {
+		return err
 	}
+
+	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region)
 	if err != nil {
 		return err
 	}
 
 	if len(versions) > 0 {
-		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions)
+		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region)
 		if err != nil {
 			return err
 		}
@@ -58,7 +60,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 	io.Logger.Info().Msgf("%v Cleared.", bucketName)
 
 	if forceMode {
-		if err := s.client.DeleteBucket(ctx, aws.String(bucketName)); err != nil {
+		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), region); err != nil {
 			return err
 		}
 		io.Logger.Info().Msgf("%v Deleted.", bucketName)
