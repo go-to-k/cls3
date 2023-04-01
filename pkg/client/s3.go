@@ -27,11 +27,12 @@ const (
 var SleepTimeSecForS3 = 10
 
 type IS3 interface {
-	DeleteBucket(ctx context.Context, bucketName *string) error
-	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error)
-	ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error)
+	DeleteBucket(ctx context.Context, bucketName *string, region string) error
+	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error)
+	ListObjectVersions(ctx context.Context, bucketName *string, region string) ([]types.ObjectIdentifier, error)
 	CheckBucketExists(ctx context.Context, bucketName *string) (bool, error)
 	ListBuckets(ctx context.Context) ([]types.Bucket, error)
+	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
 }
 
 var _ IS3 = (*S3)(nil)
@@ -46,12 +47,14 @@ func NewS3(client *s3.Client) *S3 {
 	}
 }
 
-func (s *S3) DeleteBucket(ctx context.Context, bucketName *string) error {
+func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string) error {
 	input := &s3.DeleteBucketInput{
 		Bucket: bucketName,
 	}
 
-	_, err := s.client.DeleteBucket(ctx, input)
+	_, err := s.client.DeleteBucket(ctx, input, func(o *s3.Options) {
+		o.Region = region
+	})
 	if err != nil {
 		return &ClientError{
 			ResourceName: bucketName,
@@ -61,7 +64,7 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string) error {
 	return nil
 }
 
-func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier) ([]types.Error, error) {
+func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error) {
 	errors := []types.Error{}
 	if len(objects) == 0 {
 		return errors, nil
@@ -125,6 +128,7 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 			}
 			optFn := func(o *s3.Options) {
 				o.Retryer = NewRetryer(retryable, SleepTimeSecForS3)
+				o.Region = region
 			}
 
 			output, err := s.client.DeleteObjects(ctx, input, optFn)
@@ -159,7 +163,7 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 	return errors, nil
 }
 
-func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string) ([]types.ObjectIdentifier, error) {
+func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region string) ([]types.ObjectIdentifier, error) {
 	var keyMarker *string
 	var versionIdMarker *string
 	objectIdentifiers := []types.ObjectIdentifier{}
@@ -180,7 +184,9 @@ func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string) ([]type
 			VersionIdMarker: versionIdMarker,
 		}
 
-		output, err := s.client.ListObjectVersions(ctx, input)
+		output, err := s.client.ListObjectVersions(ctx, input, func(o *s3.Options) {
+			o.Region = region
+		})
 		if err != nil {
 			return nil, &ClientError{
 				ResourceName: bucketName,
@@ -241,4 +247,23 @@ func (s *S3) ListBuckets(ctx context.Context) ([]types.Bucket, error) {
 	}
 
 	return output.Buckets, nil
+}
+
+func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string, error) {
+	input := &s3.GetBucketLocationInput{
+		Bucket: bucketName,
+	}
+
+	output, err := s.client.GetBucketLocation(ctx, input)
+	if err != nil {
+		return "", &ClientError{
+			ResourceName: bucketName,
+			Err:          err,
+		}
+	}
+	if output.LocationConstraint == "" {
+		return "us-east-1", nil
+	}
+
+	return string(output.LocationConstraint), nil
 }
