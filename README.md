@@ -8,7 +8,7 @@ The description in **Japanese** is available on the following blog page. -> [Blo
 
 CLI tool to clear (so **delete all objects and versions/delete-markers** in) Amazon S3 Buckets(AWS). The **bucket itself** can also be deleted by the option.
 
-This tool allows you to delete **multiple buckets** while **searching for bucket names**.
+This tool allows you to **search for bucket names** and delete or clear **multiple buckets**.
 
 ## Install
 
@@ -40,6 +40,7 @@ This tool allows you to delete **multiple buckets** while **searching for bucket
   - AWS profile name
 - -r, --region: optional(default: `ap-northeast-1`)
   - AWS Region
+  - It is not necessary to be aware of this as it can be used **across regions**.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
 - -i, --interactive: optional
@@ -50,6 +51,8 @@ This tool allows you to delete **multiple buckets** while **searching for bucket
 ### BucketName Selection
 
 In the interactive mode(`-i` option), you can search bucket names and select buckets.
+
+It is designed to be searchable and deletable **across regions**, so it can be used **without being region-aware**.
 
 It can be **empty**.
 
