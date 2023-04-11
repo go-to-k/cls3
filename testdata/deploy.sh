@@ -44,8 +44,8 @@ for i in $(seq 1 100); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null
-	aws s3 rm s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null        # delete marker
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null # version
+	aws s3 rm s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null        # delete marker
 
 	rm ${dir}/*.txt
 done
