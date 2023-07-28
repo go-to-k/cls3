@@ -3,7 +3,7 @@ module github.com/go-to-k/cls3
 go 1.18
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.17.7
+	github.com/aws/aws-sdk-go-v2 v1.19.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.31.0
 	github.com/golang/mock v1.6.0
