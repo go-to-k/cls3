@@ -3,7 +3,7 @@ module github.com/go-to-k/cls3
 go 1.18
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.17.7
+	github.com/aws/aws-sdk-go-v2 v1.20.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.31.0
 	github.com/golang/mock v1.6.0
@@ -27,7 +27,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.11.25 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.13.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.2 // indirect
-	github.com/aws/smithy-go v1.13.5
+	github.com/aws/smithy-go v1.14.1
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
