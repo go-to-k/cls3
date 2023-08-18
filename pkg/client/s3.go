@@ -3,7 +3,6 @@ package client
 
 import (
 	"context"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -70,15 +69,9 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 		return errors, nil
 	}
 
-	maxParallelsCount := MaxS3DeleteObjectsParallelsCount
-	numCPU := runtime.NumCPU()
-	if numCPU < MaxS3DeleteObjectsParallelsCount {
-		maxParallelsCount = numCPU
-	}
-
 	eg, ctx := errgroup.WithContext(ctx)
-	outputsCh := make(chan *s3.DeleteObjectsOutput, maxParallelsCount)
-	sem := semaphore.NewWeighted(int64(maxParallelsCount))
+	outputsCh := make(chan *s3.DeleteObjectsOutput, MaxS3DeleteObjectsParallelsCount)
+	sem := semaphore.NewWeighted(int64(MaxS3DeleteObjectsParallelsCount))
 	wg := sync.WaitGroup{}
 
 	nextObjects := make([]types.ObjectIdentifier, len(objects))
