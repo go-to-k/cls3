@@ -39,7 +39,7 @@ aws s3api put-bucket-versioning --bucket ${lower_bucket_name} --versioning-confi
 dir="./testfiles"
 mkdir -p ${dir}
 
-# about 400,000 versions
+# about 300,000 versions
 for i in $(seq 1 100); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
