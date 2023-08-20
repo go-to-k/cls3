@@ -8,9 +8,11 @@ The description in **Japanese** is available on the following blog page. -> [Blo
 
 ## What is
 
-CLI tool to clear (so **delete all objects and versions/delete-markers** in) Amazon S3 Buckets(AWS). The **bucket itself** can also be deleted by the option.
+The CLI tool **"cls3"** is to <ins>**CL**</ins>ear Amazon <ins>**S3**</ins> Buckets(AWS).
 
-This tool allows you to **search for bucket names** and delete or clear **multiple buckets**.
+It <ins>**empties**</ins> (so **deletes all objects and versions/delete-markers** in) S3 Buckets **or** <ins>**deletes**</ins> the buckets **themselves**.
+
+This tool allows you to **search for bucket names** and empty or delete **multiple buckets**.
 
 ## Install
 
