@@ -6,6 +6,8 @@ The description in **English** is available on the following blog page. -> [Blog
 
 The description in **Japanese** is available on the following blog page. -> [Blog](https://go-to-k.hatenablog.com/entry/cls3)
 
+The description in **Spanish** is available on the following page. -> [Blog](https://dev.to/aws-espanol/cls3-busqueda-y-eliminacion-masiva-de-buckets-s3-1gb)
+
 ## What is
 
 The CLI tool **"cls3"** is to <ins>**CL**</ins>ear Amazon <ins>**S3**</ins> Buckets(AWS).
