@@ -20,7 +20,7 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool) error {
+func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool, quiet bool) error {
 	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
 		return err
@@ -35,13 +35,19 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 
+	io.Logger.Info().Msgf("%v Checking...", bucketName)
+
 	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region)
 	if err != nil {
 		return err
 	}
 
-	if len(versions) > 0 {
-		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region)
+	if len(versions) == 0 {
+		io.Logger.Info().Msgf("%v No objects.", bucketName)
+	} else {
+		io.Logger.Info().Msgf("%v Clearing...", bucketName)
+
+		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
 		if err != nil {
 			return err
 		}
@@ -55,15 +61,15 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			}
 			return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
 		}
-	}
 
-	io.Logger.Info().Msgf("%v Cleared.", bucketName)
+		io.Logger.Info().Msgf("%v Cleared!!", bucketName)
+	}
 
 	if forceMode {
 		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), region); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted.", bucketName)
+		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
 	}
 
 	return nil
