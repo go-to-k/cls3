@@ -33,7 +33,7 @@ This tool allows you to **search for bucket names** and empty or delete **multip
 
 ## How to use
   ```
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-q|--quiet]
   ```
 
 - -b, --bucketName: optional
