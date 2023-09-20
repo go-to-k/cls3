@@ -51,6 +51,8 @@ This tool allows you to **search for bucket names** and empty or delete **multip
   - ForceMode (Delete the bucket together)
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
+- -q, --quiet: optional
+  - Not to display a progress bar
 
 ## Interactive Mode
 

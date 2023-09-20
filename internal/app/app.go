@@ -22,6 +22,7 @@ type App struct {
 	Region          string
 	ForceMode       bool
 	InteractiveMode bool
+	Quiet           bool
 }
 
 func NewApp(version string) *App {
@@ -64,6 +65,13 @@ func NewApp(version string) *App {
 				Value:       false,
 				Usage:       "Interactive Mode",
 				Destination: &app.InteractiveMode,
+			},
+			&cli.BoolFlag{
+				Name:        "quiet",
+				Aliases:     []string{"q"},
+				Value:       false,
+				Usage:       "Not to display a progress bar",
+				Destination: &app.Quiet,
 			},
 		},
 	}
@@ -118,7 +126,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode); err != nil {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.Quiet); err != nil {
 				return err
 			}
 		}

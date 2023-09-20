@@ -3,12 +3,16 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/schollz/progressbar/v3"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 )
@@ -27,7 +31,7 @@ var SleepTimeSecForS3 = 10
 
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
-	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error)
+	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error)
 	ListObjectVersions(ctx context.Context, bucketName *string, region string) ([]types.ObjectIdentifier, error)
 	CheckBucketExists(ctx context.Context, bucketName *string) (bool, error)
 	ListBuckets(ctx context.Context) ([]types.Bucket, error)
@@ -63,7 +67,7 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 	return nil
 }
 
-func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error) {
+func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error) {
 	errors := []types.Error{}
 	if len(objects) == 0 {
 		return errors, nil
@@ -73,6 +77,22 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 	outputsCh := make(chan *s3.DeleteObjectsOutput, MaxS3DeleteObjectsParallelsCount)
 	sem := semaphore.NewWeighted(int64(MaxS3DeleteObjectsParallelsCount))
 	wg := sync.WaitGroup{}
+
+	var bar *progressbar.ProgressBar
+	if !quiet {
+		bar = progressbar.NewOptions64(
+			int64(len(objects)),
+			progressbar.OptionSetWriter(os.Stderr),
+			progressbar.OptionSetWidth(50),
+			progressbar.OptionThrottle(65*time.Millisecond),
+			progressbar.OptionShowCount(),
+			progressbar.OptionOnCompletion(func() {
+				fmt.Fprint(os.Stderr, "\n")
+			}),
+			progressbar.OptionSpinnerType(14),
+			progressbar.OptionSetRenderBlankState(true),
+		)
+	}
 
 	nextObjects := make([]types.ObjectIdentifier, len(objects))
 	copy(nextObjects, objects)
@@ -127,6 +147,10 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 			output, err := s.client.DeleteObjects(ctx, input, optFn)
 			if err != nil {
 				return err // return non wrapping error because wrap after eg.Wait()
+			}
+
+			if !quiet {
+				bar.Add(len(inputObjects))
 			}
 
 			outputsCh <- output
