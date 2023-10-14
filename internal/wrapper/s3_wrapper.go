@@ -62,7 +62,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
 		}
 
-		io.Logger.Info().Msgf("%v Cleared!!", bucketName)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, len(versions))
 	}
 
 	if forceMode {
