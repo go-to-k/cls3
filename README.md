@@ -24,11 +24,11 @@ Initially, the tool was intended to "empty the bucket", but since I was going to
 
 ### Search for bucket names and delete multiple buckets
 
-As described below, you can search for bucket names and delete or empty multiple buckets at once.
+As described below ([Interactive Mode](#interactive-mode)), you can **search for bucket names** and delete or empty **multiple buckets at once**.
 
 ### Cross-region
 
-In deleting multiple buckets, you can delete them all at once, even if they are in multiple regions.
+In deleting multiple buckets, you can delete them all at once, even if they are in **multiple regions**.
 
 ### Versioning
 
