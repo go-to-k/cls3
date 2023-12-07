@@ -19,7 +19,7 @@ fi
 # Determine the version of cls3 to install.
 # If no version is specified as a command line argument, fetch the latest version.
 if [ -z "$1" ]; then
-    VERSION=$(curl -s https://api.github.com/repos/go-to-k/cls3/releases/latest | grep -Po '"tag_name": "\K(.*?)(?=")')
+    VERSION=$(curl -s https://api.github.com/repos/go-to-k/cls3/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
     if [ -z "$VERSION" ]; then
         echo "Failed to fetch the latest version"
         exit 1
