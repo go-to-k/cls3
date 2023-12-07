@@ -85,6 +85,17 @@ INF testgoto1 Clearing...
   ```
   brew install go-to-k/tap/cls3
   ```
+- Linux, Darwin (macOS) and Windows
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/go-to-k/cls3/main/install.sh | sh
+  cls3 -h
+
+  # To install a specific version of cls3 
+  # e.g. version 0.12.1
+  curl -fsSL https://raw.githubusercontent.com/go-to-k/cls3/main/install.sh | sh -s "v0.12.1"
+  cls3 -h
+  ```
+
 - Binary
   - [Releases](https://github.com/go-to-k/cls3/releases)
 - Git Clone and install(for developers)
