@@ -42,11 +42,12 @@ case $ARCH in
 esac
 
 # Detect the operating system (OS) of the current system.
-# This script supports Linux and Darwin (macOS) operating systems.
+# This script supports Linux, Darwin (macOS) and Windows operating systems.
 OS=$(uname -s)
 case $OS in
     Linux) OS="Linux" ;;
     Darwin) OS="Darwin" ;;
+    MINGW*|MSYS*|CYGWIN*) OS="Windows" ;; 
     *) echo "Unsupported OS: $OS"; exit 1 ;;
 esac
 
