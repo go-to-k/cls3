@@ -1,6 +1,11 @@
 #!/bin/bash
 
-# Check dependencies
+# This script automates the installation of the cls3 tool.
+# It checks for the specified version (or fetches the latest one),
+# downloads the binary, and installs it on the system.
+
+# Check for required tools: curl and tar.
+# These tools are necessary for downloading and extracting the cls3 binary.
 if ! command -v curl &> /dev/null; then
     echo "curl could not be found"
     exit 1
@@ -11,9 +16,9 @@ if ! command -v tar &> /dev/null; then
     exit 1
 fi
 
-# Check if a version is specified
+# Determine the version of cls3 to install.
+# If no version is specified as a command line argument, fetch the latest version.
 if [ -z "$1" ]; then
-    # Fetch the latest version if not specified
     VERSION=$(curl -s https://api.github.com/repos/go-to-k/cls3/releases/latest | grep -Po '"tag_name": "\K(.*?)(?=")')
     if [ -z "$VERSION" ]; then
         echo "Failed to fetch the latest version"
@@ -23,10 +28,11 @@ else
     VERSION=$1
 fi
 
-# Remove 'v' prefix if present
+# Normalize the version string by removing any leading 'v'.
 VERSION=${VERSION#v}
 
-# Detect architecture
+# Detect the architecture of the current system.
+# This script supports x86_64, arm64, and i386 architectures.
 ARCH=$(uname -m)
 case $ARCH in
     x86_64|amd64) ARCH="x86_64" ;;
@@ -35,7 +41,8 @@ case $ARCH in
     *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-# Detect OS
+# Detect the operating system (OS) of the current system.
+# This script supports Linux and Darwin (macOS) operating systems.
 OS=$(uname -s)
 case $OS in
     Linux) OS="Linux" ;;
@@ -43,30 +50,30 @@ case $OS in
     *) echo "Unsupported OS: $OS"; exit 1 ;;
 esac
 
-# Construct file name and download URL
+# Construct the download URL for the cls3 binary based on the version, OS, and architecture.
 FILE_NAME="cls3_${VERSION}_${OS}_${ARCH}.tar.gz"
 URL="https://github.com/go-to-k/cls3/releases/download/v${VERSION}/${FILE_NAME}"
 
-# Download the binary
+# Download the cls3 binary.
 echo "Downloading cls3..."
 if ! curl -L -o "$FILE_NAME" "$URL"; then
     echo "Failed to download cls3"
     exit 1
 fi
 
-# Install
+# Install cls3.
+# This involves extracting the binary and moving it to /usr/local/bin.
 echo "Installing cls3..."
 if ! tar -xzf "$FILE_NAME"; then
     echo "Failed to extract cls3"
     exit 1
 fi
-
 if ! sudo mv cls3 /usr/local/bin/cls3; then
     echo "Failed to install cls3"
     exit 1
 fi
 
-# Cleanup
+# Clean up by removing the downloaded tar file.
 rm "$FILE_NAME"
 
 echo "cls3 installation complete."
