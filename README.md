@@ -94,8 +94,8 @@ INF testgoto1 Clearing...
   cls3 -h
 
   # To install a specific version of cls3
-  # e.g. version 0.12.1
-  curl -fsSL https://raw.githubusercontent.com/go-to-k/cls3/main/install.sh | sh -s "v0.12.1"
+  # e.g. version 0.13.2
+  curl -fsSL https://raw.githubusercontent.com/go-to-k/cls3/main/install.sh | sh -s "v0.13.2"
   cls3 -h
   ```
 
