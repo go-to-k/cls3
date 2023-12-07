@@ -64,7 +64,7 @@ A progress bar will appear by default. This gives you the following information
 - Number of objects deleted
 - Estimated completion time
 
-```
+```bash
 ❯ cls3 -i
 Filter a keyword of bucket names: testgoto
 
@@ -82,15 +82,18 @@ INF testgoto1 Clearing...
 ## Install
 
 - Homebrew
-  ```
+
+  ```bash
   brew install go-to-k/tap/cls3
   ```
+
 - Linux, Darwin (macOS) and Windows
+
   ```bash
   curl -fsSL https://raw.githubusercontent.com/go-to-k/cls3/main/install.sh | sh
   cls3 -h
 
-  # To install a specific version of cls3 
+  # To install a specific version of cls3
   # e.g. version 0.12.1
   curl -fsSL https://raw.githubusercontent.com/go-to-k/cls3/main/install.sh | sh -s "v0.12.1"
   cls3 -h
@@ -99,14 +102,16 @@ INF testgoto1 Clearing...
 - Binary
   - [Releases](https://github.com/go-to-k/cls3/releases)
 - Git Clone and install(for developers)
-  ```
+
+  ```bash
   git clone https://github.com/go-to-k/cls3.git
   cd cls3
   make install
   ```
 
 ## How to use
-  ```
+
+  ```bash
   cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-q|--quiet]
   ```
 
@@ -138,14 +143,14 @@ It is designed to be searchable and deletable **across regions**, so it can be u
 
 It can be **empty**.
 
-```sh
+```bash
 ❯ cls3 -i
 Filter a keyword of bucket names: test-goto
 ```
 
 Then you select bucket names in the UI.
 
-```sh
+```bash
 ? Select buckets.
   [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
 > [x]  test-goto-bucket-1
