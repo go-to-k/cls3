@@ -123,7 +123,7 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 			Bucket: bucketName,
 			Delete: &types.Delete{
 				Objects: inputObjects,
-				Quiet:   *aws.Bool(true),
+				Quiet:   aws.Bool(true),
 			},
 		}
 
