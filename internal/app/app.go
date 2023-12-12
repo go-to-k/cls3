@@ -78,7 +78,7 @@ func NewApp(version string) *App {
 				Name:        "oldObjectsOnly",
 				Aliases:     []string{"o"},
 				Value:       false,
-				Usage:       "Delete old version objects only (include all delete-markers)",
+				Usage:       "Delete old version objects only (including all delete-markers)",
 				Destination: &app.OldObjectsOnly,
 			},
 		},

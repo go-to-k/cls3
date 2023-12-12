@@ -34,6 +34,14 @@ In deleting multiple buckets, you can delete them all at once, even if they are 
 
 **Even if versioning is turned on**, you can empty it just as if it were turned off. Therefore, you can use it **without** being aware of the versioning settings.
 
+### Delete Old Versions Only
+
+The `-o | --oldObjectsOnly` option allows you to **delete only old versions** and all delete-markers without new versions and a bucket itself.
+
+**So you can retain the latest version objects only.**
+
+This option cannot be specified with the `-f | --force` option.
+
 ### Number of objects that can be deleted
 
 The delete-objects API provided by the CLI and SDK has a limit of **"the number of objects that can be deleted in one command is limited to 1000"**, but **This tool has no limit on the number**.
@@ -112,7 +120,7 @@ INF testgoto1 Clearing...
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-q|--quiet]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-q|--quiet] [-o|--oldObjectsOnly]
   ```
 
 - -b, --bucketName: optional
@@ -132,6 +140,9 @@ INF testgoto1 Clearing...
   - Interactive Mode for buckets selection
 - -q, --quiet: optional
   - Not to display a progress bar
+- -o, --oldObjectsOnly: optional
+  - Delete old version objects only (including all delete-markers)
+  - Do not specify the `-f` option if you specify this option.
 
 ## Interactive Mode
 
