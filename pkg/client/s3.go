@@ -212,10 +212,8 @@ func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region 
 		}
 
 		for _, version := range output.Versions {
-			if oldVersionsOnly {
-				if version.IsLatest == nil || *version.IsLatest {
-					continue
-				}
+			if oldVersionsOnly && (version.IsLatest == nil || *version.IsLatest) {
+				continue
 			}
 			objectIdentifier := types.ObjectIdentifier{
 				Key:       version.Key,
