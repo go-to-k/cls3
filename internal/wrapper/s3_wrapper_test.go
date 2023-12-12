@@ -45,7 +45,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(
 					[]types.ObjectIdentifier{
 						{
 							Key:       aws.String("KeyForVersions"),
@@ -72,7 +72,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(
 					[]types.ObjectIdentifier{
 						{
 							Key:       aws.String("KeyForVersions"),
@@ -99,7 +99,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(
 					[]types.ObjectIdentifier{
 						{
 							Key:       aws.String("KeyForVersions"),
@@ -170,7 +170,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(nil, fmt.Errorf("ListObjectVersionsError"))
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(nil, fmt.Errorf("ListObjectVersionsError"))
 			},
 			want:    fmt.Errorf("ListObjectVersionsError"),
 			wantErr: true,
@@ -186,7 +186,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(
 					[]types.ObjectIdentifier{
 						{
 							Key:       aws.String("KeyForVersions"),
@@ -213,7 +213,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(
 					[]types.ObjectIdentifier{
 						{
 							Key:       aws.String("KeyForVersions"),
@@ -249,7 +249,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return(
 					[]types.ObjectIdentifier{
 						{
 							Key:       aws.String("KeyForVersions"),
@@ -277,7 +277,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return([]types.ObjectIdentifier{}, nil)
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return([]types.ObjectIdentifier{}, nil)
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(nil)
 			},
 			want:    nil,
@@ -294,7 +294,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
 				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1").Return([]types.ObjectIdentifier{}, nil)
+				m.EXPECT().ListObjectVersions(gomock.Any(), aws.String("test"), "ap-northeast-1", false).Return([]types.ObjectIdentifier{}, nil)
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(fmt.Errorf("DeleteBucketError"))
 			},
 			want:    fmt.Errorf("DeleteBucketError"),
@@ -310,7 +310,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
-			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, tt.args.quiet)
+			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, tt.args.quiet, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

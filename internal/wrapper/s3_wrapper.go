@@ -20,7 +20,7 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool, quiet bool) error {
+func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool, quiet bool, oldVersionsOnly bool) error {
 	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
 		return err
@@ -37,7 +37,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
-	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region)
+	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region, oldVersionsOnly)
 	if err != nil {
 		return err
 	}
