@@ -32,7 +32,7 @@ var SleepTimeSecForS3 = 10
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
 	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error)
-	ListObjectVersions(ctx context.Context, bucketName *string, region string, oldObjectsOnly bool) ([]types.ObjectIdentifier, error)
+	ListObjectVersions(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool) ([]types.ObjectIdentifier, error)
 	CheckBucketExists(ctx context.Context, bucketName *string) (bool, error)
 	ListBuckets(ctx context.Context) ([]types.Bucket, error)
 	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
@@ -180,7 +180,7 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 	return errors, nil
 }
 
-func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region string, oldObjectsOnly bool) ([]types.ObjectIdentifier, error) {
+func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool) ([]types.ObjectIdentifier, error) {
 	var keyMarker *string
 	var versionIdMarker *string
 	objectIdentifiers := []types.ObjectIdentifier{}
@@ -212,7 +212,7 @@ func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region 
 		}
 
 		for _, version := range output.Versions {
-			if oldObjectsOnly {
+			if oldVersionsOnly {
 				if version.IsLatest == nil || *version.IsLatest {
 					continue
 				}

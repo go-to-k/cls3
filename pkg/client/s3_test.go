@@ -459,7 +459,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		ctx                context.Context
 		bucketName         *string
 		region             string
-		oldObjectsOnly     bool
+		oldVersionsOnly    bool
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -477,10 +477,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -526,10 +526,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions failure",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -556,10 +556,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully(empty)",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -586,10 +586,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully(versions only)",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -626,10 +626,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully(delete markers only)",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -666,10 +666,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions with marker successfully",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
@@ -770,10 +770,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions with marker failure",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: false,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
@@ -841,12 +841,12 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "list objects versions with old versions if oldObjectsOnly is true successfully",
+			name: "list objects versions with old versions if oldVersionsOnly is true successfully",
 			args: args{
-				ctx:            context.Background(),
-				bucketName:     aws.String("test"),
-				region:         "ap-northeast-1",
-				oldObjectsOnly: true,
+				ctx:             context.Background(),
+				bucketName:      aws.String("test"),
+				region:          "ap-northeast-1",
+				oldVersionsOnly: true,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -933,7 +933,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.ListObjectVersions(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldObjectsOnly)
+			output, err := s3Client.ListObjectVersions(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

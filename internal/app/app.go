@@ -23,7 +23,7 @@ type App struct {
 	ForceMode       bool
 	InteractiveMode bool
 	Quiet           bool
-	OldObjectsOnly  bool
+	OldVersionsOnly bool
 }
 
 func NewApp(version string) *App {
@@ -75,11 +75,11 @@ func NewApp(version string) *App {
 				Destination: &app.Quiet,
 			},
 			&cli.BoolFlag{
-				Name:        "oldObjectsOnly",
+				Name:        "oldVersionsOnly",
 				Aliases:     []string{"o"},
 				Value:       false,
 				Usage:       "Delete old version objects only (including all delete-markers)",
-				Destination: &app.OldObjectsOnly,
+				Destination: &app.OldVersionsOnly,
 			},
 		},
 	}
@@ -105,7 +105,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 			errMsg := fmt.Sprintln("When specifying -i, do not specify the -b option.")
 			return fmt.Errorf("InvalidOptionError: %v", errMsg)
 		}
-		if a.ForceMode && a.OldObjectsOnly {
+		if a.ForceMode && a.OldVersionsOnly {
 			errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
 			return fmt.Errorf("InvalidOptionError: %v", errMsg)
 		}
@@ -138,7 +138,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.Quiet, a.OldObjectsOnly); err != nil {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.Quiet, a.OldVersionsOnly); err != nil {
 				return err
 			}
 		}
