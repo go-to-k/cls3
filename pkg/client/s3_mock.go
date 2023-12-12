@@ -109,16 +109,16 @@ func (mr *MockIS3MockRecorder) ListBuckets(ctx interface{}) *gomock.Call {
 }
 
 // ListObjectVersions mocks base method.
-func (m *MockIS3) ListObjectVersions(ctx context.Context, bucketName *string, region string) ([]types.ObjectIdentifier, error) {
+func (m *MockIS3) ListObjectVersions(ctx context.Context, bucketName *string, region string, oldObjectsOnly bool) ([]types.ObjectIdentifier, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListObjectVersions", ctx, bucketName, region)
+	ret := m.ctrl.Call(m, "ListObjectVersions", ctx, bucketName, region, oldObjectsOnly)
 	ret0, _ := ret[0].([]types.ObjectIdentifier)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListObjectVersions indicates an expected call of ListObjectVersions.
-func (mr *MockIS3MockRecorder) ListObjectVersions(ctx, bucketName, region interface{}) *gomock.Call {
+func (mr *MockIS3MockRecorder) ListObjectVersions(ctx, bucketName, region, oldObjectsOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectVersions", reflect.TypeOf((*MockIS3)(nil).ListObjectVersions), ctx, bucketName, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListObjectVersions", reflect.TypeOf((*MockIS3)(nil).ListObjectVersions), ctx, bucketName, region, oldObjectsOnly)
 }

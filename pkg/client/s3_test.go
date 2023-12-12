@@ -459,6 +459,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		ctx                context.Context
 		bucketName         *string
 		region             string
+		oldObjectsOnly     bool
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -476,9 +477,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -524,9 +526,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions failure",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -553,9 +556,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully(empty)",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -582,9 +586,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully(versions only)",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -621,9 +626,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions successfully(delete markers only)",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -660,9 +666,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions with marker successfully",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
@@ -763,9 +770,10 @@ func TestS3_ListObjectVersions(t *testing.T) {
 		{
 			name: "list objects versions with marker failure",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
@@ -832,6 +840,83 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "list objects versions with old versions if oldObjectsOnly is true successfully",
+			args: args{
+				ctx:            context.Background(),
+				bucketName:     aws.String("test"),
+				region:         "ap-northeast-1",
+				oldObjectsOnly: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectVersionsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectVersionsOutput{
+										Versions: []types.ObjectVersion{
+											{
+												Key:       aws.String("KeyForVersions1"),
+												VersionId: aws.String("VersionIdForVersions1"),
+												IsLatest:  aws.Bool(false),
+											},
+											{
+												Key:       aws.String("KeyForVersions2"),
+												VersionId: aws.String("VersionIdForVersions2"),
+												IsLatest:  aws.Bool(true),
+											},
+											{
+												Key:       aws.String("KeyForVersions3"),
+												VersionId: aws.String("VersionIdForVersions3"),
+											},
+										},
+										DeleteMarkers: []types.DeleteMarkerEntry{
+											{
+												Key:       aws.String("KeyForDeleteMarkers1"),
+												VersionId: aws.String("VersionIdForDeleteMarkers1"),
+												IsLatest:  aws.Bool(false),
+											},
+											{
+												Key:       aws.String("KeyForDeleteMarkers2"),
+												VersionId: aws.String("VersionIdForDeleteMarkers2"),
+												IsLatest:  aws.Bool(true),
+											},
+											{
+												Key:       aws.String("KeyForDeleteMarkers3"),
+												VersionId: aws.String("VersionIdForDeleteMarkers3"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("KeyForVersions1"),
+						VersionId: aws.String("VersionIdForVersions1"),
+					},
+					{
+						Key:       aws.String("KeyForDeleteMarkers1"),
+						VersionId: aws.String("VersionIdForDeleteMarkers1"),
+					},
+					{
+						Key:       aws.String("KeyForDeleteMarkers2"),
+						VersionId: aws.String("VersionIdForDeleteMarkers2"),
+					},
+					{
+						Key:       aws.String("KeyForDeleteMarkers3"),
+						VersionId: aws.String("VersionIdForDeleteMarkers3"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {
@@ -848,7 +933,7 @@ func TestS3_ListObjectVersions(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.ListObjectVersions(tt.args.ctx, tt.args.bucketName, tt.args.region)
+			output, err := s3Client.ListObjectVersions(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldObjectsOnly)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
