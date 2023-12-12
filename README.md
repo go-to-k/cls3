@@ -18,7 +18,7 @@ This tool allows you to **search for bucket names** and empty or delete **multip
 
 ## Features
 
-### Delete bucket option
+### Bucket deletion option
 
 Initially, the tool was intended to "empty the bucket", but since I was going to go through the trouble, I also added an option (`-f|--force`) to **"delete the bucket as well"**.
 
@@ -34,9 +34,9 @@ In deleting multiple buckets, you can delete them all at once, even if they are 
 
 **Even if versioning is turned on**, you can empty it just as if it were turned off. Therefore, you can use it **without** being aware of the versioning settings.
 
-### Delete Old Version Objects Only
+### Deletion of old version Objects Only
 
-The `-o | --oldVersionsOnly` option allows you to **delete only old versions** and all delete-markers without new versions and a bucket itself.
+The `-o | --oldVersionsOnly` option allows you to **delete only old versions** and all delete-markers **without new versions and a bucket itself**.
 
 **So you can retain the latest version objects only.**
 
