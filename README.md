@@ -34,7 +34,7 @@ In deleting multiple buckets, you can delete them all at once, even if they are 
 
 **Even if versioning is turned on**, you can empty it just as if it were turned off. Therefore, you can use it **without** being aware of the versioning settings.
 
-### Delete Old Versions Only
+### Delete Old Version Objects Only
 
 The `-o | --oldObjectsOnly` option allows you to **delete only old versions** and all delete-markers without new versions and a bucket itself.
 
