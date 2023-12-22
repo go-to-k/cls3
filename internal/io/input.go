@@ -19,7 +19,7 @@ func GetCheckboxes(label string, opts []string) []string {
 		Options:  opts,
 		PageSize: SelectionPageSize,
 	}
-	survey.AskOne(prompt, &res)
+	survey.AskOne(prompt, &res, survey.WithKeepFilter(true))
 
 	return res
 }
