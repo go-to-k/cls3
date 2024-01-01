@@ -11,7 +11,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/rs/zerolog v1.30.0
 	github.com/schollz/progressbar/v3 v3.13.1
-	github.com/urfave/cli/v2 v2.25.0
+	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/goleak v1.2.1
 	golang.org/x/sync v0.5.0
 )
