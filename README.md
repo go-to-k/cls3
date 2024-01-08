@@ -107,6 +107,12 @@ INF testgoto1 Clearing...
   cls3 -h
   ```
 
+- aqua
+
+  ```bash
+  aqua g -i go-to-k/cls3
+  ```
+
 - Binary
   - [Releases](https://github.com/go-to-k/cls3/releases)
 - Git Clone and install(for developers)
