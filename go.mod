@@ -4,10 +4,10 @@ go 1.21
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
-	github.com/aws/aws-sdk-go-v2 v1.23.5
+	github.com/aws/aws-sdk-go-v2 v1.25.0
 	github.com/aws/aws-sdk-go-v2/config v1.25.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.47.3
-	github.com/aws/smithy-go v1.18.1
+	github.com/aws/smithy-go v1.20.0
 	github.com/golang/mock v1.6.0
 	github.com/rs/zerolog v1.30.0
 	github.com/schollz/progressbar/v3 v3.13.1
