@@ -3,11 +3,26 @@ package wrapper
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
+	"github.com/schollz/progressbar/v3"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
+)
+
+const (
+	// S3 API can achieve at least 3,500 PUT/COPY/POST/DELETE or 5,500 GET/HEAD requests per second per partitioned prefix.
+	// Values above that threshold cause many 503 errors.
+	// So limit DeleteObjects to 3 parallels of 1000 objects at a time.
+	// https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
+	MaxS3DeleteObjectsParallelsCount = 3
 )
 
 type S3Wrapper struct {
@@ -35,34 +50,116 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 
-	io.Logger.Info().Msgf("%v Checking...", bucketName)
-
-	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region, oldVersionsOnly)
-	if err != nil {
-		return err
+	deletedVersionsCount := 0
+	dummyForFirstValue := 1000 // dummy for a first value (because it does not work if the value is zero)
+	var bar *progressbar.ProgressBar
+	if !quiet {
+		bar = progressbar.NewOptions64(
+			int64(dummyForFirstValue),
+			progressbar.OptionSetWriter(os.Stderr),
+			progressbar.OptionSetWidth(50),
+			progressbar.OptionThrottle(65*time.Millisecond),
+			progressbar.OptionShowCount(),
+			progressbar.OptionOnCompletion(func() {
+				fmt.Fprint(os.Stderr, "\n\n")
+			}),
+			progressbar.OptionSpinnerType(14),
+			progressbar.OptionSetRenderBlankState(true),
+		)
 	}
 
-	if len(versions) == 0 {
-		io.Logger.Info().Msgf("%v No objects.", bucketName)
-	} else {
-		io.Logger.Info().Msgf("%v Clearing...", bucketName)
+	// clear the dummy for a first value
+	bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
 
-		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
+	eg, ctx := errgroup.WithContext(ctx)
+	errorStr := ""
+	errorsCh := make(chan []types.Error, MaxS3DeleteObjectsParallelsCount)
+	deletedVersionsCountCh := make(chan int)
+	sem := semaphore.NewWeighted(int64(MaxS3DeleteObjectsParallelsCount))
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for cnt := range deletedVersionsCountCh {
+			deletedVersionsCount += cnt
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for outputErrors := range errorsCh {
+			outputErrors := outputErrors
+			if len(outputErrors) > 0 {
+				for _, error := range outputErrors {
+					errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
+					errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
+					errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
+					errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+				}
+			}
+		}
+	}()
+
+	var keyMarker *string
+	var versionIdMarker *string
+	for {
+		var versions []types.ObjectIdentifier
+
+		versions, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(ctx, aws.String(bucketName), region, oldVersionsOnly, keyMarker, versionIdMarker)
 		if err != nil {
 			return err
 		}
-		if len(errors) > 0 {
-			errorStr := ""
-			for _, error := range errors {
-				errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-				errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-				errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-				errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
-			}
-			return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
+		if len(versions) == 0 {
+			break
 		}
 
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, len(versions))
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return err
+		}
+
+		bar.ChangeMax(bar.GetMax() + len(versions))
+
+		eg.Go(func() error {
+			defer sem.Release(1)
+
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
+			if err != nil {
+				return err
+			}
+
+			errorsCh <- gotErrors
+			deletedVersionsCountCh <- len(versions)
+
+			if !quiet {
+				bar.Add(len(versions))
+			}
+
+			return nil
+		})
+
+		if keyMarker == nil && versionIdMarker == nil {
+			break
+		}
+	}
+
+	go func() {
+		eg.Wait()
+		close(errorsCh)
+		close(deletedVersionsCountCh)
+	}()
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	if errorStr != "" {
+		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
+	}
+
+	if deletedVersionsCount == 0 {
+		io.Logger.Info().Msgf("%v No objects.", bucketName)
+	} else {
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedVersionsCount)
 	}
 
 	if forceMode {
