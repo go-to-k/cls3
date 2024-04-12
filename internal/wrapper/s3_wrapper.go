@@ -51,7 +51,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 	}
 
 	deletedVersionsCount := 0
-	dummyForFirstValue := 1000 // dummy for a first value (because it does not work if the value is zero)
+	dummyForFirstValue := 1000 // dummy for the first value (because it does not work if the value is zero)
 	var bar *progressbar.ProgressBar
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -113,7 +113,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 				progressbar.OptionSpinnerType(14),
 				progressbar.OptionSetRenderBlankState(true),
 			)
-			// clear the dummy for a first value
+			// clear the dummy for the first value
 			bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
 		}
 
