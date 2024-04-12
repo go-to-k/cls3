@@ -121,11 +121,11 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			bar.ChangeMax(bar.GetMax() + len(versions))
 		}
 
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return err
-		}
-
 		eg.Go(func() error {
+			// Call semaphore in eg.Go to finish all of ListObjectVersionsByPage first and limit the number of parallels for DeleteObjects
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
 			defer sem.Release(1)
 
 			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
