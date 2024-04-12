@@ -64,9 +64,8 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 }
 
 func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error) {
-	errorStr := []types.Error{}
 	if len(objects) == 0 {
-		return errorStr, nil
+		return []types.Error{}, nil
 	}
 
 	input := &s3.DeleteObjectsInput{
@@ -87,7 +86,7 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 
 	output, err := s.client.DeleteObjects(ctx, input, optFn)
 	if err != nil {
-		return errorStr, &ClientError{
+		return []types.Error{}, &ClientError{
 			ResourceName: bucketName,
 			Err:          err,
 		}
