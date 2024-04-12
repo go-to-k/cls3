@@ -53,23 +53,6 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 	deletedVersionsCount := 0
 	dummyForFirstValue := 1000 // dummy for a first value (because it does not work if the value is zero)
 	var bar *progressbar.ProgressBar
-	if !quiet {
-		bar = progressbar.NewOptions64(
-			int64(dummyForFirstValue),
-			progressbar.OptionSetWriter(os.Stderr),
-			progressbar.OptionSetWidth(50),
-			progressbar.OptionThrottle(65*time.Millisecond),
-			progressbar.OptionShowCount(),
-			progressbar.OptionOnCompletion(func() {
-				fmt.Fprint(os.Stderr, "\n\n")
-			}),
-			progressbar.OptionSpinnerType(14),
-			progressbar.OptionSetRenderBlankState(true),
-		)
-	}
-
-	// clear the dummy for a first value
-	bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
 
 	eg, ctx := errgroup.WithContext(ctx)
 	errorStr := ""
@@ -104,6 +87,7 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 
 	var keyMarker *string
 	var versionIdMarker *string
+	isFirstLoop := true
 	for {
 		var versions []types.ObjectIdentifier
 
@@ -115,11 +99,31 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			break
 		}
 
+		if !quiet && isFirstLoop {
+			isFirstLoop = false
+			bar = progressbar.NewOptions64(
+				int64(dummyForFirstValue),
+				progressbar.OptionSetWriter(os.Stderr),
+				progressbar.OptionSetWidth(50),
+				progressbar.OptionThrottle(65*time.Millisecond),
+				progressbar.OptionShowCount(),
+				progressbar.OptionOnCompletion(func() {
+					fmt.Fprint(os.Stderr, "\n")
+				}),
+				progressbar.OptionSpinnerType(14),
+				progressbar.OptionSetRenderBlankState(true),
+			)
+			// clear the dummy for a first value
+			bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
+		}
+
 		if err := sem.Acquire(ctx, 1); err != nil {
 			return err
 		}
 
-		bar.ChangeMax(bar.GetMax() + len(versions))
+		if !quiet {
+			bar.ChangeMax(bar.GetMax() + len(versions))
+		}
 
 		eg.Go(func() error {
 			defer sem.Release(1)
