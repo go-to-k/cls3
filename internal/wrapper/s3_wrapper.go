@@ -117,12 +117,12 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
 		}
 
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return err
-		}
-
 		if !quiet {
 			bar.ChangeMax(bar.GetMax() + len(versions))
+		}
+
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return err
 		}
 
 		eg.Go(func() error {
