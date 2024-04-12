@@ -50,16 +50,13 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 
-	deletedVersionsCount := 0
-	dummyForFirstValue := 1000 // dummy for the first value (because it does not work if the value is zero)
-	var bar *progressbar.ProgressBar
-
 	eg, ctx := errgroup.WithContext(ctx)
-	errorStr := ""
-	errorsCh := make(chan []types.Error, MaxS3DeleteObjectsParallelsCount)
-	deletedVersionsCountCh := make(chan int)
 	sem := semaphore.NewWeighted(int64(MaxS3DeleteObjectsParallelsCount))
 	wg := sync.WaitGroup{}
+	errorStr := ""
+	errorsCh := make(chan []types.Error, MaxS3DeleteObjectsParallelsCount)
+	deletedVersionsCount := 0
+	deletedVersionsCountCh := make(chan int)
 
 	wg.Add(1)
 	go func() {
@@ -87,7 +84,9 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 
 	var keyMarker *string
 	var versionIdMarker *string
+	var bar *progressbar.ProgressBar
 	isFirstLoop := true
+
 	for {
 		var versions []types.ObjectIdentifier
 
@@ -101,6 +100,8 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 
 		if !quiet && isFirstLoop {
 			isFirstLoop = false
+			dummyForFirstValue := 1000 // dummy for the first value (because it does not work if the value is zero)
+
 			bar = progressbar.NewOptions64(
 				int64(dummyForFirstValue),
 				progressbar.OptionSetWriter(os.Stderr),
