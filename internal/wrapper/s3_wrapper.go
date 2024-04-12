@@ -35,7 +35,13 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool, quiet bool, oldVersionsOnly bool) error {
+func (s *S3Wrapper) ClearS3Objects(
+	ctx context.Context,
+	bucketName string,
+	forceMode bool,
+	quiet bool,
+	oldVersionsOnly bool,
+) error {
 	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
 		return err
@@ -50,37 +56,12 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	eg := errgroup.Group{}
 	sem := semaphore.NewWeighted(int64(MaxS3DeleteObjectsParallelsCount))
-	wg := sync.WaitGroup{}
 	errorStr := ""
-	errorsCh := make(chan []types.Error, MaxS3DeleteObjectsParallelsCount)
+	errorsMtx := sync.Mutex{}
 	deletedVersionsCount := 0
-	deletedVersionsCountCh := make(chan int)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for cnt := range deletedVersionsCountCh {
-			deletedVersionsCount += cnt
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for outputErrors := range errorsCh {
-			outputErrors := outputErrors
-			if len(outputErrors) > 0 {
-				for _, error := range outputErrors {
-					errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-					errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-					errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-					errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
-				}
-			}
-		}
-	}()
+	deletedVersionsCountMtx := sync.Mutex{}
 
 	var keyMarker *string
 	var versionIdMarker *string
@@ -90,7 +71,14 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 	for {
 		var versions []types.ObjectIdentifier
 
-		versions, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(ctx, aws.String(bucketName), region, oldVersionsOnly, keyMarker, versionIdMarker)
+		versions, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
+			ctx,
+			aws.String(bucketName),
+			region,
+			oldVersionsOnly,
+			keyMarker,
+			versionIdMarker,
+		)
 		if err != nil {
 			return err
 		}
@@ -98,9 +86,12 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			break
 		}
 
-		if !quiet && isFirstLoop {
-			isFirstLoop = false
-			dummyForFirstValue := 1000 // dummy for the first value (because it does not work if the value is zero)
+		if isFirstLoop {
+			io.Logger.Info().Msgf("%v Clearing...", bucketName)
+		}
+		if isFirstLoop && !quiet {
+			// dummy for the first value (because it does not work if the value is zero)
+			dummyForFirstValue := 1000
 
 			bar = progressbar.NewOptions64(
 				int64(dummyForFirstValue),
@@ -117,13 +108,13 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			// clear the dummy for the first value
 			bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
 		}
-
 		if !quiet {
 			bar.ChangeMax(bar.GetMax() + len(versions))
 		}
 
 		eg.Go(func() error {
-			// Call semaphore in eg.Go to finish all of ListObjectVersionsByPage first and limit the number of parallels for DeleteObjects
+			// Call the semaphore in eg.Go to finish all of ListObjectVersionsByPage first
+			// and limit the number of parallels for DeleteObjects
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
 			}
@@ -133,9 +124,20 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 			if err != nil {
 				return err
 			}
+			if len(gotErrors) > 0 {
+				errorsMtx.Lock()
+				for _, error := range gotErrors {
+					errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
+					errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
+					errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
+					errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+				}
+				errorsMtx.Unlock()
+			}
 
-			errorsCh <- gotErrors
-			deletedVersionsCountCh <- len(versions)
+			deletedVersionsCountMtx.Lock()
+			deletedVersionsCount += len(versions)
+			deletedVersionsCountMtx.Unlock()
 
 			if !quiet {
 				bar.Add(len(versions))
@@ -147,16 +149,13 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		if keyMarker == nil && versionIdMarker == nil {
 			break
 		}
+		isFirstLoop = false
 	}
 
-	go func() {
-		eg.Wait()
-		close(errorsCh)
-		close(deletedVersionsCountCh)
-	}()
 	if err := eg.Wait(); err != nil {
 		return err
 	}
+
 	if errorStr != "" {
 		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
 	}
