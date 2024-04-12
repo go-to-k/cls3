@@ -36,14 +36,16 @@ fi
 
 aws s3api put-bucket-versioning --bucket ${lower_bucket_name} --versioning-configuration Status=Enabled
 
-dir="./testfiles"
+dir="./testfiles/${bucket_name}"
 mkdir -p ${dir}
 
-# about 300,000 versions
-for i in $(seq 1 100); do
+# about 1,000,000 versions
+for i in $(seq 1 200); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null
+	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null # version
+	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null # version
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null # version
 	aws s3 rm s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null        # delete marker
 
