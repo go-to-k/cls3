@@ -14,15 +14,6 @@ import (
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
-)
-
-const (
-	// S3 API can achieve at least 3,500 PUT/COPY/POST/DELETE or 5,500 GET/HEAD requests per second per partitioned prefix.
-	// Values above that threshold cause many 503 errors.
-	// So limit DeleteObjects to 3 parallels of 1000 objects at a time.
-	// https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
-	MaxS3DeleteObjectsParallelsCount = 3
 )
 
 type S3Wrapper struct {
@@ -57,7 +48,6 @@ func (s *S3Wrapper) ClearS3Objects(
 	}
 
 	eg := errgroup.Group{}
-	sem := semaphore.NewWeighted(int64(MaxS3DeleteObjectsParallelsCount))
 	errorStr := ""
 	errorsMtx := sync.Mutex{}
 	deletedVersionsCount := 0
@@ -113,13 +103,6 @@ func (s *S3Wrapper) ClearS3Objects(
 		}
 
 		eg.Go(func() error {
-			// Call the semaphore in eg.Go to finish all of ListObjectVersionsByPage first
-			// and limit the number of parallels for DeleteObjects
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-			defer sem.Release(1)
-
 			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
 			if err != nil {
 				return err
