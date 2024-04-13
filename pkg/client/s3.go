@@ -140,6 +140,7 @@ func (s *S3) ListObjectVersionsByPage(
 	nextVersionIdMarker *string,
 	err error,
 ) {
+	objectIdentifiers = []types.ObjectIdentifier{}
 	input := &s3.ListObjectVersionsInput{
 		Bucket:          bucketName,
 		KeyMarker:       keyMarker,
