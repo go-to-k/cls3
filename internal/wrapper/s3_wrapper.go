@@ -3,16 +3,14 @@ package wrapper
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
-	"github.com/schollz/progressbar/v3"
+	"github.com/gosuri/uilive"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -53,11 +51,14 @@ func (s *S3Wrapper) ClearS3Objects(
 	deletedVersionsCount := 0
 	deletedVersionsCountMtx := sync.Mutex{}
 
+	writer := uilive.New()
+	writer.Start()
+
+	io.Logger.Info().Msgf("%v Checking...", bucketName)
+
 	var keyMarker *string
 	var versionIdMarker *string
-	var bar *progressbar.ProgressBar
 	isFirstLoop := true
-
 	for {
 		var versions []types.ObjectIdentifier
 
@@ -76,30 +77,8 @@ func (s *S3Wrapper) ClearS3Objects(
 			break
 		}
 
-		if isFirstLoop {
-			io.Logger.Info().Msgf("%v Clearing...", bucketName)
-		}
-		if isFirstLoop && !quiet {
-			// dummy for the first value (because it does not work if the value is zero)
-			dummyForFirstValue := 1000
-
-			bar = progressbar.NewOptions64(
-				int64(dummyForFirstValue),
-				progressbar.OptionSetWriter(os.Stderr),
-				progressbar.OptionSetWidth(50),
-				progressbar.OptionThrottle(65*time.Millisecond),
-				progressbar.OptionShowCount(),
-				progressbar.OptionOnCompletion(func() {
-					fmt.Fprint(os.Stderr, "\n")
-				}),
-				progressbar.OptionSpinnerType(14),
-				progressbar.OptionSetRenderBlankState(true),
-			)
-			// clear the dummy for the first value
-			bar.ChangeMax(bar.GetMax() - dummyForFirstValue)
-		}
-		if !quiet {
-			bar.ChangeMax(bar.GetMax() + len(versions))
+		if !quiet && isFirstLoop {
+			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
 		}
 
 		eg.Go(func() error {
@@ -123,7 +102,9 @@ func (s *S3Wrapper) ClearS3Objects(
 			deletedVersionsCountMtx.Unlock()
 
 			if !quiet {
-				bar.Add(len(versions))
+				deletedVersionsCountMtx.Lock()
+				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+				deletedVersionsCountMtx.Unlock()
 			}
 
 			return nil
@@ -132,12 +113,15 @@ func (s *S3Wrapper) ClearS3Objects(
 		if keyMarker == nil && versionIdMarker == nil {
 			break
 		}
+
 		isFirstLoop = false
 	}
 
 	if err := eg.Wait(); err != nil {
 		return err
 	}
+
+	writer.Stop()
 
 	if errorStr != "" {
 		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
