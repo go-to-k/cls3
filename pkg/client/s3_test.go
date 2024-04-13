@@ -144,7 +144,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 		bucketName         *string
 		region             string
 		objects            []types.ObjectIdentifier
-		quiet              bool
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -171,43 +170,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 						VersionId: aws.String("VersionId"),
 					},
 				},
-				quiet: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"DeleteObjectsMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.DeleteObjectsOutput{
-										Deleted: []types.DeletedObject{},
-										Errors:  []types.Error{},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []types.Error{},
-				err:    nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "delete objects with quiet successfully",
-			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
-				objects: []types.ObjectIdentifier{
-					{
-						Key:       aws.String("Key"),
-						VersionId: aws.String("VersionId"),
-					},
-				},
-				quiet: true,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -238,7 +200,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				objects:    []types.ObjectIdentifier{},
-				quiet:      false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -269,7 +230,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				objects:    objectsOverLimit,
-				quiet:      false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -305,7 +265,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 						VersionId: aws.String("VersionId"),
 					},
 				},
-				quiet: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -344,7 +303,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 						VersionId: aws.String("VersionId"),
 					},
 				},
-				quiet: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -386,7 +344,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 						VersionId: aws.String("VersionId"),
 					},
 				},
-				quiet: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -440,7 +397,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.DeleteObjects(tt.args.ctx, tt.args.bucketName, tt.args.objects, tt.args.region, tt.args.quiet)
+			output, err := s3Client.DeleteObjects(tt.args.ctx, tt.args.bucketName, tt.args.objects, tt.args.region)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

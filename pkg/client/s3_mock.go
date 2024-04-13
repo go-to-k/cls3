@@ -64,18 +64,18 @@ func (mr *MockIS3MockRecorder) DeleteBucket(ctx, bucketName, region interface{})
 }
 
 // DeleteObjects mocks base method.
-func (m *MockIS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error) {
+func (m *MockIS3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteObjects", ctx, bucketName, objects, region, quiet)
+	ret := m.ctrl.Call(m, "DeleteObjects", ctx, bucketName, objects, region)
 	ret0, _ := ret[0].([]types.Error)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteObjects indicates an expected call of DeleteObjects.
-func (mr *MockIS3MockRecorder) DeleteObjects(ctx, bucketName, objects, region, quiet interface{}) *gomock.Call {
+func (mr *MockIS3MockRecorder) DeleteObjects(ctx, bucketName, objects, region interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObjects", reflect.TypeOf((*MockIS3)(nil).DeleteObjects), ctx, bucketName, objects, region, quiet)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObjects", reflect.TypeOf((*MockIS3)(nil).DeleteObjects), ctx, bucketName, objects, region)
 }
 
 // GetBucketLocation mocks base method.

@@ -28,7 +28,6 @@ func (s *S3Wrapper) ClearS3Objects(
 	ctx context.Context,
 	bucketName string,
 	forceMode bool,
-	quiet bool,
 	oldVersionsOnly bool,
 ) error {
 	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
@@ -77,12 +76,12 @@ func (s *S3Wrapper) ClearS3Objects(
 			break
 		}
 
-		if !quiet && isFirstLoop {
+		if isFirstLoop {
 			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
 		}
 
 		eg.Go(func() error {
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region)
 			if err != nil {
 				return err
 			}
@@ -99,13 +98,8 @@ func (s *S3Wrapper) ClearS3Objects(
 
 			deletedVersionsCountMtx.Lock()
 			deletedVersionsCount += len(versions)
+			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
 			deletedVersionsCountMtx.Unlock()
-
-			if !quiet {
-				deletedVersionsCountMtx.Lock()
-				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
-				deletedVersionsCountMtx.Unlock()
-			}
 
 			return nil
 		})

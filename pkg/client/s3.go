@@ -14,7 +14,7 @@ var SleepTimeSecForS3 = 10
 
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
-	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error)
+	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error)
 	ListObjectVersions(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool) ([]types.ObjectIdentifier, error)
 	ListObjectVersionsByPage(
 		ctx context.Context,
@@ -63,7 +63,7 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 	return nil
 }
 
-func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string, quiet bool) ([]types.Error, error) {
+func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error) {
 	if len(objects) == 0 {
 		return []types.Error{}, nil
 	}

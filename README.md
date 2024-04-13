@@ -64,29 +64,6 @@ When there are tens of thousands of objects, a SlowDown error (503 error) may oc
 
 When this occurs, cls3 responds by adding a mechanism that waits a few seconds and retries automatically several times.
 
-### Progress bar
-
-A progress bar will appear by default. This gives you the following information
-
-- Number of all objects
-- Number of objects deleted
-- Estimated completion time
-
-```bash
-❯ cls3 -i
-Filter a keyword of bucket names: testgoto
-
-? Select buckets.
- testgoto1
-OK? (Y/n)
-
-INF testgoto1 Checking...
-INF testgoto1 Clearing...
-  52% |██████████████████████████                        | (12000/22882) [4s:4s]
-```
-
-`-q | --quiet` option to hide the progress bar.
-
 ## Install
 
 - Homebrew
@@ -126,7 +103,7 @@ INF testgoto1 Clearing...
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-q|--quiet] [-o|--oldVersionsOnly]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly]
   ```
 
 - -b, --bucketName: optional
@@ -144,8 +121,6 @@ INF testgoto1 Clearing...
   - ForceMode (Delete the bucket together)
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
-- -q, --quiet: optional
-  - Not to display a progress bar
 - -o, --oldVersionsOnly: optional
   - Delete old version objects only (including all delete-markers)
   - Do not specify the `-f` option if you specify this option.
