@@ -92,6 +92,12 @@ func (s *S3Wrapper) ClearS3Objects(
 			if err != nil {
 				return err
 			}
+
+			deletedVersionsCountMtx.Lock()
+			deletedVersionsCount += len(versions)
+			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+			deletedVersionsCountMtx.Unlock()
+
 			if len(gotErrors) > 0 {
 				errorsMtx.Lock()
 				for _, error := range gotErrors {
@@ -102,11 +108,6 @@ func (s *S3Wrapper) ClearS3Objects(
 				}
 				errorsMtx.Unlock()
 			}
-
-			deletedVersionsCountMtx.Lock()
-			deletedVersionsCount += len(versions)
-			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
-			deletedVersionsCountMtx.Unlock()
 
 			return nil
 		})
