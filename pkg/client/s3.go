@@ -110,43 +110,14 @@ func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region 
 		default:
 		}
 
-		input := &s3.ListObjectVersionsInput{
-			Bucket:          bucketName,
-			KeyMarker:       keyMarker,
-			VersionIdMarker: versionIdMarker,
-		}
-
-		output, err := s.client.ListObjectVersions(ctx, input, func(o *s3.Options) {
-			o.Region = region
-		})
+		objectIdentifiersByPage, nextKeyMarker, nextVersionIdMarker, err := s.ListObjectVersionsByPage(ctx, bucketName, region, oldVersionsOnly, keyMarker, versionIdMarker)
 		if err != nil {
-			return nil, &ClientError{
-				ResourceName: bucketName,
-				Err:          err,
-			}
+			return nil, err // ListObjectVersionsByPage already wraps the error
 		}
 
-		for _, version := range output.Versions {
-			if oldVersionsOnly && (version.IsLatest == nil || *version.IsLatest) {
-				continue
-			}
-			objectIdentifier := types.ObjectIdentifier{
-				Key:       version.Key,
-				VersionId: version.VersionId,
-			}
-			objectIdentifiers = append(objectIdentifiers, objectIdentifier)
-		}
-
-		for _, deleteMarker := range output.DeleteMarkers {
-			objectIdentifier := types.ObjectIdentifier{
-				Key:       deleteMarker.Key,
-				VersionId: deleteMarker.VersionId,
-			}
-			objectIdentifiers = append(objectIdentifiers, objectIdentifier)
-		}
-
-		keyMarker = output.NextKeyMarker
-		versionIdMarker = output.NextVersionIdMarker
+		objectIdentifiers = append(objectIdentifiers, objectIdentifiersByPage...)
+		keyMarker = nextKeyMarker
+		versionIdMarker = nextVersionIdMarker
 
 		if keyMarker == nil && versionIdMarker == nil {
 			break
