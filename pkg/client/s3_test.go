@@ -164,8 +164,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.DeleteObjectsOutput{
-										Deleted: []types.DeletedObject{},
-										Errors:  []types.Error{},
+										Errors: []types.Error{},
 									},
 								}, middleware.Metadata{}, nil
 							},
@@ -194,8 +193,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.DeleteObjectsOutput{
-										Deleted: []types.DeletedObject{},
-										Errors:  []types.Error{},
+										Errors: []types.Error{},
 									},
 								}, middleware.Metadata{}, nil
 							},
@@ -229,8 +227,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.DeleteObjectsOutput{
-										Deleted: []types.DeletedObject{},
-										Errors:  []types.Error{},
+										Errors: []types.Error{},
 									},
 								}, middleware.Metadata{}, fmt.Errorf("DeleteObjectsError")
 							},
@@ -267,8 +264,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 										Result: &s3.DeleteObjectsOutput{
-											Deleted: []types.DeletedObject{},
-											Errors:  []types.Error{},
+											Errors: []types.Error{},
 										},
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
 										Attempt: MaxRetryCount,
@@ -308,7 +304,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.DeleteObjectsOutput{
-										Deleted: []types.DeletedObject{},
 										Errors: []types.Error{
 											{
 												Key:       aws.String("Key"),
