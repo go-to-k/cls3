@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"runtime"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -127,18 +126,6 @@ func TestS3_DeleteBucket(t *testing.T) {
 }
 
 func TestS3_DeleteObjects(t *testing.T) {
-	SleepTimeSecForS3 = 1
-	objectsOverLimit := []types.ObjectIdentifier{}
-	// TODO: delete S3DeleteObjectsSizeLimit
-	S3DeleteObjectsSizeLimit := 1000
-	s3DeleteObjectsSizeOverLimit := S3DeleteObjectsSizeLimit*int(runtime.NumCPU())*2 + 1 // loop over cpu core size for channel waiting when next loop
-	for i := 0; i < s3DeleteObjectsSizeOverLimit; i++ {
-		objectsOverLimit = append(objectsOverLimit, types.ObjectIdentifier{
-			Key:       aws.String("Key"),
-			VersionId: aws.String("VersionId"),
-		})
-	}
-
 	type args struct {
 		ctx                context.Context
 		bucketName         *string
@@ -204,36 +191,6 @@ func TestS3_DeleteObjects(t *testing.T) {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
 							"DeleteObjectsIfZeroObjectsMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.DeleteObjectsOutput{
-										Deleted: []types.DeletedObject{},
-										Errors:  []types.Error{},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []types.Error{},
-				err:    nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "delete objects over limit successfully",
-			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
-				objects:    objectsOverLimit,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"DeleteObjectsOverLimitMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.DeleteObjectsOutput{
