@@ -122,6 +122,8 @@ func (s *S3Wrapper) ClearS3Objects(
 		return err
 	}
 
+	writer.Flush()
+
 	if errorStr != "" {
 		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
 	}
