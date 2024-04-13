@@ -14,8 +14,17 @@ var SleepTimeSecForS3 = 10
 
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
-	DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error)
-	ListObjectVersions(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool) ([]types.ObjectIdentifier, error)
+	DeleteObjects(
+		ctx context.Context,
+		bucketName *string,
+		objects []types.ObjectIdentifier,
+		region string,
+	) ([]types.Error, error)
+	ListObjectVersions(ctx context.Context,
+		bucketName *string,
+		region string,
+		oldVersionsOnly bool,
+	) ([]types.ObjectIdentifier, error)
 	ListObjectVersionsByPage(
 		ctx context.Context,
 		bucketName *string,
@@ -63,7 +72,15 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 	return nil
 }
 
-func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []types.ObjectIdentifier, region string) ([]types.Error, error) {
+func (s *S3) DeleteObjects(
+	ctx context.Context,
+	bucketName *string,
+	objects []types.ObjectIdentifier,
+	region string,
+) ([]types.Error, error) {
+	// Assuming that the number of objects received as an argument does not
+	// exceed 1000, so no loop processing and validation whether exceeds
+	// 1000 or not are good.
 	if len(objects) == 0 {
 		return []types.Error{}, nil
 	}
@@ -95,7 +112,12 @@ func (s *S3) DeleteObjects(ctx context.Context, bucketName *string, objects []ty
 	return output.Errors, nil
 }
 
-func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool) ([]types.ObjectIdentifier, error) {
+func (s *S3) ListObjectVersions(
+	ctx context.Context,
+	bucketName *string,
+	region string,
+	oldVersionsOnly bool,
+) ([]types.ObjectIdentifier, error) {
 	var keyMarker *string
 	var versionIdMarker *string
 	objectIdentifiers := []types.ObjectIdentifier{}
@@ -110,7 +132,15 @@ func (s *S3) ListObjectVersions(ctx context.Context, bucketName *string, region 
 		default:
 		}
 
-		objectIdentifiersByPage, nextKeyMarker, nextVersionIdMarker, err := s.ListObjectVersionsByPage(ctx, bucketName, region, oldVersionsOnly, keyMarker, versionIdMarker)
+		objectIdentifiersByPage, nextKeyMarker, nextVersionIdMarker, err :=
+			s.ListObjectVersionsByPage(
+				ctx,
+				bucketName,
+				region,
+				oldVersionsOnly,
+				keyMarker,
+				versionIdMarker,
+			)
 		if err != nil {
 			return nil, err // ListObjectVersionsByPage already wraps the error
 		}

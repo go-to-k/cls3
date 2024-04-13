@@ -62,6 +62,8 @@ func (s *S3Wrapper) ClearS3Objects(
 	for {
 		var versions []types.ObjectIdentifier
 
+		// ListObjectVersions API can only retrieve up to 1000 items, so it is good to pass it
+		// directly to DeleteObjects, which can only delete up to 1000 items.
 		versions, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
 			ctx,
 			aws.String(bucketName),
@@ -82,6 +84,10 @@ func (s *S3Wrapper) ClearS3Objects(
 		}
 
 		eg.Go(func() error {
+			// One DeleteObjects is executed for each loop of the List, and it usually ends during
+			// the next loop. Therefore, there seems to be no throttling concern, so the number of
+			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
+			// per second.)
 			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region)
 			if err != nil {
 				return err
