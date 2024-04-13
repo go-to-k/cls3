@@ -52,6 +52,7 @@ func (s *S3Wrapper) ClearS3Objects(
 
 	writer := uilive.New()
 	writer.Start()
+	defer writer.Stop()
 
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
@@ -114,8 +115,6 @@ func (s *S3Wrapper) ClearS3Objects(
 	if err := eg.Wait(); err != nil {
 		return err
 	}
-
-	writer.Stop()
 
 	if errorStr != "" {
 		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
