@@ -89,6 +89,8 @@ func (a *App) Run(ctx context.Context) error {
 
 func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
+		io.Logger.Debug().Msg("Debug mode...")
+
 		if !a.InteractiveMode && len(a.BucketNames.Value()) == 0 {
 			errMsg := fmt.Sprintln("At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).")
 			return fmt.Errorf("InvalidOptionError: %v", errMsg)

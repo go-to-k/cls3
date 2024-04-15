@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/go-to-k/cls3/internal/io"
 )
 
 var SleepTimeSecForS3 = 10
@@ -94,7 +95,11 @@ func (s *S3) DeleteObjects(
 	}
 
 	retryable := func(err error) bool {
-		return strings.Contains(err.Error(), "api error SlowDown")
+		isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
+		if isErrorRetryable {
+			io.Logger.Debug().Msgf("Retry: %s", err.Error())
+		}
+		return isErrorRetryable
 	}
 	optFn := func(o *s3.Options) {
 		o.Retryer = NewRetryer(retryable, SleepTimeSecForS3)
