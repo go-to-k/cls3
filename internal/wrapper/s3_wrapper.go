@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
+	"github.com/gosuri/uilive"
+	"golang.org/x/sync/errgroup"
 )
 
 type S3Wrapper struct {
@@ -20,7 +24,12 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, forceMode bool, quiet bool, oldVersionsOnly bool) error {
+func (s *S3Wrapper) ClearS3Objects(
+	ctx context.Context,
+	bucketName string,
+	forceMode bool,
+	oldVersionsOnly bool,
+) error {
 	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
 		return err
@@ -35,34 +44,95 @@ func (s *S3Wrapper) ClearS3Objects(ctx context.Context, bucketName string, force
 		return err
 	}
 
+	eg := errgroup.Group{}
+	errorStr := ""
+	errorsMtx := sync.Mutex{}
+	deletedVersionsCount := 0
+	deletedVersionsCountMtx := sync.Mutex{}
+
+	writer := uilive.New()
+	writer.Start()
+	defer writer.Stop()
+
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
-	versions, err := s.client.ListObjectVersions(ctx, aws.String(bucketName), region, oldVersionsOnly)
-	if err != nil {
-		return err
-	}
+	var keyMarker *string
+	var versionIdMarker *string
+	isFirstLoop := true
+	for {
+		var versions []types.ObjectIdentifier
 
-	if len(versions) == 0 {
-		io.Logger.Info().Msgf("%v No objects.", bucketName)
-	} else {
-		io.Logger.Info().Msgf("%v Clearing...", bucketName)
-
-		errors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region, quiet)
+		// ListObjectVersions API can only retrieve up to 1000 items, so it is good to pass it
+		// directly to DeleteObjects, which can only delete up to 1000 items.
+		versions, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
+			ctx,
+			aws.String(bucketName),
+			region,
+			oldVersionsOnly,
+			keyMarker,
+			versionIdMarker,
+		)
 		if err != nil {
 			return err
 		}
-		if len(errors) > 0 {
-			errorStr := ""
-			for _, error := range errors {
-				errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-				errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-				errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-				errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
-			}
-			return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
+		if len(versions) == 0 {
+			break
 		}
 
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, len(versions))
+		if isFirstLoop {
+			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+		}
+
+		eg.Go(func() error {
+			// One DeleteObjects is executed for each loop of the List, and it usually ends during
+			// the next loop. Therefore, there seems to be no throttling concern, so the number of
+			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
+			// per second.)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region)
+			if err != nil {
+				return err
+			}
+
+			deletedVersionsCountMtx.Lock()
+			deletedVersionsCount += len(versions)
+			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+			deletedVersionsCountMtx.Unlock()
+
+			if len(gotErrors) > 0 {
+				errorsMtx.Lock()
+				for _, error := range gotErrors {
+					errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
+					errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
+					errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
+					errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+				}
+				errorsMtx.Unlock()
+			}
+
+			return nil
+		})
+
+		if keyMarker == nil && versionIdMarker == nil {
+			break
+		}
+
+		isFirstLoop = false
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	writer.Flush()
+
+	if errorStr != "" {
+		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
+	}
+
+	if deletedVersionsCount == 0 {
+		io.Logger.Info().Msgf("%v No objects.", bucketName)
+	} else {
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedVersionsCount)
 	}
 
 	if forceMode {

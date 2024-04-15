@@ -22,7 +22,6 @@ type App struct {
 	Region          string
 	ForceMode       bool
 	InteractiveMode bool
-	Quiet           bool
 	OldVersionsOnly bool
 }
 
@@ -68,13 +67,6 @@ func NewApp(version string) *App {
 				Destination: &app.InteractiveMode,
 			},
 			&cli.BoolFlag{
-				Name:        "quiet",
-				Aliases:     []string{"q"},
-				Value:       false,
-				Usage:       "Not to display a progress bar",
-				Destination: &app.Quiet,
-			},
-			&cli.BoolFlag{
 				Name:        "oldVersionsOnly",
 				Aliases:     []string{"o"},
 				Value:       false,
@@ -97,6 +89,8 @@ func (a *App) Run(ctx context.Context) error {
 
 func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
+		io.Logger.Debug().Msg("Debug mode...")
+
 		if !a.InteractiveMode && len(a.BucketNames.Value()) == 0 {
 			errMsg := fmt.Sprintln("At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).")
 			return fmt.Errorf("InvalidOptionError: %v", errMsg)
@@ -138,7 +132,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.Quiet, a.OldVersionsOnly); err != nil {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly); err != nil {
 				return err
 			}
 		}
