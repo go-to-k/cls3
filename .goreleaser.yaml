@@ -34,11 +34,11 @@ changelog:
       - '^docs:'
       - '^test:'
 brews:
-  - tap:
+  - repository:
       owner: go-to-k
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    folder: Formula
+    directory: Formula
     homepage: https://github.com/go-to-k/cls3
     description: cls3
     test: |
