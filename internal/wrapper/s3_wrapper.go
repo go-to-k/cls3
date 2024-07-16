@@ -128,8 +128,8 @@ func (s *S3Wrapper) ClearS3Objects(
 		}
 
 		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedVersionsCount)
-		if errorStr != "" {
-			return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
+		if errorsCount > 0 {
+			return fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr)
 		}
 	}
 
