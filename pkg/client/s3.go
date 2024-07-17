@@ -4,6 +4,7 @@ package client
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -13,7 +14,6 @@ import (
 )
 
 var SleepTimeSecForS3 = 10
-var RetryCountsWithoutSlowDown = 3
 
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
@@ -107,8 +107,9 @@ func (s *S3) DeleteObjects(
 			}
 			return isErrorRetryable
 		}
+		retryer := NewRetryer(retryable, SleepTimeSecForS3)
 		optFn := func(o *s3.Options) {
-			o.Retryer = NewRetryer(retryable, SleepTimeSecForS3)
+			o.Retryer = retryer
 			o.Region = region
 		}
 
@@ -126,10 +127,7 @@ func (s *S3) DeleteObjects(
 
 		retryCounts++
 
-		// TODO: sleep!!!!
-		//// process
-
-		if retryCounts > RetryCountsWithoutSlowDown {
+		if retryCounts > retryer.MaxAttempts() {
 			errors = append(errors, output.Errors...)
 			break
 		}
@@ -159,6 +157,10 @@ func (s *S3) DeleteObjects(
 				io.Logger.Debug().Msgf("Retry: key=%v, versionId=%d", object.Key, object.VersionId)
 			}
 		}
+
+		// random sleep
+		sleepTime, _ := retryer.RetryDelay(0, nil)
+		time.Sleep(sleepTime)
 	}
 
 	return errors, nil
