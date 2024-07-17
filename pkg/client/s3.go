@@ -85,7 +85,7 @@ func (s *S3) DeleteObjects(
 
 	for {
 		// Assuming that the number of objects received as an argument does not
-		// exceed 1000, so no loop processing and validation whether exceeds
+		// exceed 1000, so no slice splitting and validation whether exceeds
 		// 1000 or not are good.
 		if len(objects) == 0 {
 			break
@@ -119,7 +119,9 @@ func (s *S3) DeleteObjects(
 			}
 		}
 
-		if output.Errors != nil && len(output.Errors) > 0 {
+		if len(output.Errors) == 0 {
+			break
+		} else {
 			retryCounts++
 
 			// TODO: sleep!!!!
