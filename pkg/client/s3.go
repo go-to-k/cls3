@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/internal/version"
 )
 
 var SleepTimeSecForS3 = 10
@@ -121,24 +122,41 @@ func (s *S3) DeleteObjects(
 
 		if len(output.Errors) == 0 {
 			break
-		} else {
-			retryCounts++
+		}
 
-			// TODO: sleep!!!!
-			//// process
+		retryCounts++
 
-			if retryCounts > RetryCountsWithoutSlowDown {
-				errors = append(errors, output.Errors...)
-				break
-			}
+		// TODO: sleep!!!!
+		//// process
 
-			objects = []types.ObjectIdentifier{}
-			for _, err := range output.Errors {
-				io.Logger.Debug().Msgf("Retry: key=%v, versionId=%d", err.Key, err.VersionId)
+		if retryCounts > RetryCountsWithoutSlowDown {
+			errors = append(errors, output.Errors...)
+			break
+		}
+
+		objects = []types.ObjectIdentifier{}
+		for _, err := range output.Errors {
+			// Error example:
+			// 	 Code: InternalError
+			// 	 Message: We encountered an internal error. Please try again.
+			if strings.Contains(*err.Message, "Please try again") {
 				objects = append(objects, types.ObjectIdentifier{
 					Key:       err.Key,
 					VersionId: err.VersionId,
 				})
+			} else {
+				// Set all errors and break if there is at least one non-retryable error.
+				errors = append(errors, output.Errors...)
+				break
+			}
+		}
+		// Exit if there is at least one non-retryable error.
+		if len(errors) > 0 {
+			break
+		}
+		if version.IsDebug() {
+			for _, object := range objects {
+				io.Logger.Debug().Msgf("Retry: key=%v, versionId=%d", object.Key, object.VersionId)
 			}
 		}
 	}
