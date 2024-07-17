@@ -40,7 +40,7 @@ dir="./testfiles/${bucket_name}"
 mkdir -p ${dir}
 
 # about 100,000 versions
-for i in $(seq 1 25); do
+for i in $(seq 1 250); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
 	# version
