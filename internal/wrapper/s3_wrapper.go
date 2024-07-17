@@ -118,7 +118,9 @@ func (s *S3Wrapper) ClearS3Objects(
 		return err
 	}
 
-	writer.Flush()
+	if err := writer.Flush(); err != nil {
+		return err
+	}
 
 	if deletedVersionsCount == 0 {
 		io.Logger.Info().Msgf("%v No objects.", bucketName)
