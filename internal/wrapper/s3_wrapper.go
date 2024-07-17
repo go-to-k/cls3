@@ -122,22 +122,19 @@ func (s *S3Wrapper) ClearS3Objects(
 		return err
 	}
 
+	if errorsCount > 0 {
+		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
+		// However, we want to treat it as an error, so we use `client.ClientError`.
+		return &client.ClientError{
+			ResourceName: aws.String(bucketName),
+			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
+		}
+	}
+
 	if deletedVersionsCount == 0 {
 		io.Logger.Info().Msgf("%v No objects.", bucketName)
 	} else {
-		if errorsCount > 0 {
-			deletedVersionsCount -= errorsCount
-		}
-
 		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedVersionsCount)
-		if errorsCount > 0 {
-			// The error is from `DeleteObjectsOutput.Errors`, not `err`.
-			// However, we want to treat it as an error, so we use `client.ClientError`.
-			return &client.ClientError{
-				ResourceName: aws.String(bucketName),
-				Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
-			}
-		}
 	}
 
 	if forceMode {
