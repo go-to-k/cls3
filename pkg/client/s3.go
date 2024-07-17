@@ -12,6 +12,7 @@ import (
 )
 
 var SleepTimeSecForS3 = 10
+var RetryCountsWithoutSlowDown = 3
 
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
@@ -79,42 +80,68 @@ func (s *S3) DeleteObjects(
 	objects []types.ObjectIdentifier,
 	region string,
 ) ([]types.Error, error) {
-	// Assuming that the number of objects received as an argument does not
-	// exceed 1000, so no loop processing and validation whether exceeds
-	// 1000 or not are good.
-	if len(objects) == 0 {
-		return []types.Error{}, nil
-	}
+	errors := []types.Error{}
+	retryCounts := 0
 
-	input := &s3.DeleteObjectsInput{
-		Bucket: bucketName,
-		Delete: &types.Delete{
-			Objects: objects,
-			Quiet:   aws.Bool(true),
-		},
-	}
-
-	retryable := func(err error) bool {
-		isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
-		if isErrorRetryable {
-			io.Logger.Debug().Msgf("Retry: %s", err.Error())
+	for {
+		// Assuming that the number of objects received as an argument does not
+		// exceed 1000, so no loop processing and validation whether exceeds
+		// 1000 or not are good.
+		if len(objects) == 0 {
+			break
 		}
-		return isErrorRetryable
-	}
-	optFn := func(o *s3.Options) {
-		o.Retryer = NewRetryer(retryable, SleepTimeSecForS3)
-		o.Region = region
-	}
 
-	output, err := s.client.DeleteObjects(ctx, input, optFn)
-	if err != nil {
-		return []types.Error{}, &ClientError{
-			ResourceName: bucketName,
-			Err:          err,
+		input := &s3.DeleteObjectsInput{
+			Bucket: bucketName,
+			Delete: &types.Delete{
+				Objects: objects,
+				Quiet:   aws.Bool(true),
+			},
+		}
+
+		retryable := func(err error) bool {
+			isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
+			if isErrorRetryable {
+				io.Logger.Debug().Msgf("Retry: %s", err.Error())
+			}
+			return isErrorRetryable
+		}
+		optFn := func(o *s3.Options) {
+			o.Retryer = NewRetryer(retryable, SleepTimeSecForS3)
+			o.Region = region
+		}
+
+		output, err := s.client.DeleteObjects(ctx, input, optFn)
+		if err != nil {
+			return []types.Error{}, &ClientError{
+				ResourceName: bucketName,
+				Err:          err,
+			}
+		}
+
+		if output.Errors != nil && len(output.Errors) > 0 {
+			retryCounts++
+
+			// TODO: sleep!!!!
+			//// process
+
+			if retryCounts > RetryCountsWithoutSlowDown {
+				errors = append(errors, output.Errors...)
+				break
+			}
+
+			objects = []types.ObjectIdentifier{}
+			for _, err := range output.Errors {
+				io.Logger.Debug().Msgf("Retry: key=%v, versionId=%d", err.Key, err.VersionId)
+				objects = append(objects, types.ObjectIdentifier{
+					Key:       err.Key,
+					VersionId: err.VersionId,
+				})
+			}
 		}
 	}
 
-	return output.Errors, nil
+	return errors, nil
 }
 
 func (s *S3) ListObjectVersions(
