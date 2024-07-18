@@ -604,7 +604,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 											Message:   aws.String("We encountered an internal error. Please try again."),
 											VersionId: aws.String("VersionId1"),
 										},
-										// 2nd and 3rd object is not an error
+										// 2nd and 3rd objects are not errors
 									}
 								} else {
 									errors = []types.Error{
