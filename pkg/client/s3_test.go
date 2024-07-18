@@ -333,6 +333,66 @@ func TestS3_DeleteObjects(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "delete objects failure including retryable and non-retryable output errors",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				objects: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("Key"),
+						VersionId: aws.String("VersionId"),
+					},
+				},
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"DeleteObjectsOutputErrorsMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.DeleteObjectsOutput{
+										Errors: []types.Error{
+											{
+												Key:       aws.String("Key"),
+												Code:      aws.String("InternalError"),
+												Message:   aws.String("We encountered an internal error. Please try again."),
+												VersionId: aws.String("VersionId"),
+											},
+											{
+												Key:       aws.String("Key"),
+												Code:      aws.String("InternalError"),
+												Message:   aws.String("Other Error"),
+												VersionId: aws.String("VersionId"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Error{
+					{
+						Key:       aws.String("Key"),
+						Code:      aws.String("InternalError"),
+						Message:   aws.String("We encountered an internal error. Please try again."),
+						VersionId: aws.String("VersionId"),
+					},
+					{
+						Key:       aws.String("Key"),
+						Code:      aws.String("InternalError"),
+						Message:   aws.String("Other Error"),
+						VersionId: aws.String("VersionId"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {
