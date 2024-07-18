@@ -9,8 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/go-to-k/cls3/internal/io"
-	"github.com/go-to-k/cls3/internal/version"
 )
 
 var SleepTimeSecForS3 = 10
@@ -102,9 +100,6 @@ func (s *S3) DeleteObjects(
 
 		retryable := func(err error) bool {
 			isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
-			if isErrorRetryable {
-				io.Logger.Debug().Msgf("Retry: %s", err.Error())
-			}
 			return isErrorRetryable
 		}
 		retryer := NewRetryer(retryable, SleepTimeSecForS3)
@@ -151,11 +146,6 @@ func (s *S3) DeleteObjects(
 		// Exit if there is at least one non-retryable error.
 		if len(errors) > 0 {
 			break
-		}
-		if version.IsDebug() {
-			for _, object := range objects {
-				io.Logger.Debug().Msgf("Retry: key=%v, versionId=%d", object.Key, object.VersionId)
-			}
 		}
 
 		// random sleep
