@@ -30,16 +30,16 @@ func getNextMarkerForS3Initialize(
 	return next.HandleInitialize(ctx, in)
 }
 
-type targetObjectsForS3 struct{}
+type targetObjectsForDeleteObjects struct{}
 
-func setTargetObjectsForS3Initialize(
+func setTargetObjectsForDeleteObjectsInitialize(
 	ctx context.Context, in middleware.InitializeInput, next middleware.InitializeHandler,
 ) (
 	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
 ) {
 	switch v := in.Parameters.(type) {
 	case *s3.DeleteObjectsInput:
-		ctx = middleware.WithStackValue(ctx, targetObjectsForS3{}, v.Delete.Objects)
+		ctx = middleware.WithStackValue(ctx, targetObjectsForDeleteObjects{}, v.Delete.Objects)
 	}
 	return next.HandleInitialize(ctx, in)
 }
@@ -371,7 +371,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
 							"SetTargetObjects",
-							setTargetObjectsForS3Initialize,
+							setTargetObjectsForDeleteObjectsInitialize,
 						), middleware.Before,
 					)
 					if err != nil {
@@ -380,9 +380,9 @@ func TestS3_DeleteObjects(t *testing.T) {
 
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
-							"DeleteObjectsErrorsMock",
+							"DeleteObjectsWithRetryableErrorsMock",
 							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								objects := middleware.GetStackValue(ctx, targetObjectsForS3{}).([]types.ObjectIdentifier)
+								objects := middleware.GetStackValue(ctx, targetObjectsForDeleteObjects{}).([]types.ObjectIdentifier)
 								var errors []types.Error
 								// first loop
 								if len(objects) == 3 {
@@ -444,7 +444,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
-							"DeleteObjectsErrorsMock",
+							"DeleteObjectsWithRetryableErrorsMock",
 							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.DeleteObjectsOutput{
@@ -501,7 +501,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
 							"SetTargetObjects",
-							setTargetObjectsForS3Initialize,
+							setTargetObjectsForDeleteObjectsInitialize,
 						), middleware.Before,
 					)
 					if err != nil {
@@ -510,9 +510,9 @@ func TestS3_DeleteObjects(t *testing.T) {
 
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
-							"DeleteObjectsErrorsMock",
+							"DeleteObjectsWithRetryableErrorsMock",
 							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								objects := middleware.GetStackValue(ctx, targetObjectsForS3{}).([]types.ObjectIdentifier)
+								objects := middleware.GetStackValue(ctx, targetObjectsForDeleteObjects{}).([]types.ObjectIdentifier)
 								var errors []types.Error
 								// first loop
 								if len(objects) == 3 {
@@ -582,7 +582,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 					err := stack.Initialize.Add(
 						middleware.InitializeMiddlewareFunc(
 							"SetTargetObjects",
-							setTargetObjectsForS3Initialize,
+							setTargetObjectsForDeleteObjectsInitialize,
 						), middleware.Before,
 					)
 					if err != nil {
@@ -591,9 +591,9 @@ func TestS3_DeleteObjects(t *testing.T) {
 
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
-							"DeleteObjectsErrorsMock",
+							"DeleteObjectsWithRetryableErrorsMock",
 							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								objects := middleware.GetStackValue(ctx, targetObjectsForS3{}).([]types.ObjectIdentifier)
+								objects := middleware.GetStackValue(ctx, targetObjectsForDeleteObjects{}).([]types.ObjectIdentifier)
 								var errors []types.Error
 								// first loop
 								if len(objects) == 3 {
