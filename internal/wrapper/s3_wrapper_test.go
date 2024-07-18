@@ -199,7 +199,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 					}, nil,
 				)
 			},
-			want:    fmt.Errorf("DeleteObjectsError: followings \nCode: Code\nKey: Key\nVersionId: VersionId\nMessage: Message\n"),
+			want:    fmt.Errorf("[resource test] DeleteObjectsError: 1 objects with errors were found. \nCode: Code\nKey: Key\nVersionId: VersionId\nMessage: Message\n"),
 			wantErr: true,
 		},
 		{
@@ -387,7 +387,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 					}, nil,
 				)
 			},
-			want:    fmt.Errorf("DeleteObjectsError: followings \nCode: Code\nKey: Key\nVersionId: VersionId\nMessage: Message\n"),
+			want:    fmt.Errorf("[resource test] DeleteObjectsError: 1 objects with errors were found. \nCode: Code\nKey: Key\nVersionId: VersionId\nMessage: Message\n"),
 			wantErr: true,
 		},
 		{

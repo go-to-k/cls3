@@ -46,6 +46,7 @@ func (s *S3Wrapper) ClearS3Objects(
 
 	eg := errgroup.Group{}
 	errorStr := ""
+	errorsCount := 0
 	errorsMtx := sync.Mutex{}
 	deletedVersionsCount := 0
 	deletedVersionsCountMtx := sync.Mutex{}
@@ -58,7 +59,6 @@ func (s *S3Wrapper) ClearS3Objects(
 
 	var keyMarker *string
 	var versionIdMarker *string
-	isFirstLoop := true
 	for {
 		var versions []types.ObjectIdentifier
 
@@ -79,11 +79,12 @@ func (s *S3Wrapper) ClearS3Objects(
 			break
 		}
 
-		if isFirstLoop {
-			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
-		}
-
 		eg.Go(func() error {
+			deletedVersionsCountMtx.Lock()
+			deletedVersionsCount += len(versions)
+			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+			deletedVersionsCountMtx.Unlock()
+
 			// One DeleteObjects is executed for each loop of the List, and it usually ends during
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
@@ -93,13 +94,9 @@ func (s *S3Wrapper) ClearS3Objects(
 				return err
 			}
 
-			deletedVersionsCountMtx.Lock()
-			deletedVersionsCount += len(versions)
-			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
-			deletedVersionsCountMtx.Unlock()
-
 			if len(gotErrors) > 0 {
 				errorsMtx.Lock()
+				errorsCount += len(gotErrors)
 				for _, error := range gotErrors {
 					errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
 					errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
@@ -115,18 +112,23 @@ func (s *S3Wrapper) ClearS3Objects(
 		if keyMarker == nil && versionIdMarker == nil {
 			break
 		}
-
-		isFirstLoop = false
 	}
 
 	if err := eg.Wait(); err != nil {
 		return err
 	}
 
-	writer.Flush()
+	if err := writer.Flush(); err != nil {
+		return err
+	}
 
-	if errorStr != "" {
-		return fmt.Errorf("DeleteObjectsError: followings %v", errorStr)
+	if errorsCount > 0 {
+		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
+		// However, we want to treat it as an error, so we use `client.ClientError`.
+		return &client.ClientError{
+			ResourceName: aws.String(bucketName),
+			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
+		}
 	}
 
 	if deletedVersionsCount == 0 {
