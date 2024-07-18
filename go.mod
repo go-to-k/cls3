@@ -4,15 +4,15 @@ go 1.21
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
-	github.com/aws/aws-sdk-go-v2 v1.23.5
+	github.com/aws/aws-sdk-go-v2 v1.25.2
 	github.com/aws/aws-sdk-go-v2/config v1.25.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.47.3
-	github.com/aws/smithy-go v1.18.1
+	github.com/aws/smithy-go v1.20.1
 	github.com/golang/mock v1.6.0
 	github.com/gosuri/uilive v0.0.4
 	github.com/rs/zerolog v1.30.0
 	github.com/urfave/cli/v2 v2.25.0
-	go.uber.org/goleak v1.2.1
+	go.uber.org/goleak v1.3.0
 	golang.org/x/sync v0.5.0
 )
 
