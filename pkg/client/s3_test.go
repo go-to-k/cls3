@@ -558,6 +558,88 @@ func TestS3_DeleteObjects(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "return errors if a retryable error becomes a non-retryable error after retrying",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				objects: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("Key1"),
+						VersionId: aws.String("VersionId1"),
+					},
+					{
+						Key:       aws.String("Key2"),
+						VersionId: aws.String("VersionId2"),
+					},
+					{
+						Key:       aws.String("Key3"),
+						VersionId: aws.String("VersionId3"),
+					},
+				},
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"SetTargetObjects",
+							setTargetObjectsForS3Initialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"DeleteObjectsErrorsMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								objects := middleware.GetStackValue(ctx, targetObjectsForS3{}).([]types.ObjectIdentifier)
+								var errors []types.Error
+								// first loop
+								if len(objects) == 3 {
+									errors = []types.Error{
+										{
+											Key:       aws.String("Key1"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("We encountered an internal error. Please try again."),
+											VersionId: aws.String("VersionId1"),
+										},
+										// 2nd and 3rd object is not an error
+									}
+								} else {
+									errors = []types.Error{
+										{
+											Key:       aws.String("Key1"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("Other Error"),
+											VersionId: aws.String("VersionId1"),
+										},
+									}
+								}
+								return middleware.FinalizeOutput{
+									Result: &s3.DeleteObjectsOutput{
+										Errors: errors,
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Error{
+					{
+						Key:       aws.String("Key1"),
+						Code:      aws.String("InternalError"),
+						Message:   aws.String("Other Error"),
+						VersionId: aws.String("VersionId1"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {
