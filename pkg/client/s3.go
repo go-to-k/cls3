@@ -138,19 +138,14 @@ func (s *S3) DeleteObjects(
 					VersionId: err.VersionId,
 				})
 			} else {
-				// Set all errors and break if there is at least one non-retryable error.
-				errors = append(errors, output.Errors...)
-				break
+				errors = append(errors, err)
 			}
 		}
-		// Exit if there is at least one non-retryable error.
-		if len(errors) > 0 {
-			break
-		}
-
 		// random sleep
-		sleepTime, _ := retryer.RetryDelay(0, nil)
-		time.Sleep(sleepTime)
+		if len(objects) > 0 {
+			sleepTime, _ := retryer.RetryDelay(0, nil)
+			time.Sleep(sleepTime)
+		}
 	}
 
 	return errors, nil
