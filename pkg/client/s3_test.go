@@ -348,7 +348,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "don't return errors when retry succeeds",
+			name: "does not return errors when retry succeeds",
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
