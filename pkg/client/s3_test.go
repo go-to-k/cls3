@@ -30,6 +30,20 @@ func getNextMarkerForS3Initialize(
 	return next.HandleInitialize(ctx, in)
 }
 
+type targetObjectsForDeleteObjects struct{}
+
+func setTargetObjectsForDeleteObjectsInitialize(
+	ctx context.Context, in middleware.InitializeInput, next middleware.InitializeHandler,
+) (
+	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
+) {
+	switch v := in.Parameters.(type) {
+	case *s3.DeleteObjectsInput:
+		ctx = middleware.WithStackValue(ctx, targetObjectsForDeleteObjects{}, v.Delete.Objects)
+	}
+	return next.HandleInitialize(ctx, in)
+}
+
 /*
 	Test Cases
 */
@@ -333,10 +347,304 @@ func TestS3_DeleteObjects(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "does not return errors when retry succeeds",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				objects: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("Key1"),
+						VersionId: aws.String("VersionId1"),
+					},
+					{
+						Key:       aws.String("Key2"),
+						VersionId: aws.String("VersionId2"),
+					},
+					{
+						Key:       aws.String("Key3"),
+						VersionId: aws.String("VersionId3"),
+					},
+				},
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"SetTargetObjects",
+							setTargetObjectsForDeleteObjectsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"DeleteObjectsWithRetryableErrorsMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								objects := middleware.GetStackValue(ctx, targetObjectsForDeleteObjects{}).([]types.ObjectIdentifier)
+								var errors []types.Error
+								// first loop
+								if len(objects) == 3 {
+									errors = []types.Error{
+										{
+											Key:       aws.String("Key1"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("We encountered an internal error. Please try again."),
+											VersionId: aws.String("VersionId1"),
+										},
+										{
+											Key:       aws.String("Key2"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("We encountered an internal error. Please try again."),
+											VersionId: aws.String("VersionId2"),
+										},
+										// 3rd object is not an error
+									}
+								} else {
+									errors = []types.Error{}
+								}
+								return middleware.FinalizeOutput{
+									Result: &s3.DeleteObjectsOutput{
+										Errors: errors,
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Error{},
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "return retryable output errors when it exceeds max attempts",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				objects: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("Key1"),
+						VersionId: aws.String("VersionId1"),
+					},
+					{
+						Key:       aws.String("Key2"),
+						VersionId: aws.String("VersionId2"),
+					},
+					{
+						Key:       aws.String("Key3"),
+						VersionId: aws.String("VersionId3"),
+					},
+				},
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"DeleteObjectsWithRetryableErrorsMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.DeleteObjectsOutput{
+										Errors: []types.Error{
+											{
+												Key:       aws.String("Key1"),
+												Code:      aws.String("InternalError"),
+												Message:   aws.String("We encountered an internal error. Please try again."),
+												VersionId: aws.String("VersionId1"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Error{
+					{
+						Key:       aws.String("Key1"),
+						Code:      aws.String("InternalError"),
+						Message:   aws.String("We encountered an internal error. Please try again."),
+						VersionId: aws.String("VersionId1"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "return non-retryable output errors even when retrying",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				objects: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("Key1"),
+						VersionId: aws.String("VersionId1"),
+					},
+					{
+						Key:       aws.String("Key2"),
+						VersionId: aws.String("VersionId2"),
+					},
+					{
+						Key:       aws.String("Key3"),
+						VersionId: aws.String("VersionId3"),
+					},
+				},
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"SetTargetObjects",
+							setTargetObjectsForDeleteObjectsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"DeleteObjectsWithRetryableErrorsMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								objects := middleware.GetStackValue(ctx, targetObjectsForDeleteObjects{}).([]types.ObjectIdentifier)
+								var errors []types.Error
+								// first loop
+								if len(objects) == 3 {
+									errors = []types.Error{
+										{
+											Key:       aws.String("Key1"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("We encountered an internal error. Please try again."),
+											VersionId: aws.String("VersionId1"),
+										},
+										{
+											Key:       aws.String("Key2"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("Other Error"),
+											VersionId: aws.String("VersionId2"),
+										},
+										// 3rd object is not an error
+									}
+								} else {
+									errors = []types.Error{}
+								}
+								return middleware.FinalizeOutput{
+									Result: &s3.DeleteObjectsOutput{
+										Errors: errors,
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Error{
+					{
+						Key:       aws.String("Key2"),
+						Code:      aws.String("InternalError"),
+						Message:   aws.String("Other Error"),
+						VersionId: aws.String("VersionId2"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "return errors if a retryable error becomes a non-retryable error after retrying",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				objects: []types.ObjectIdentifier{
+					{
+						Key:       aws.String("Key1"),
+						VersionId: aws.String("VersionId1"),
+					},
+					{
+						Key:       aws.String("Key2"),
+						VersionId: aws.String("VersionId2"),
+					},
+					{
+						Key:       aws.String("Key3"),
+						VersionId: aws.String("VersionId3"),
+					},
+				},
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"SetTargetObjects",
+							setTargetObjectsForDeleteObjectsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"DeleteObjectsWithRetryableErrorsMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								objects := middleware.GetStackValue(ctx, targetObjectsForDeleteObjects{}).([]types.ObjectIdentifier)
+								var errors []types.Error
+								// first loop
+								if len(objects) == 3 {
+									errors = []types.Error{
+										{
+											Key:       aws.String("Key1"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("We encountered an internal error. Please try again."),
+											VersionId: aws.String("VersionId1"),
+										},
+										// 2nd and 3rd objects are not errors
+									}
+								} else {
+									errors = []types.Error{
+										{
+											Key:       aws.String("Key1"),
+											Code:      aws.String("InternalError"),
+											Message:   aws.String("Other Error"),
+											VersionId: aws.String("VersionId1"),
+										},
+									}
+								}
+								return middleware.FinalizeOutput{
+									Result: &s3.DeleteObjectsOutput{
+										Errors: errors,
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Error{
+					{
+						Key:       aws.String("Key1"),
+						Code:      aws.String("InternalError"),
+						Message:   aws.String("Other Error"),
+						VersionId: aws.String("VersionId1"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
+			SleepTimeSecForS3 = 0
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
 				config.WithRegion("ap-northeast-1"),
