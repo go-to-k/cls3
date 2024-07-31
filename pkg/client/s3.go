@@ -47,12 +47,20 @@ type IS3 interface {
 var _ IS3 = (*S3)(nil)
 
 type S3 struct {
-	client *s3.Client
+	client  *s3.Client
+	retryer *Retryer
 }
 
 func NewS3(client *s3.Client) *S3 {
+	retryable := func(err error) bool {
+		isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
+		return isErrorRetryable
+	}
+	retryer := NewRetryer(retryable, SleepTimeSecForS3)
+
 	return &S3{
 		client,
+		retryer,
 	}
 }
 
@@ -61,9 +69,8 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 		Bucket: bucketName,
 	}
 
-	retryer := s.createRetryer()
 	optFn := func(o *s3.Options) {
-		o.Retryer = retryer
+		o.Retryer = s.retryer
 		o.Region = region
 	}
 
@@ -102,9 +109,8 @@ func (s *S3) DeleteObjects(
 			},
 		}
 
-		retryer := s.createRetryer()
 		optFn := func(o *s3.Options) {
-			o.Retryer = retryer
+			o.Retryer = s.retryer
 			o.Region = region
 		}
 
@@ -122,7 +128,7 @@ func (s *S3) DeleteObjects(
 
 		retryCounts++
 
-		if retryCounts > retryer.MaxAttempts() {
+		if retryCounts > s.retryer.MaxAttempts() {
 			errors = append(errors, output.Errors...)
 			break
 		}
@@ -143,7 +149,7 @@ func (s *S3) DeleteObjects(
 		}
 		// random sleep
 		if len(objects) > 0 {
-			sleepTime, _ := retryer.RetryDelay(0, nil)
+			sleepTime, _ := s.retryer.RetryDelay(0, nil)
 			time.Sleep(sleepTime)
 		}
 	}
@@ -216,9 +222,8 @@ func (s *S3) ListObjectVersionsByPage(
 		VersionIdMarker: versionIdMarker,
 	}
 
-	retryer := s.createRetryer()
 	optFn := func(o *s3.Options) {
-		o.Retryer = retryer
+		o.Retryer = s.retryer
 		o.Region = region
 	}
 
@@ -273,9 +278,8 @@ func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, e
 func (s *S3) ListBuckets(ctx context.Context) ([]types.Bucket, error) {
 	input := &s3.ListBucketsInput{}
 
-	retryer := s.createRetryer()
 	optFn := func(o *s3.Options) {
-		o.Retryer = retryer
+		o.Retryer = s.retryer
 	}
 
 	output, err := s.client.ListBuckets(ctx, input, optFn)
@@ -293,9 +297,8 @@ func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string,
 		Bucket: bucketName,
 	}
 
-	retryer := s.createRetryer()
 	optFn := func(o *s3.Options) {
-		o.Retryer = retryer
+		o.Retryer = s.retryer
 	}
 
 	output, err := s.client.GetBucketLocation(ctx, input, optFn)
@@ -310,12 +313,4 @@ func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string,
 	}
 
 	return string(output.LocationConstraint), nil
-}
-
-func (s *S3) createRetryer() *Retryer {
-	retryable := func(err error) bool {
-		isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
-		return isErrorRetryable
-	}
-	return NewRetryer(retryable, SleepTimeSecForS3)
 }
