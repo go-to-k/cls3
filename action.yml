@@ -12,6 +12,10 @@ inputs:
     description: "ForceMode (Delete the bucket together)"
     default: false
     required: false
+  quiet:
+    description: "Hide live display of number of deletions (default: true in GitHub Actions ONLY.)"
+    default: true
+    required: false
   region:
     description: "AWS Region"
     default: "us-east-1"
@@ -41,9 +45,13 @@ runs:
           if [ "${{ inputs.force }}" = "true" ]; then
             force="-f"
           fi
+          quiet=""
+          if [ "${{ inputs.quiet }}" = "true" ]; then
+            quiet="-q"
+          fi
           region=""
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"
           fi
-          cls3 $buckets $force $region
+          cls3 $buckets $force $quiet $region
         fi
