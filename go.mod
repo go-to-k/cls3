@@ -10,7 +10,7 @@ require (
 	github.com/aws/smithy-go v1.20.3
 	github.com/golang/mock v1.6.0
 	github.com/gosuri/uilive v0.0.4
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.33.0
 	github.com/urfave/cli/v2 v2.25.0
 	go.uber.org/goleak v1.3.0
 	golang.org/x/sync v0.5.0
@@ -33,8 +33,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
