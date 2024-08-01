@@ -1,0 +1,49 @@
+name: "cls3-action"
+author: "k.goto"
+description: "Run cls3 in GitHub Actions"
+branding:
+  icon: "command"
+  color: "blue"
+inputs:
+  bucket-name:
+    description: "Names of one or multiple buckets you want to delete (comma separated)"
+    required: false
+  force:
+    description: "ForceMode (Delete the bucket together)"
+    default: false
+    required: false
+  region:
+    description: "AWS Region"
+    default: "us-east-1"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        set -eu
+        if [ ! -e /usr/local/bin/cls3 ]; then
+          DOWNLOAD_URL=$(curl https://api.github.com/repos/go-to-k/cls3/releases/latest | jq -r '.assets[].browser_download_url|select(match("Linux_x86_64."))')
+          cd /tmp
+          curl -sfLO ${DOWNLOAD_URL}
+          FILENAME=$(basename $DOWNLOAD_URL)
+          tar xzvf ${FILENAME}
+          chmod +x cls3
+          sudo mv cls3 /usr/local/bin/
+          rm ${FILENAME}
+        fi        
+        if [ -n "${{ inputs.bucket-name }}" ]; then
+          buckets=""
+          for bucket in $(echo ${{ inputs.bucket-name }} | tr ',' ' '); do
+            buckets="${buckets}-b ${bucket} "
+          done
+          force=""
+          if [ "${{ inputs.force }}" = "true" ]; then
+            force="-f"
+          fi
+          region=""
+          if [ -n "${{ inputs.region }}" ]; then
+            region="-r ${{ inputs.region }}"
+          fi
+          cls3 $buckets $force $region
+        fi

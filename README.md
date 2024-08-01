@@ -137,3 +137,60 @@ Then you select bucket names in the UI.
   [ ]  test-goto-bucket-2
   [x]  test-goto-bucket-3
 ```
+
+## GitHub Actions
+
+You can use cls3 with parameters **"bucket-name", "force" and "region"** (actually no need to specify "region"
+as it runs across regions) in GitHub Actions Workflow.
+
+To delete multiple buckets, specify bucket names separated by commas.
+
+```yaml
+jobs:
+  cls3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::123456789100:role/my-github-actions-role
+          # Or specify access keys.
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Delete bucket
+        uses: go-to-k/cls3@main # Or specify the version instead of main
+        with:
+          bucket-name: YourBucket
+          # bucket-name: YourBucket1, YourBucket2, YourBucket3 # To delete multiple buckets
+          force: true # Whether to delete the bucket itself, not just the object (default: false)
+          region: us-east-1 # Actually, no need to specify as it runs across regions
+```
+
+You can also run raw commands after installing the cls3 binary.
+
+```yaml
+jobs:
+  cls3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::123456789100:role/my-github-actions-role
+          # Or specify access keys.
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Install cls3
+        uses: go-to-k/cls3@main # Or specify the version instead of main
+      - name: Run cls3
+        run: |
+          echo "cls3"
+          cls3 -v
+          cls3 -b YourBucket1 -b YourBucket2
+```
