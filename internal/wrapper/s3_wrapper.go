@@ -29,6 +29,7 @@ func (s *S3Wrapper) ClearS3Objects(
 	bucketName string,
 	forceMode bool,
 	oldVersionsOnly bool,
+	quietMode bool,
 ) error {
 	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
@@ -51,9 +52,12 @@ func (s *S3Wrapper) ClearS3Objects(
 	deletedVersionsCount := 0
 	deletedVersionsCountMtx := sync.Mutex{}
 
-	writer := uilive.New()
-	writer.Start()
-	defer writer.Stop()
+	var writer *uilive.Writer
+	if !quietMode {
+		writer = uilive.New()
+		writer.Start()
+		defer writer.Stop()
+	}
 
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
@@ -82,7 +86,9 @@ func (s *S3Wrapper) ClearS3Objects(
 		eg.Go(func() error {
 			deletedVersionsCountMtx.Lock()
 			deletedVersionsCount += len(versions)
-			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+			if !quietMode {
+				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+			}
 			deletedVersionsCountMtx.Unlock()
 
 			// One DeleteObjects is executed for each loop of the List, and it usually ends during
@@ -118,8 +124,10 @@ func (s *S3Wrapper) ClearS3Objects(
 		return err
 	}
 
-	if err := writer.Flush(); err != nil {
-		return err
+	if !quietMode {
+		if err := writer.Flush(); err != nil {
+			return err
+		}
 	}
 
 	if errorsCount > 0 {

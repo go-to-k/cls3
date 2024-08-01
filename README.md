@@ -91,7 +91,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode]
   ```
 
 - -b, --bucketName: optional
@@ -112,6 +112,9 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 - -o, --oldVersionsOnly: optional
   - Delete old version objects only (including all delete-markers)
   - Do not specify the `-f` option if you specify this option.
+- -q, --quietMode: optional
+  - Hide live display of number of deletions
+  - It would be good to use in CI
 
 ## Interactive Mode
 
@@ -166,6 +169,7 @@ jobs:
           bucket-name: YourBucket
           # bucket-name: YourBucket1, YourBucket2, YourBucket3 # To delete multiple buckets
           force: true # Whether to delete the bucket itself, not just the object (default: false)
+          quiet: false # Hide live display of number of deletions (default: true in GitHub Actions ONLY.)
           region: us-east-1 # Actually, no need to specify as it runs across regions
 ```
 
