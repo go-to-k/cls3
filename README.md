@@ -146,7 +146,7 @@ Then you select bucket names in the UI.
 You can use cls3 with parameters **"bucket-name", "force", "quiet" and "region"** (actually no need to specify "region"
 as it runs across regions) in GitHub Actions Workflow.
 
-The "quiet" allows you to hive live display of number of deletions (default: true in GitHub Actions ONLY).
+The "quiet" allows you to hive live display of number of deletions (**default: true in GitHub Actions ONLY**).
 
 To delete multiple buckets, specify bucket names separated by commas.
 
