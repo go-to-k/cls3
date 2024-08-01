@@ -23,6 +23,7 @@ type App struct {
 	ForceMode       bool
 	InteractiveMode bool
 	OldVersionsOnly bool
+	QuietMode       bool
 }
 
 func NewApp(version string) *App {
@@ -72,6 +73,13 @@ func NewApp(version string) *App {
 				Value:       false,
 				Usage:       "Delete old version objects only (including all delete-markers)",
 				Destination: &app.OldVersionsOnly,
+			},
+			&cli.BoolFlag{
+				Name:        "quietMode",
+				Aliases:     []string{"q"},
+				Value:       false,
+				Usage:       "Hide live display of number of deletions",
+				Destination: &app.QuietMode,
 			},
 		},
 	}
@@ -132,7 +140,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly); err != nil {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
 				return err
 			}
 		}

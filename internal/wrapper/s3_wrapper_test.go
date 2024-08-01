@@ -24,6 +24,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 		ctx        context.Context
 		bucketName string
 		forceMode  bool
+		quietMode  bool
 	}
 
 	cases := []struct {
@@ -39,6 +40,34 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
+				m.EXPECT().ListObjectVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					[]types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions"),
+							VersionId: aws.String("VersionIdForVersions"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers"),
+							VersionId: aws.String("VersionIdForDeleteMarkers"),
+						},
+					}, nil, nil, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "clear objects on quiet mode successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "test",
+				forceMode:  false,
+				quietMode:  true,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -65,6 +94,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  true,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -92,6 +122,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(false, fmt.Errorf("ListBucketsError"))
@@ -105,6 +136,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(false, nil)
@@ -118,6 +150,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -132,6 +165,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -147,6 +181,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -173,6 +208,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -208,6 +244,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  true,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -235,6 +272,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  true,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -251,6 +289,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  true,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -267,6 +306,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -327,6 +367,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -396,6 +437,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 				ctx:        context.Background(),
 				bucketName: "test",
 				forceMode:  false,
+				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().CheckBucketExists(gomock.Any(), aws.String("test")).Return(true, nil)
@@ -460,7 +502,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
-			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, false)
+			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, false, tt.args.quietMode)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
