@@ -39,8 +39,9 @@ aws s3api put-bucket-versioning --bucket ${lower_bucket_name} --versioning-confi
 dir="./testfiles/${bucket_name}"
 mkdir -p ${dir}
 
-# about 100,000 versions
-for i in $(seq 1 25); do
+# about 1000,000 versions
+## NOTE: It'll cost you $5 (0.005 USD / 1000 PUT)
+for i in $(seq 1 250); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
 	# version
