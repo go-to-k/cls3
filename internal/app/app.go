@@ -16,14 +16,15 @@ import (
 const SDKRetryMaxAttempts = 3
 
 type App struct {
-	Cli             *cli.App
-	BucketNames     *cli.StringSlice
-	Profile         string
-	Region          string
-	ForceMode       bool
-	InteractiveMode bool
-	OldVersionsOnly bool
-	QuietMode       bool
+	Cli                  *cli.App
+	BucketNames          *cli.StringSlice
+	Profile              string
+	Region               string
+	ForceMode            bool
+	InteractiveMode      bool
+	OldVersionsOnly      bool
+	QuietMode            bool
+	DirectoryBucketsMode bool
 }
 
 func NewApp(version string) *App {
@@ -81,6 +82,13 @@ func NewApp(version string) *App {
 				Usage:       "Hide live display of number of deletions",
 				Destination: &app.QuietMode,
 			},
+			&cli.BoolFlag{
+				Name:        "directoryBucketsMode",
+				Aliases:     []string{"d"},
+				Value:       false,
+				Usage:       "Clear Directory Buckets for S3 Express One Zone",
+				Destination: &app.DirectoryBucketsMode,
+			},
 		},
 	}
 
@@ -111,6 +119,10 @@ func (a *App) getAction() func(c *cli.Context) error {
 			errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
 			return fmt.Errorf("InvalidOptionError: %v", errMsg)
 		}
+		if a.DirectoryBucketsMode && a.OldVersionsOnly {
+			errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
+			return fmt.Errorf("InvalidOptionError: %v", errMsg)
+		}
 
 		config, err := client.LoadAWSConfig(c.Context, a.Region, a.Profile)
 		if err != nil {
@@ -125,8 +137,12 @@ func (a *App) getAction() func(c *cli.Context) error {
 		)
 		s3Wrapper := wrapper.NewS3Wrapper(client)
 
+		if a.DirectoryBucketsMode {
+			io.Logger.Info().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+		}
+
 		if a.InteractiveMode {
-			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
+			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper, a.DirectoryBucketsMode)
 			if err != nil {
 				return err
 			}
@@ -140,7 +156,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode, a.DirectoryBucketsMode); err != nil {
 				return err
 			}
 		}
@@ -149,7 +165,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper, directoryBucketsMode bool) ([]string, bool, error) {
 	var checkboxes []string
 	var keyword string
 
@@ -157,7 +173,7 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrappe
 	keyword = io.InputKeywordForFilter(BucketNameLabel)
 
 	label := "Select buckets." + "\n"
-	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
+	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword), directoryBucketsMode)
 	if err != nil {
 		return checkboxes, false, err
 	}

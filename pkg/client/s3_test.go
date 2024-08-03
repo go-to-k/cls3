@@ -1873,7 +1873,7 @@ func TestS3_CheckBucketExists(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName)
+			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
