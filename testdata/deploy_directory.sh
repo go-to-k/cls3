@@ -40,7 +40,7 @@ if [ -z "$(aws s3api list-directory-buckets ${profile_option} | grep ${lower_buc
 		${profile_option}
 fi
 
-dir="./testfiles/${bucket_name}"
+dir="./testfiles/${lower_bucket_name}"
 mkdir -p ${dir}
 
 # about 1000,000 objects on the directory buckets for S3 Express One Zone
