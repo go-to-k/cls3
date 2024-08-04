@@ -42,7 +42,7 @@ func (s *S3Wrapper) ClearS3Objects(
 	}
 
 	// This is so that buckets in other regions than the specified one can also be deleted.
-	// If directoryBucketsMode is true, this property is unnecessary because only one region's
+	// If directoryBucketsMode is true, this variable is unnecessary because only one region's
 	// buckets can be operated on.
 	var bucketRegion string
 	if !directoryBucketsMode {
