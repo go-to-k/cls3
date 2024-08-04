@@ -7,7 +7,7 @@ profile=""
 bucket_name=""
 profile_option=""
 
-while getopts p:b:d: OPT; do
+while getopts p:b: OPT; do
 	case $OPT in
 	p)
 		profile="$OPTARG"
