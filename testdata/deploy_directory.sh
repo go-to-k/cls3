@@ -45,6 +45,7 @@ mkdir -p ${dir}
 
 # about 1000,000 objects on the directory buckets for S3 Express One Zone
 ## NOTE: It'll cost you $2.5 (S3 Express One Zone: 0.0025USD USD / 1000 PUT)
+## NOTE: You can create up to 10 directory buckets in each of your AWS accounts.
 ## FIXME: Errors often occur when uploading files to S3 Express One Zone. (Retrying fixes it, but it happens again with another file.)
 ### upload failed: testfiles/test-goto-01/1_864_21587.txt to s3://test-goto-01--use1-az4--x-s3/1_864_21587.txt An error occurred (400) when calling the PutObject operation: Bad Request
 for i in $(seq 1 1000); do
