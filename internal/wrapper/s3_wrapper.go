@@ -41,9 +41,13 @@ func (s *S3Wrapper) ClearS3Objects(
 		return nil
 	}
 
-	var region string
+	// This is so that buckets in other regions than the specified one can also be deleted.
+	// If directoryBucketsMode is true, this property is unnecessary because only one region's
+	// buckets can be operated on. In that case, the region specified in the options is used.
+	// (If that option is not also specified, the region of the profile currently in use)
+	var bucketRegion string
 	if !directoryBucketsMode {
-		region, err = s.client.GetBucketLocation(ctx, aws.String(bucketName))
+		bucketRegion, err = s.client.GetBucketLocation(ctx, aws.String(bucketName))
 		if err != nil {
 			return err
 		}
@@ -73,7 +77,7 @@ func (s *S3Wrapper) ClearS3Objects(
 		if directoryBucketsMode {
 			// ListObjects API can only retrieve up to 1000 items, so it is good to pass it
 			// directly to DeleteObjects, which can only delete up to 1000 items.
-			objects, keyMarker, err = s.client.ListObjectsByPage(ctx, aws.String(bucketName), region, keyMarker)
+			objects, keyMarker, err = s.client.ListObjectsByPage(ctx, aws.String(bucketName), bucketRegion, keyMarker)
 			if err != nil {
 				return err
 			}
@@ -83,7 +87,7 @@ func (s *S3Wrapper) ClearS3Objects(
 			objects, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
 				ctx,
 				aws.String(bucketName),
-				region,
+				bucketRegion,
 				oldVersionsOnly,
 				keyMarker,
 				versionIdMarker,
@@ -109,7 +113,7 @@ func (s *S3Wrapper) ClearS3Objects(
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
 			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), objects, region)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), objects, bucketRegion)
 			if err != nil {
 				return err
 			}
@@ -160,7 +164,7 @@ func (s *S3Wrapper) ClearS3Objects(
 	}
 
 	if forceMode {
-		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), region); err != nil {
+		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), bucketRegion); err != nil {
 			return err
 		}
 		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
