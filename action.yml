@@ -16,6 +16,14 @@ inputs:
     description: "Hide live display of number of deletions (default: true in GitHub Actions ONLY.)"
     default: true
     required: false
+  old-versions-only:
+    description: "Delete old version objects only (including all delete-markers)"
+    default: false
+    required: false
+  directory-buckets-mode:
+    description: "Clear Directory Buckets for S3 Express One Zone"
+    default: false
+    required: false
   region:
     description: "AWS Region"
     default: "us-east-1"
@@ -49,9 +57,17 @@ runs:
           if [ "${{ inputs.quiet }}" = "true" ]; then
             quiet="-q"
           fi
+          old_versions_only=""
+          if [ "${{ inputs.old-versions-only }}" = "true" ]; then
+            old_versions_only="-o"
+          fi
+          directory_buckets_mode=""
+          if [ "${{ inputs.directory-buckets-mode }}" = "true" ]; then
+            directory_buckets_mode="-d"
+          fi
           region=""
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"
           fi
-          cls3 $buckets $force $quiet $region
+          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $region
         fi

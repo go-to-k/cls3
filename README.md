@@ -28,9 +28,11 @@ As described below ([Interactive Mode](#interactive-mode)), you can **search for
 
 ### Cross-region
 
-In deleting multiple buckets, you can delete them all at once, even if they are in **multiple regions**.
+In deleting multiple buckets, you can list and delete them all at once, even if they are in **multiple regions**.
 
-### Versioning
+(In the **Directory Buckets** Mode for **S3 Express One Zone** (`-d` option), operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.)
+
+### Deletion of buckets with versioning enabled
 
 **Even if versioning is turned on**, you can empty it just as if it were turned off. Therefore, you can use it **without** being aware of the versioning settings.
 
@@ -41,6 +43,12 @@ The `-o | --oldVersionsOnly` option allows you to **delete only old versions** a
 **So you can retain the latest version objects only.**
 
 This option cannot be specified with the `-f | --force` option.
+
+### Deletion of Directory Buckets for S3 Express One Zone
+
+The `-d | --directoryBucketsMode` option allows you to delete **the Directory Buckets** for **S3 Express One Zone**.
+
+In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
 ### Number of objects that can be deleted
 
@@ -91,7 +99,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode]
   ```
 
 - -b, --bucketName: optional
@@ -104,7 +112,9 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
   - AWS profile name
 - -r, --region: optional(default: `ap-northeast-1`)
   - AWS Region
+    - If this option is not specified and your AWS profile is tied to a region, the region is used instead of the default region.
   - It is not necessary to be aware of this as it can be used **across regions**.
+    - But in the **Directory Buckets** Mode for **S3 Express One Zone** (with `-d` option), you should specify the region. The mode is not available across regions.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
 - -i, --interactive: optional
@@ -115,6 +125,10 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 - -q, --quietMode: optional
   - Hide live display of number of deletions
   - It would be good to use in CI
+- -d, --directoryBucketsMode: optional
+  - Directory Buckets Mode for S3 Express One Zone
+  - Operation across regions is not possible, but only in one region.
+  - You can specify the region with the `-r` option.
 
 ## Interactive Mode
 
@@ -143,10 +157,13 @@ Then you select bucket names in the UI.
 
 ## GitHub Actions
 
-You can use cls3 with parameters **"bucket-name", "force", "quiet" and "region"** (actually no need to specify "region"
-as it runs across regions) in GitHub Actions Workflow.
+You can use cls3 in GitHub Actions Workflow.
 
 The "quiet" allows you to hive live display of number of deletions (**default: true in GitHub Actions ONLY**).
+
+Basically, you do not need to specify a "region" parameter, since you can delete buckets across regions. However,
+in Directory Buckets mode (`-d` option) for S3 Express One Zone, the region must be specified. This mode cannot
+be used across regions.
 
 To delete multiple buckets, specify bucket names separated by commas.
 
@@ -172,7 +189,9 @@ jobs:
           # bucket-name: YourBucket1, YourBucket2, YourBucket3 # To delete multiple buckets
           force: true # Whether to delete the bucket itself, not just the object (default: false)
           quiet: false # Hide live display of number of deletions (default: true in GitHub Actions ONLY.)
-          region: us-east-1 # Actually, no need to specify as it runs across regions
+          old-versions-only: false # Delete old version objects only (including all delete-markers) (default: false)
+          directory-buckets-mode: false # Directory Buckets Mode for S3 Express One Zone (default: false)
+          region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone
 ```
 
 You can also run raw commands after installing the cls3 binary.
