@@ -519,8 +519,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 	io.NewLogger(false)
 
 	type args struct {
-		ctx     context.Context
-		keyword string
+		ctx                  context.Context
+		keyword              string
+		directoryBucketsMode bool
 	}
 
 	type want struct {
@@ -538,8 +539,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list a bucket filtered by keyword successfully",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "test",
+				ctx:                  context.Background(),
+				keyword:              "test",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
@@ -555,10 +557,31 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "list a bucket filtered by keyword successfully on directory buckets mode",
+			args: args{
+				ctx:                  context.Background(),
+				keyword:              "test",
+				directoryBucketsMode: true,
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListDirectoryBuckets(gomock.Any()).Return([]types.Bucket{
+					{Name: aws.String("test1")},
+				}, nil)
+			},
+			want: want{
+				output: []string{
+					"test1",
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
 			name: "list buckets filtered by keyword successfully",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "test",
+				ctx:                  context.Background(),
+				keyword:              "test",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
@@ -579,8 +602,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list buckets filtered by keyword successfully when keyword is empty",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "",
+				ctx:                  context.Background(),
+				keyword:              "",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
@@ -602,8 +626,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list buckets filtered by keyword successfully but not match",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "test",
+				ctx:                  context.Background(),
+				keyword:              "test",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
@@ -621,8 +646,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list buckets filtered by keyword successfully but not return buckets",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "test",
+				ctx:                  context.Background(),
+				keyword:              "test",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, nil)
@@ -636,8 +662,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list buckets filtered by keyword successfully but not return buckets when keyword is empty",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "",
+				ctx:                  context.Background(),
+				keyword:              "",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, nil)
@@ -651,8 +678,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list buckets filtered by keyword failure",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "test",
+				ctx:                  context.Background(),
+				keyword:              "test",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{}, fmt.Errorf("ListBucketsError"))
@@ -666,8 +694,9 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 		{
 			name: "list buckets filtered by keyword successfully for case-insensitive search",
 			args: args{
-				ctx:     context.Background(),
-				keyword: "TEST",
+				ctx:                  context.Background(),
+				keyword:              "TEST",
+				directoryBucketsMode: false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
 				m.EXPECT().ListBuckets(gomock.Any()).Return([]types.Bucket{
@@ -695,7 +724,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
-			output, err := s3.ListBucketNamesFilteredByKeyword(tt.args.ctx, aws.String(tt.args.keyword), false)
+			output, err := s3.ListBucketNamesFilteredByKeyword(tt.args.ctx, aws.String(tt.args.keyword), tt.args.directoryBucketsMode)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err, tt.wantErr)
 				return
