@@ -1458,9 +1458,10 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 
 func TestS3_CheckBucketExists(t *testing.T) {
 	type args struct {
-		ctx                context.Context
-		bucketName         *string
-		withAPIOptionsFunc func(*middleware.Stack) error
+		ctx                  context.Context
+		bucketName           *string
+		directoryBucketsMode bool
+		withAPIOptionsFunc   func(*middleware.Stack) error
 	}
 
 	type want struct {
@@ -1477,8 +1478,9 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		{
 			name: "check bucket for bucket exists",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1509,10 +1511,46 @@ func TestS3_CheckBucketExists(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "check bucket for bucket exists on directory buckets mode",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBuckets",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{
+											{
+												Name: aws.String("test"),
+											},
+											{
+												Name: aws.String("test2"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				exists: true,
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
 			name: "check bucket for bucket do not exist",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1545,8 +1583,9 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		{
 			name: "check bucket exists failure",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1572,8 +1611,9 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		{
 			name: "check bucket exists failure for api error SlowDown",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1615,7 +1655,7 @@ func TestS3_CheckBucketExists(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName, false)
+			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName, tt.args.directoryBucketsMode)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
