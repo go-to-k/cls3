@@ -276,14 +276,13 @@ func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string, director
 		if err != nil {
 			return false, err
 		}
-		buckets = append(buckets, b...)
-
+		copy(buckets, b)
 	} else {
 		b, err := s.ListBuckets(ctx)
 		if err != nil {
 			return false, err
 		}
-		buckets = append(buckets, b...)
+		copy(buckets, b)
 	}
 
 	for _, bucket := range buckets {
