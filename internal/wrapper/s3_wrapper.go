@@ -30,8 +30,9 @@ func (s *S3Wrapper) ClearS3Objects(
 	forceMode bool,
 	oldVersionsOnly bool,
 	quietMode bool,
+	directoryBucketsMode bool,
 ) error {
-	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
+	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName), directoryBucketsMode)
 	if err != nil {
 		return err
 	}
@@ -40,17 +41,23 @@ func (s *S3Wrapper) ClearS3Objects(
 		return nil
 	}
 
-	region, err := s.client.GetBucketLocation(ctx, aws.String(bucketName))
-	if err != nil {
-		return err
+	// This is so that buckets in other regions than the specified one can also be deleted.
+	// If directoryBucketsMode is true, this variable is unnecessary because only one region's
+	// buckets can be operated on.
+	var bucketRegion string
+	if !directoryBucketsMode {
+		bucketRegion, err = s.client.GetBucketLocation(ctx, aws.String(bucketName))
+		if err != nil {
+			return err
+		}
 	}
 
 	eg := errgroup.Group{}
 	errorStr := ""
 	errorsCount := 0
 	errorsMtx := sync.Mutex{}
-	deletedVersionsCount := 0
-	deletedVersionsCountMtx := sync.Mutex{}
+	deletedObjectsCount := 0
+	deletedObjectsCountMtx := sync.Mutex{}
 
 	var writer *uilive.Writer
 	if !quietMode {
@@ -64,38 +71,48 @@ func (s *S3Wrapper) ClearS3Objects(
 	var keyMarker *string
 	var versionIdMarker *string
 	for {
-		var versions []types.ObjectIdentifier
+		var objects []types.ObjectIdentifier
 
-		// ListObjectVersions API can only retrieve up to 1000 items, so it is good to pass it
-		// directly to DeleteObjects, which can only delete up to 1000 items.
-		versions, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
-			ctx,
-			aws.String(bucketName),
-			region,
-			oldVersionsOnly,
-			keyMarker,
-			versionIdMarker,
-		)
-		if err != nil {
-			return err
+		if directoryBucketsMode {
+			// ListObjects API can only retrieve up to 1000 items, so it is good to pass it
+			// directly to DeleteObjects, which can only delete up to 1000 items.
+			objects, keyMarker, err = s.client.ListObjectsByPage(ctx, aws.String(bucketName), bucketRegion, keyMarker)
+			if err != nil {
+				return err
+			}
+		} else {
+			// ListObjectVersions API can only retrieve up to 1000 items, so it is good to pass it
+			// directly to DeleteObjects, which can only delete up to 1000 items.
+			objects, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
+				ctx,
+				aws.String(bucketName),
+				bucketRegion,
+				oldVersionsOnly,
+				keyMarker,
+				versionIdMarker,
+			)
+			if err != nil {
+				return err
+			}
 		}
-		if len(versions) == 0 {
+
+		if len(objects) == 0 {
 			break
 		}
 
 		eg.Go(func() error {
-			deletedVersionsCountMtx.Lock()
-			deletedVersionsCount += len(versions)
+			deletedObjectsCountMtx.Lock()
+			deletedObjectsCount += len(objects)
 			if !quietMode {
-				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedVersionsCount)
+				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedObjectsCount)
 			}
-			deletedVersionsCountMtx.Unlock()
+			deletedObjectsCountMtx.Unlock()
 
 			// One DeleteObjects is executed for each loop of the List, and it usually ends during
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
 			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), versions, region)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), objects, bucketRegion)
 			if err != nil {
 				return err
 			}
@@ -139,14 +156,14 @@ func (s *S3Wrapper) ClearS3Objects(
 		}
 	}
 
-	if deletedVersionsCount == 0 {
+	if deletedObjectsCount == 0 {
 		io.Logger.Info().Msgf("%v No objects.", bucketName)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedVersionsCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedObjectsCount)
 	}
 
 	if forceMode {
-		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), region); err != nil {
+		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), bucketRegion); err != nil {
 			return err
 		}
 		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
@@ -155,10 +172,17 @@ func (s *S3Wrapper) ClearS3Objects(
 	return nil
 }
 
-func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string, directoryBucketsMode bool) ([]string, error) {
 	filteredBucketNames := []string{}
 
-	buckets, err := s.client.ListBuckets(ctx)
+	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
+	if directoryBucketsMode {
+		listBucketsFunc = s.client.ListDirectoryBuckets
+	} else {
+		listBucketsFunc = s.client.ListBuckets
+	}
+
+	buckets, err := listBucketsFunc(ctx)
 	if err != nil {
 		return filteredBucketNames, err
 	}

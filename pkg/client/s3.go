@@ -3,6 +3,7 @@ package client
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -34,8 +35,19 @@ type IS3 interface {
 		nextVersionIdMarker *string,
 		err error,
 	)
-	CheckBucketExists(ctx context.Context, bucketName *string) (bool, error)
+	ListObjectsByPage(
+		ctx context.Context,
+		bucketName *string,
+		region string,
+		marker *string,
+	) (
+		objectIdentifiers []types.ObjectIdentifier,
+		nextMarker *string,
+		err error,
+	)
+	CheckBucketExists(ctx context.Context, bucketName *string, directoryBucketsMode bool) (bool, error)
 	ListBuckets(ctx context.Context) ([]types.Bucket, error)
+	ListDirectoryBuckets(ctx context.Context) ([]types.Bucket, error)
 	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
 }
 
@@ -66,7 +78,9 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 
 	optFn := func(o *s3.Options) {
 		o.Retryer = s.retryer
-		o.Region = region
+		if region != "" {
+			o.Region = region
+		}
 	}
 
 	_, err := s.client.DeleteBucket(ctx, input, optFn)
@@ -106,7 +120,9 @@ func (s *S3) DeleteObjects(
 
 		optFn := func(o *s3.Options) {
 			o.Retryer = s.retryer
-			o.Region = region
+			if region != "" {
+				o.Region = region
+			}
 		}
 
 		output, err := s.client.DeleteObjects(ctx, input, optFn)
@@ -174,7 +190,9 @@ func (s *S3) ListObjectVersionsByPage(
 
 	optFn := func(o *s3.Options) {
 		o.Retryer = s.retryer
-		o.Region = region
+		if region != "" {
+			o.Region = region
+		}
 	}
 
 	output, err := s.client.ListObjectVersions(ctx, input, optFn)
@@ -210,8 +228,56 @@ func (s *S3) ListObjectVersionsByPage(
 	return objectIdentifiers, nextKeyMarker, nextVersionIdMarker, nil
 }
 
-func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
-	buckets, err := s.ListBuckets(ctx)
+func (s *S3) ListObjectsByPage(
+	ctx context.Context,
+	bucketName *string,
+	region string,
+	token *string,
+) (
+	objectIdentifiers []types.ObjectIdentifier,
+	nextToken *string,
+	err error,
+) {
+	objectIdentifiers = []types.ObjectIdentifier{}
+	input := &s3.ListObjectsV2Input{
+		Bucket:            bucketName,
+		ContinuationToken: token,
+	}
+
+	optFn := func(o *s3.Options) {
+		o.Retryer = s.retryer
+		if region != "" {
+			o.Region = region
+		}
+	}
+
+	output, err := s.client.ListObjectsV2(ctx, input, optFn)
+	if err != nil {
+		return nil, nextToken, &ClientError{
+			ResourceName: bucketName,
+			Err:          err,
+		}
+	}
+
+	for _, object := range output.Contents {
+		objectIdentifier := types.ObjectIdentifier{
+			Key: object.Key,
+		}
+		objectIdentifiers = append(objectIdentifiers, objectIdentifier)
+	}
+
+	return objectIdentifiers, output.NextContinuationToken, nil
+}
+
+func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string, directoryBucketsMode bool) (bool, error) {
+	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
+	if directoryBucketsMode {
+		listBucketsFunc = s.ListDirectoryBuckets
+	} else {
+		listBucketsFunc = s.ListBuckets
+	}
+
+	buckets, err := listBucketsFunc(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -240,6 +306,50 @@ func (s *S3) ListBuckets(ctx context.Context) ([]types.Bucket, error) {
 	}
 
 	return output.Buckets, nil
+}
+
+func (s *S3) ListDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
+	buckets := []types.Bucket{}
+	var continuationToken *string
+
+	for {
+		select {
+		case <-ctx.Done():
+			return buckets, &ClientError{
+				Err: ctx.Err(),
+			}
+		default:
+		}
+
+		input := &s3.ListDirectoryBucketsInput{
+			ContinuationToken: continuationToken,
+		}
+
+		optFn := func(o *s3.Options) {
+			o.Retryer = s.retryer
+		}
+
+		output, err := s.client.ListDirectoryBuckets(ctx, input, optFn)
+		if err != nil {
+			return buckets, &ClientError{
+				Err: err,
+			}
+		}
+
+		buckets = append(buckets, output.Buckets...)
+
+		if output.ContinuationToken == nil {
+			break
+		}
+		continuationToken = output.ContinuationToken
+	}
+
+	// sort by bucket name
+	sort.Slice(buckets, func(i, j int) bool {
+		return *buckets[i].Name < *buckets[j].Name
+	})
+
+	return buckets, nil
 }
 
 func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string, error) {

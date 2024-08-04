@@ -14,18 +14,16 @@ import (
 	"github.com/aws/smithy-go/middleware"
 )
 
-type keyMarkerKeyForS3 struct{}
-type versionIdMarkerKeyForS3 struct{}
+type tokenForListDirectoryBuckets struct{}
 
-func getNextMarkerForS3Initialize(
+func getTokenForListDirectoryBucketsInitialize(
 	ctx context.Context, in middleware.InitializeInput, next middleware.InitializeHandler,
 ) (
 	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
 ) {
 	switch v := in.Parameters.(type) {
-	case *s3.ListObjectVersionsInput:
-		ctx = middleware.WithStackValue(ctx, keyMarkerKeyForS3{}, v.KeyMarker)
-		ctx = middleware.WithStackValue(ctx, versionIdMarkerKeyForS3{}, v.VersionIdMarker)
+	case *s3.ListDirectoryBucketsInput:
+		ctx = middleware.WithStackValue(ctx, tokenForListDirectoryBuckets{}, v.ContinuationToken)
 	}
 	return next.HandleInitialize(ctx, in)
 }
@@ -1186,11 +1184,284 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 	}
 }
 
-func TestS3_CheckBucketExists(t *testing.T) {
+func TestS3_ListObjectsByPage(t *testing.T) {
 	type args struct {
 		ctx                context.Context
 		bucketName         *string
+		region             string
+		token              *string
 		withAPIOptionsFunc func(*middleware.Stack) error
+	}
+
+	type want struct {
+		output    []types.ObjectIdentifier
+		nextToken *string
+		err       error
+	}
+
+	cases := []struct {
+		name    string
+		args    args
+		want    want
+		wantErr bool
+	}{
+		{
+			name: "list objects successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{
+											{
+												Key: aws.String("Key1"),
+											},
+											{
+												Key: aws.String("Key2"),
+											},
+										},
+										NextContinuationToken: aws.String("NextContinuationToken"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.ObjectIdentifier{
+					{
+						Key: aws.String("Key1"),
+					},
+					{
+						Key: aws.String("Key2"),
+					},
+				},
+				nextToken: aws.String("NextContinuationToken"),
+				err:       nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list objects failure",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2ErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectsV2Error")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    nil,
+				nextToken: nil,
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, ListObjectsV2Error"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list objects failure for api error SlowDown",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2ApiErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+										Result: &s3.ListObjectsV2Output{},
+									}, middleware.Metadata{}, &retry.MaxAttemptsError{
+										Attempt: MaxRetryCount,
+										Err:     fmt.Errorf("api error SlowDown"),
+									}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    nil,
+				nextToken: nil,
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, exceeded maximum number of attempts, 10, api error SlowDown"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list objects successfully(empty)",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2EmptyMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    []types.ObjectIdentifier{},
+				nextToken: nil,
+				err:       nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list objects with token successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      aws.String("Token"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{
+											{
+												Key: aws.String("Key1"),
+											},
+											{
+												Key: aws.String("Key2"),
+											},
+										},
+										NextContinuationToken: nil,
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.ObjectIdentifier{
+					{
+						Key: aws.String("Key1"),
+					},
+					{
+						Key: aws.String("Key2"),
+					},
+				},
+				nextToken: nil,
+				err:       nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list objects with token failure",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      aws.String("Token"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectsV2Error")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    nil,
+				nextToken: nil,
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, ListObjectsV2Error"),
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.LoadDefaultConfig(
+				tt.args.ctx,
+				config.WithRegion("ap-northeast-1"),
+				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := s3.NewFromConfig(cfg)
+			s3Client := NewS3(client)
+
+			output, nextToken, err := s3Client.ListObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.output) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.output)
+			}
+			if !reflect.DeepEqual(nextToken, tt.want.nextToken) {
+				t.Errorf("nextToken = %#v, want %#v", nextToken, tt.want.nextToken)
+			}
+		})
+	}
+}
+
+func TestS3_CheckBucketExists(t *testing.T) {
+	type args struct {
+		ctx                  context.Context
+		bucketName           *string
+		directoryBucketsMode bool
+		withAPIOptionsFunc   func(*middleware.Stack) error
 	}
 
 	type want struct {
@@ -1207,8 +1478,9 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		{
 			name: "check bucket for bucket exists",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1239,10 +1511,46 @@ func TestS3_CheckBucketExists(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "check bucket for bucket exists on directory buckets mode",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBuckets",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{
+											{
+												Name: aws.String("test"),
+											},
+											{
+												Name: aws.String("test2"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				exists: true,
+				err:    nil,
+			},
+			wantErr: false,
+		},
+		{
 			name: "check bucket for bucket do not exist",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1275,8 +1583,9 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		{
 			name: "check bucket exists failure",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1302,8 +1611,9 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		{
 			name: "check bucket exists failure for api error SlowDown",
 			args: args{
-				ctx:        context.Background(),
-				bucketName: aws.String("test"),
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1345,7 +1655,7 @@ func TestS3_CheckBucketExists(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName)
+			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName, tt.args.directoryBucketsMode)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -1516,6 +1826,355 @@ func TestS3_ListBuckets(t *testing.T) {
 			s3Client := NewS3(client)
 
 			output, err := s3Client.ListBuckets(tt.args.ctx)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.buckets) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.buckets)
+			}
+		})
+	}
+}
+
+func TestS3_ListDirectoryBuckets(t *testing.T) {
+	type args struct {
+		ctx                context.Context
+		withAPIOptionsFunc func(*middleware.Stack) error
+	}
+
+	type want struct {
+		buckets []types.Bucket
+		err     error
+	}
+
+	cases := []struct {
+		name    string
+		args    args
+		want    want
+		wantErr bool
+	}{
+		{
+			name: "list directory buckets successfully",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{
+											{
+												Name: aws.String("test"),
+											},
+											{
+												Name: aws.String("test2"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list directory buckets sorted successfully",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{
+											{
+												Name: aws.String("test2"),
+											},
+											{
+												Name: aws.String("test3"),
+											},
+											{
+												Name: aws.String("test"),
+											},
+											{
+												Name: aws.String("test1"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test"),
+					},
+					{
+						Name: aws.String("test1"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+					{
+						Name: aws.String("test3"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list directory buckets successfully but empty",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsNotExistMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{},
+				err:     nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list directory buckets failure",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: nil,
+								}, middleware.Metadata{}, fmt.Errorf("ListDirectoryBucketsError")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{},
+				err: &ClientError{
+					Err: fmt.Errorf("operation error S3: ListDirectoryBuckets, ListDirectoryBucketsError"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list directory buckets failure for api error SlowDown",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsApiErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+										Result: nil,
+									}, middleware.Metadata{}, &retry.MaxAttemptsError{
+										Attempt: MaxRetryCount,
+										Err:     fmt.Errorf("api error SlowDown"),
+									}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{},
+				err: &ClientError{
+					Err: fmt.Errorf("operation error S3: ListDirectoryBuckets, exceeded maximum number of attempts, 10, api error SlowDown"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list directory buckets with token successfully",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"GetToken",
+							getTokenForListDirectoryBucketsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsWithTokenMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								continuationToken := middleware.GetStackValue(ctx, tokenForListDirectoryBuckets{}).(*string)
+
+								var nextToken *string
+								var buckets []types.Bucket
+								if continuationToken == nil {
+									nextToken = aws.String("NextToken")
+									buckets = []types.Bucket{
+										{
+											Name: aws.String("test"),
+										},
+									}
+									return middleware.FinalizeOutput{
+										Result: &s3.ListDirectoryBucketsOutput{
+											Buckets:           buckets,
+											ContinuationToken: nextToken,
+										},
+									}, middleware.Metadata{}, nil
+								} else {
+									buckets = []types.Bucket{
+										{
+											Name: aws.String("test2"),
+										},
+									}
+									return middleware.FinalizeOutput{
+										Result: &s3.ListDirectoryBucketsOutput{
+											Buckets:           buckets,
+											ContinuationToken: nextToken,
+										},
+									}, middleware.Metadata{}, nil
+								}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list directory buckets with token failure",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"GetToken",
+							getTokenForListDirectoryBucketsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsWithTokenMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								continuationToken := middleware.GetStackValue(ctx, tokenForListDirectoryBuckets{}).(*string)
+
+								var nextToken *string
+								var buckets []types.Bucket
+								if continuationToken == nil {
+									nextToken = aws.String("NextToken")
+									buckets = []types.Bucket{
+										{
+											Name: aws.String("test1"),
+										},
+									}
+									return middleware.FinalizeOutput{
+										Result: &s3.ListDirectoryBucketsOutput{
+											Buckets:           buckets,
+											ContinuationToken: nextToken,
+										},
+									}, middleware.Metadata{}, nil
+								} else {
+									return middleware.FinalizeOutput{
+										Result: &s3.ListDirectoryBucketsOutput{},
+									}, middleware.Metadata{}, fmt.Errorf("ListDirectoryBucketsError")
+								}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test1"),
+					},
+				},
+				err: &ClientError{
+					Err: fmt.Errorf("operation error S3: ListDirectoryBuckets, ListDirectoryBucketsError"),
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.LoadDefaultConfig(
+				tt.args.ctx,
+				config.WithRegion("ap-northeast-1"),
+				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := s3.NewFromConfig(cfg)
+			s3Client := NewS3(client)
+
+			output, err := s3Client.ListDirectoryBuckets(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
