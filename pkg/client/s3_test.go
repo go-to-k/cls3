@@ -1899,6 +1899,58 @@ func TestS3_ListDirectoryBuckets(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "list directory buckets sorted successfully",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{
+											{
+												Name: aws.String("test2"),
+											},
+											{
+												Name: aws.String("test3"),
+											},
+											{
+												Name: aws.String("test"),
+											},
+											{
+												Name: aws.String("test1"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test"),
+					},
+					{
+						Name: aws.String("test1"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+					{
+						Name: aws.String("test3"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
 			name: "list directory buckets successfully but empty",
 			args: args{
 				ctx: context.Background(),
