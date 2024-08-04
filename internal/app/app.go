@@ -137,8 +137,8 @@ func (a *App) getAction() func(c *cli.Context) error {
 		)
 		s3Wrapper := wrapper.NewS3Wrapper(client)
 
-		if a.DirectoryBucketsMode {
-			io.Logger.Info().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+		if a.DirectoryBucketsMode && a.Region == "" {
+			io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 		}
 
 		if a.InteractiveMode {
