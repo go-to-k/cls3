@@ -1186,6 +1186,278 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 	}
 }
 
+func TestS3_ListObjectsByPage(t *testing.T) {
+	type args struct {
+		ctx                context.Context
+		bucketName         *string
+		region             string
+		token              *string
+		withAPIOptionsFunc func(*middleware.Stack) error
+	}
+
+	type want struct {
+		output    []types.ObjectIdentifier
+		nextToken *string
+		err       error
+	}
+
+	cases := []struct {
+		name    string
+		args    args
+		want    want
+		wantErr bool
+	}{
+		{
+			name: "list objects successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{
+											{
+												Key: aws.String("Key1"),
+											},
+											{
+												Key: aws.String("Key2"),
+											},
+										},
+										NextContinuationToken: aws.String("NextContinuationToken"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.ObjectIdentifier{
+					{
+						Key: aws.String("Key1"),
+					},
+					{
+						Key: aws.String("Key2"),
+					},
+				},
+				nextToken: aws.String("NextContinuationToken"),
+				err:       nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list objects failure",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2ErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectsV2Error")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    nil,
+				nextToken: nil,
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, ListObjectsV2Error"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list objects failure for api error SlowDown",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2ApiErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+										Result: &s3.ListObjectsV2Output{},
+									}, middleware.Metadata{}, &retry.MaxAttemptsError{
+										Attempt: MaxRetryCount,
+										Err:     fmt.Errorf("api error SlowDown"),
+									}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    nil,
+				nextToken: nil,
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, exceeded maximum number of attempts, 10, api error SlowDown"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list objects successfully(empty)",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2EmptyMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    []types.ObjectIdentifier{},
+				nextToken: nil,
+				err:       nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list objects with token successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      aws.String("Token"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{
+											{
+												Key: aws.String("Key1"),
+											},
+											{
+												Key: aws.String("Key2"),
+											},
+										},
+										NextContinuationToken: nil,
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.ObjectIdentifier{
+					{
+						Key: aws.String("Key1"),
+					},
+					{
+						Key: aws.String("Key2"),
+					},
+				},
+				nextToken: nil,
+				err:       nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list objects with token failure",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: aws.String("test"),
+				region:     "ap-northeast-1",
+				token:      aws.String("Token"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectsV2Error")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output:    nil,
+				nextToken: nil,
+				err: &ClientError{
+					ResourceName: aws.String("test"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, ListObjectsV2Error"),
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.LoadDefaultConfig(
+				tt.args.ctx,
+				config.WithRegion("ap-northeast-1"),
+				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := s3.NewFromConfig(cfg)
+			s3Client := NewS3(client)
+
+			output, nextToken, err := s3Client.ListObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.output) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.output)
+			}
+			if !reflect.DeepEqual(nextToken, tt.want.nextToken) {
+				t.Errorf("nextToken = %#v, want %#v", nextToken, tt.want.nextToken)
+			}
+		})
+	}
+}
+
 func TestS3_CheckBucketExists(t *testing.T) {
 	type args struct {
 		ctx                context.Context

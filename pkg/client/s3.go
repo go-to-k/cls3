@@ -235,7 +235,7 @@ func (s *S3) ListObjectsByPage(
 	token *string,
 ) (
 	objectIdentifiers []types.ObjectIdentifier,
-	nextMarker *string,
+	nextToken *string,
 	err error,
 ) {
 	objectIdentifiers = []types.ObjectIdentifier{}
@@ -253,7 +253,7 @@ func (s *S3) ListObjectsByPage(
 
 	output, err := s.client.ListObjectsV2(ctx, input, optFn)
 	if err != nil {
-		return nil, nextMarker, &ClientError{
+		return nil, nextToken, &ClientError{
 			ResourceName: bucketName,
 			Err:          err,
 		}
