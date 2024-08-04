@@ -311,6 +311,7 @@ func (s *S3) ListDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	buckets := []types.Bucket{}
 	var continuationToken *string
 
+	// TODO: sort by bucket name
 	for {
 		select {
 		case <-ctx.Done():
