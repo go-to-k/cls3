@@ -33,7 +33,7 @@ if [ -n "${profile}" ]; then
 	profile_option="--profile ${profile} --region ${region}"
 fi
 
-if [ -z "$(aws s3 ls ${profile_option} | grep ${lower_bucket_name})" ]; then
+if [ -z "$(aws s3api list-directory-buckets ${profile_option} | grep ${lower_bucket_name})" ]; then
 	aws s3api create-bucket \
 		--bucket ${lower_bucket_name} \
 		--create-bucket-configuration "Location={Type=AvailabilityZone,Name=${az_id}},Bucket={DataRedundancy=SingleAvailabilityZone,Type=Directory}" \
