@@ -159,9 +159,9 @@ Then you select bucket names in the UI.
 
 You can use cls3 in GitHub Actions Workflow.
 
-The "quiet" allows you to hive live display of number of deletions (**default: true in GitHub Actions ONLY**).
+The `quiet` allows you to hive live display of number of deletions (**default: true in GitHub Actions ONLY**).
 
-Basically, you do not need to specify a "region" parameter, since you can delete buckets across regions. However,
+Basically, you do not need to specify a `region` parameter, since you can delete buckets across regions. However,
 in Directory Buckets mode (`directory-buckets-mode`) for S3 Express One Zone, the region must be specified. This mode cannot
 be used across regions.
 
