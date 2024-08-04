@@ -43,8 +43,7 @@ func (s *S3Wrapper) ClearS3Objects(
 
 	// This is so that buckets in other regions than the specified one can also be deleted.
 	// If directoryBucketsMode is true, this property is unnecessary because only one region's
-	// buckets can be operated on. In that case, the region specified in the options is used.
-	// (If that option is not also specified, the region of the profile currently in use)
+	// buckets can be operated on.
 	var bucketRegion string
 	if !directoryBucketsMode {
 		bucketRegion, err = s.client.GetBucketLocation(ctx, aws.String(bucketName))
