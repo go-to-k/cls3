@@ -269,21 +269,16 @@ func (s *S3) ListObjectsByPage(
 }
 
 func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string, directoryBucketsMode bool) (bool, error) {
-	buckets := []types.Bucket{}
-
+	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
 	if directoryBucketsMode {
-		b, err := s.ListDirectoryBuckets(ctx)
-		if err != nil {
-			return false, err
-		}
-		buckets = append(buckets, b...)
-
+		listBucketsFunc = s.ListDirectoryBuckets
 	} else {
-		b, err := s.ListBuckets(ctx)
-		if err != nil {
-			return false, err
-		}
-		buckets = append(buckets, b...)
+		listBucketsFunc = s.ListBuckets
+	}
+
+	buckets, err := listBucketsFunc(ctx)
+	if err != nil {
+		return false, err
 	}
 
 	for _, bucket := range buckets {

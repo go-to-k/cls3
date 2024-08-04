@@ -171,20 +171,17 @@ func (s *S3Wrapper) ClearS3Objects(
 
 func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string, directoryBucketsMode bool) ([]string, error) {
 	filteredBucketNames := []string{}
-	buckets := []types.Bucket{}
 
+	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
 	if directoryBucketsMode {
-		b, err := s.client.ListDirectoryBuckets(ctx)
-		if err != nil {
-			return filteredBucketNames, err
-		}
-		buckets = append(buckets, b...)
+		listBucketsFunc = s.client.ListDirectoryBuckets
 	} else {
-		b, err := s.client.ListBuckets(ctx)
-		if err != nil {
-			return filteredBucketNames, err
-		}
-		buckets = append(buckets, b...)
+		listBucketsFunc = s.client.ListBuckets
+	}
+
+	buckets, err := listBucketsFunc(ctx)
+	if err != nil {
+		return filteredBucketNames, err
 	}
 
 	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
