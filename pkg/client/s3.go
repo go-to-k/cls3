@@ -3,6 +3,7 @@ package client
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -311,7 +312,6 @@ func (s *S3) ListDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	buckets := []types.Bucket{}
 	var continuationToken *string
 
-	// TODO: sort by bucket name
 	for {
 		select {
 		case <-ctx.Done():
@@ -343,6 +343,11 @@ func (s *S3) ListDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 		}
 		continuationToken = output.ContinuationToken
 	}
+
+	// sort by bucket name
+	sort.Slice(buckets, func(i, j int) bool {
+		return *buckets[i].Name < *buckets[j].Name
+	})
 
 	return buckets, nil
 }
