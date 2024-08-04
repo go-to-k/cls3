@@ -126,9 +126,9 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
   - Hide live display of number of deletions
   - It would be good to use in CI
 - -d, --directoryBucketsMode: optional
-  - Directory Buckets Mode for S3 Express One Zone
-  - Operation across regions is not possible, but only in one region.
-  - You can specify the region with the `-r` option.
+  - **Directory Buckets** Mode for **S3 Express One Zone**
+  - Operation across regions is not possible, but only in **one region**.
+    - You can specify the region with the `-r` option.
 
 ## Interactive Mode
 
