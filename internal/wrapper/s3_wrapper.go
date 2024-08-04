@@ -178,13 +178,13 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 		if err != nil {
 			return filteredBucketNames, err
 		}
-		copy(buckets, b)
+		buckets = append(buckets, b...)
 	} else {
 		b, err := s.client.ListBuckets(ctx)
 		if err != nil {
 			return filteredBucketNames, err
 		}
-		copy(buckets, b)
+		buckets = append(buckets, b...)
 	}
 
 	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
