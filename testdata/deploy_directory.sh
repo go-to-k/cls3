@@ -51,7 +51,10 @@ mkdir -p ${dir}
 for i in $(seq 1 1000); do
 	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
+	## Do not finish even in the event of an error because the above error will occur.
+	set +e
 	aws s3 cp ${dir} s3://${lower_bucket_name}/ --recursive ${profile_option} >/dev/null
+	set -e
 
 	rm ${dir}/*.txt
 done
