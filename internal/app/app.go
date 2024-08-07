@@ -137,11 +137,12 @@ func (a *App) getAction() func(c *cli.Context) error {
 				o.RetryMaxAttempts = SDKRetryMaxAttempts
 				o.RetryMode = aws.RetryModeStandard
 			}),
+			a.DirectoryBucketsMode,
 		)
 		s3Wrapper := wrapper.NewS3Wrapper(client)
 
 		if a.InteractiveMode {
-			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper, a.DirectoryBucketsMode)
+			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
 			if err != nil {
 				return err
 			}
@@ -155,7 +156,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode, a.DirectoryBucketsMode); err != nil {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
 				return err
 			}
 		}
@@ -164,7 +165,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper, directoryBucketsMode bool) ([]string, bool, error) {
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
 	var checkboxes []string
 	var keyword string
 
@@ -172,7 +173,7 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrappe
 	keyword = io.InputKeywordForFilter(BucketNameLabel)
 
 	label := "Select buckets." + "\n"
-	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword), directoryBucketsMode)
+	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
 		return checkboxes, false, err
 	}

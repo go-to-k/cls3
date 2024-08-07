@@ -3,7 +3,6 @@ package wrapper
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -30,9 +29,8 @@ func (s *S3Wrapper) ClearS3Objects(
 	forceMode bool,
 	oldVersionsOnly bool,
 	quietMode bool,
-	directoryBucketsMode bool,
 ) error {
-	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName), directoryBucketsMode)
+	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
 	if err != nil {
 		return err
 	}
@@ -41,15 +39,12 @@ func (s *S3Wrapper) ClearS3Objects(
 		return nil
 	}
 
-	// This is so that buckets in other regions than the specified one can also be deleted.
-	// If directoryBucketsMode is true, this variable is unnecessary because only one region's
+	// This `bucketRegion` allows buckets outside the specified region to be deleted.
+	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
 	// buckets can be operated on.
-	var bucketRegion string
-	if !directoryBucketsMode {
-		bucketRegion, err = s.client.GetBucketLocation(ctx, aws.String(bucketName))
-		if err != nil {
-			return err
-		}
+	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(bucketName))
+	if err != nil {
+		return err
 	}
 
 	eg := errgroup.Group{}
@@ -73,28 +68,23 @@ func (s *S3Wrapper) ClearS3Objects(
 	for {
 		var objects []types.ObjectIdentifier
 
-		if directoryBucketsMode {
-			// ListObjects API can only retrieve up to 1000 items, so it is good to pass it
-			// directly to DeleteObjects, which can only delete up to 1000 items.
-			objects, keyMarker, err = s.client.ListObjectsByPage(ctx, aws.String(bucketName), bucketRegion, keyMarker)
-			if err != nil {
-				return err
-			}
-		} else {
-			// ListObjectVersions API can only retrieve up to 1000 items, so it is good to pass it
-			// directly to DeleteObjects, which can only delete up to 1000 items.
-			objects, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
-				ctx,
-				aws.String(bucketName),
-				bucketRegion,
-				oldVersionsOnly,
-				keyMarker,
-				versionIdMarker,
-			)
-			if err != nil {
-				return err
-			}
+		// ListObjectVersions/ListObjectsV2 API can only retrieve up to 1000 items, so it is good to pass it
+		// directly to DeleteObjects, which can only delete up to 1000 items.
+		output, err := s.client.ListObjectsOrVersionsByPage(
+			ctx,
+			aws.String(bucketName),
+			bucketRegion,
+			oldVersionsOnly,
+			keyMarker,
+			versionIdMarker,
+		)
+		if err != nil {
+			return err
 		}
+
+		objects = output.ObjectIdentifiers
+		keyMarker = output.NextKeyMarker
+		versionIdMarker = output.NextVersionIdMarker
 
 		if len(objects) == 0 {
 			break
@@ -172,30 +162,6 @@ func (s *S3Wrapper) ClearS3Objects(
 	return nil
 }
 
-func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string, directoryBucketsMode bool) ([]string, error) {
-	filteredBucketNames := []string{}
-
-	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
-	if directoryBucketsMode {
-		listBucketsFunc = s.client.ListDirectoryBuckets
-	} else {
-		listBucketsFunc = s.client.ListBuckets
-	}
-
-	buckets, err := listBucketsFunc(ctx)
-	if err != nil {
-		return filteredBucketNames, err
-	}
-
-	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
-	lowerKeyword := strings.ToLower(*keyword)
-
-	// To be series to avoid throttling of S3 API
-	for _, bucket := range buckets {
-		if strings.Contains(*bucket.Name, lowerKeyword) {
-			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
-		}
-	}
-
-	return filteredBucketNames, nil
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
+	return s.client.ListBucketNamesFilteredByKeyword(ctx, keyword)
 }
