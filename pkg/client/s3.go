@@ -184,10 +184,7 @@ func (s *S3) ListObjectsOrVersionsByPage(
 	if s.directoryBucketsMode {
 		output, err := s.listObjectsByPage(ctx, bucketName, region, keyMarker)
 		if err != nil {
-			err = &ClientError{
-				ResourceName: bucketName,
-				Err:          err,
-			}
+			return nil, err
 		}
 
 		objectIdentifiers = output.ObjectIdentifiers
@@ -195,10 +192,7 @@ func (s *S3) ListObjectsOrVersionsByPage(
 	} else {
 		output, err := s.listObjectVersionsByPage(ctx, bucketName, region, oldVersionsOnly, keyMarker, versionIdMarker)
 		if err != nil {
-			err = &ClientError{
-				ResourceName: bucketName,
-				Err:          err,
-			}
+			return nil, err
 		}
 
 		objectIdentifiers = output.ObjectIdentifiers
