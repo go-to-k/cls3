@@ -1438,7 +1438,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			}
 
 			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, false)
+			s3Client := NewS3(client, true)
 
 			output, err := s3Client.listObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token)
 			if (err != nil) != tt.wantErr {
@@ -2524,7 +2524,7 @@ func TestS3_listDirectoryBuckets(t *testing.T) {
 			}
 
 			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, false)
+			s3Client := NewS3(client, true)
 
 			output, err := s3Client.listDirectoryBuckets(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
