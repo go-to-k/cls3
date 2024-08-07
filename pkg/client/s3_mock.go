@@ -124,14 +124,12 @@ func (mr *MockIS3MockRecorder) ListDirectoryBuckets(ctx interface{}) *gomock.Cal
 }
 
 // ListObjectVersionsByPage mocks base method.
-func (m *MockIS3) ListObjectVersionsByPage(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool, keyMarker, versionIdMarker *string) ([]types.ObjectIdentifier, *string, *string, error) {
+func (m *MockIS3) ListObjectVersionsByPage(ctx context.Context, bucketName *string, region string, oldVersionsOnly bool, keyMarker, versionIdMarker *string) (*ListObjectVersionsByPageOutput, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListObjectVersionsByPage", ctx, bucketName, region, oldVersionsOnly, keyMarker, versionIdMarker)
-	ret0, _ := ret[0].([]types.ObjectIdentifier)
-	ret1, _ := ret[1].(*string)
-	ret2, _ := ret[2].(*string)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret0, _ := ret[0].(*ListObjectVersionsByPageOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ListObjectVersionsByPage indicates an expected call of ListObjectVersionsByPage.
@@ -141,13 +139,12 @@ func (mr *MockIS3MockRecorder) ListObjectVersionsByPage(ctx, bucketName, region,
 }
 
 // ListObjectsByPage mocks base method.
-func (m *MockIS3) ListObjectsByPage(ctx context.Context, bucketName *string, region string, marker *string) ([]types.ObjectIdentifier, *string, error) {
+func (m *MockIS3) ListObjectsByPage(ctx context.Context, bucketName *string, region string, marker *string) (*ListObjectsByPageOutput, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListObjectsByPage", ctx, bucketName, region, marker)
-	ret0, _ := ret[0].([]types.ObjectIdentifier)
-	ret1, _ := ret[1].(*string)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(*ListObjectsByPageOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ListObjectsByPage indicates an expected call of ListObjectsByPage.

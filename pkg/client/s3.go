@@ -14,6 +14,16 @@ import (
 
 var SleepTimeSecForS3 = 10
 
+type ListObjectVersionsByPageOutput struct {
+	ObjectIdentifiers   []types.ObjectIdentifier
+	NextKeyMarker       *string
+	NextVersionIdMarker *string
+}
+type ListObjectsByPageOutput struct {
+	ObjectIdentifiers []types.ObjectIdentifier
+	NextToken         *string
+}
+
 type IS3 interface {
 	DeleteBucket(ctx context.Context, bucketName *string, region string) error
 	DeleteObjects(
@@ -29,22 +39,13 @@ type IS3 interface {
 		oldVersionsOnly bool,
 		keyMarker *string,
 		versionIdMarker *string,
-	) (
-		objectIdentifiers []types.ObjectIdentifier,
-		nextKeyMarker *string,
-		nextVersionIdMarker *string,
-		clientError error,
-	)
+	) (*ListObjectVersionsByPageOutput, error)
 	ListObjectsByPage(
 		ctx context.Context,
 		bucketName *string,
 		region string,
 		marker *string,
-	) (
-		objectIdentifiers []types.ObjectIdentifier,
-		nextMarker *string,
-		clientError error,
-	)
+	) (*ListObjectsByPageOutput, error)
 	CheckBucketExists(ctx context.Context, bucketName *string, directoryBucketsMode bool) (bool, error)
 	ListBuckets(ctx context.Context) ([]types.Bucket, error)
 	ListDirectoryBuckets(ctx context.Context) ([]types.Bucket, error)
@@ -127,7 +128,7 @@ func (s *S3) DeleteObjects(
 
 		output, err := s.client.DeleteObjects(ctx, input, optFn)
 		if err != nil {
-			return []types.Error{}, &ClientError{
+			return errors, &ClientError{
 				ResourceName: bucketName,
 				Err:          err,
 			}
@@ -175,13 +176,8 @@ func (s *S3) ListObjectVersionsByPage(
 	oldVersionsOnly bool,
 	keyMarker *string,
 	versionIdMarker *string,
-) (
-	objectIdentifiers []types.ObjectIdentifier,
-	nextKeyMarker *string,
-	nextVersionIdMarker *string,
-	clientError error,
-) {
-	objectIdentifiers = []types.ObjectIdentifier{}
+) (*ListObjectVersionsByPageOutput, error) {
+	objectIdentifiers := []types.ObjectIdentifier{}
 	input := &s3.ListObjectVersionsInput{
 		Bucket:          bucketName,
 		KeyMarker:       keyMarker,
@@ -197,11 +193,10 @@ func (s *S3) ListObjectVersionsByPage(
 
 	output, err := s.client.ListObjectVersions(ctx, input, optFn)
 	if err != nil {
-		clientError = &ClientError{
+		return nil, &ClientError{
 			ResourceName: bucketName,
 			Err:          err,
 		}
-		return
 	}
 
 	for _, version := range output.Versions {
@@ -223,10 +218,11 @@ func (s *S3) ListObjectVersionsByPage(
 		objectIdentifiers = append(objectIdentifiers, objectIdentifier)
 	}
 
-	nextKeyMarker = output.NextKeyMarker
-	nextVersionIdMarker = output.NextVersionIdMarker
-
-	return
+	return &ListObjectVersionsByPageOutput{
+		ObjectIdentifiers:   objectIdentifiers,
+		NextKeyMarker:       output.NextKeyMarker,
+		NextVersionIdMarker: output.NextVersionIdMarker,
+	}, nil
 }
 
 func (s *S3) ListObjectsByPage(
@@ -234,12 +230,8 @@ func (s *S3) ListObjectsByPage(
 	bucketName *string,
 	region string,
 	token *string,
-) (
-	objectIdentifiers []types.ObjectIdentifier,
-	nextToken *string,
-	clientError error,
-) {
-	objectIdentifiers = []types.ObjectIdentifier{}
+) (*ListObjectsByPageOutput, error) {
+	objectIdentifiers := []types.ObjectIdentifier{}
 	input := &s3.ListObjectsV2Input{
 		Bucket:            bucketName,
 		ContinuationToken: token,
@@ -254,11 +246,10 @@ func (s *S3) ListObjectsByPage(
 
 	output, err := s.client.ListObjectsV2(ctx, input, optFn)
 	if err != nil {
-		clientError = &ClientError{
+		return nil, &ClientError{
 			ResourceName: bucketName,
 			Err:          err,
 		}
-		return
 	}
 
 	for _, object := range output.Contents {
@@ -267,9 +258,11 @@ func (s *S3) ListObjectsByPage(
 		}
 		objectIdentifiers = append(objectIdentifiers, objectIdentifier)
 	}
-	nextToken = output.NextContinuationToken
 
-	return
+	return &ListObjectsByPageOutput{
+		ObjectIdentifiers: objectIdentifiers,
+		NextToken:         output.NextContinuationToken,
+	}, nil
 }
 
 func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string, directoryBucketsMode bool) (bool, error) {

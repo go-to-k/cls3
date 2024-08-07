@@ -712,10 +712,8 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 	}
 
 	type want struct {
-		output              []types.ObjectIdentifier
-		nextKeyMarker       *string
-		nextVersionIdMarker *string
-		err                 error
+		output *ListObjectVersionsByPageOutput
+		err    error
 	}
 
 	cases := []struct {
@@ -763,19 +761,21 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key:       aws.String("KeyForVersions"),
-						VersionId: aws.String("VersionIdForVersions"),
+				output: &ListObjectVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions"),
+							VersionId: aws.String("VersionIdForVersions"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers"),
+							VersionId: aws.String("VersionIdForDeleteMarkers"),
+						},
 					},
-					{
-						Key:       aws.String("KeyForDeleteMarkers"),
-						VersionId: aws.String("VersionIdForDeleteMarkers"),
-					},
+					NextKeyMarker:       aws.String("NextKeyMarker"),
+					NextVersionIdMarker: aws.String("NextVersionIdMarker"),
 				},
-				nextKeyMarker:       aws.String("NextKeyMarker"),
-				nextVersionIdMarker: aws.String("NextVersionIdMarker"),
-				err:                 nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -803,9 +803,7 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:              []types.ObjectIdentifier{},
-				nextKeyMarker:       nil,
-				nextVersionIdMarker: nil,
+				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
 					Err:          fmt.Errorf("operation error S3: ListObjectVersions, ListObjectVersionsError"),
@@ -840,9 +838,7 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:              []types.ObjectIdentifier{},
-				nextKeyMarker:       nil,
-				nextVersionIdMarker: nil,
+				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
 					Err:          fmt.Errorf("operation error S3: ListObjectVersions, exceeded maximum number of attempts, 10, api error SlowDown"),
@@ -877,10 +873,12 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:              []types.ObjectIdentifier{},
-				nextKeyMarker:       nil,
-				nextVersionIdMarker: nil,
-				err:                 nil,
+				output: &ListObjectVersionsByPageOutput{
+					ObjectIdentifiers:   []types.ObjectIdentifier{},
+					NextKeyMarker:       nil,
+					NextVersionIdMarker: nil,
+				},
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -918,15 +916,17 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key:       aws.String("KeyForVersions"),
-						VersionId: aws.String("VersionIdForVersions"),
+				output: &ListObjectVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions"),
+							VersionId: aws.String("VersionIdForVersions"),
+						},
 					},
+					NextKeyMarker:       aws.String("NextKeyMarker"),
+					NextVersionIdMarker: aws.String("NextVersionIdMarker"),
 				},
-				nextKeyMarker:       aws.String("NextKeyMarker"),
-				nextVersionIdMarker: aws.String("NextVersionIdMarker"),
-				err:                 nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -964,15 +964,17 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key:       aws.String("KeyForDeleteMarkers"),
-						VersionId: aws.String("VersionIdForDeleteMarkers"),
+				output: &ListObjectVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForDeleteMarkers"),
+							VersionId: aws.String("VersionIdForDeleteMarkers"),
+						},
 					},
+					NextKeyMarker:       aws.String("NextKeyMarker"),
+					NextVersionIdMarker: aws.String("NextVersionIdMarker"),
 				},
-				nextKeyMarker:       aws.String("NextKeyMarker"),
-				nextVersionIdMarker: aws.String("NextVersionIdMarker"),
-				err:                 nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -1015,19 +1017,21 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key:       aws.String("KeyForVersions"),
-						VersionId: aws.String("VersionIdForVersions"),
+				output: &ListObjectVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions"),
+							VersionId: aws.String("VersionIdForVersions"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers"),
+							VersionId: aws.String("VersionIdForDeleteMarkers"),
+						},
 					},
-					{
-						Key:       aws.String("KeyForDeleteMarkers"),
-						VersionId: aws.String("VersionIdForDeleteMarkers"),
-					},
+					NextKeyMarker:       nil,
+					NextVersionIdMarker: nil,
 				},
-				nextKeyMarker:       nil,
-				nextVersionIdMarker: nil,
-				err:                 nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -1055,9 +1059,7 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:              []types.ObjectIdentifier{},
-				nextKeyMarker:       nil,
-				nextVersionIdMarker: nil,
+				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
 					Err:          fmt.Errorf("operation error S3: ListObjectVersions, ListObjectVersionsError"),
@@ -1122,27 +1124,29 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key:       aws.String("KeyForVersions1"),
-						VersionId: aws.String("VersionIdForVersions1"),
+				output: &ListObjectVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions1"),
+							VersionId: aws.String("VersionIdForVersions1"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers1"),
+							VersionId: aws.String("VersionIdForDeleteMarkers1"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers2"),
+							VersionId: aws.String("VersionIdForDeleteMarkers2"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers3"),
+							VersionId: aws.String("VersionIdForDeleteMarkers3"),
+						},
 					},
-					{
-						Key:       aws.String("KeyForDeleteMarkers1"),
-						VersionId: aws.String("VersionIdForDeleteMarkers1"),
-					},
-					{
-						Key:       aws.String("KeyForDeleteMarkers2"),
-						VersionId: aws.String("VersionIdForDeleteMarkers2"),
-					},
-					{
-						Key:       aws.String("KeyForDeleteMarkers3"),
-						VersionId: aws.String("VersionIdForDeleteMarkers3"),
-					},
+					NextKeyMarker:       nil,
+					NextVersionIdMarker: nil,
 				},
-				nextKeyMarker:       nil,
-				nextVersionIdMarker: nil,
-				err:                 nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -1162,7 +1166,7 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, nextKeyMarker, nextVersionIdMarker, err := s3Client.ListObjectVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
+			output, err := s3Client.ListObjectVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -1174,11 +1178,11 @@ func TestS3_ListObjectVersionsByPage(t *testing.T) {
 			if !reflect.DeepEqual(output, tt.want.output) {
 				t.Errorf("output = %#v, want %#v", output, tt.want.output)
 			}
-			if !reflect.DeepEqual(nextKeyMarker, tt.want.nextKeyMarker) {
-				t.Errorf("nextKeyMarker = %#v, want %#v", nextKeyMarker, tt.want.nextKeyMarker)
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextKeyMarker, tt.want.output.NextKeyMarker) {
+				t.Errorf("nextKeyMarker = %#v, want %#v", output.NextKeyMarker, tt.want.output.NextKeyMarker)
 			}
-			if !reflect.DeepEqual(nextVersionIdMarker, tt.want.nextVersionIdMarker) {
-				t.Errorf("nextVersionIdMarker = %#v, want %#v", nextVersionIdMarker, tt.want.nextVersionIdMarker)
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextVersionIdMarker, tt.want.output.NextVersionIdMarker) {
+				t.Errorf("nextVersionIdMarker = %#v, want %#v", output.NextVersionIdMarker, tt.want.output.NextVersionIdMarker)
 			}
 		})
 	}
@@ -1194,9 +1198,8 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 	}
 
 	type want struct {
-		output    []types.ObjectIdentifier
-		nextToken *string
-		err       error
+		output *ListObjectsByPageOutput
+		err    error
 	}
 
 	cases := []struct {
@@ -1237,16 +1240,18 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key: aws.String("Key1"),
+				output: &ListObjectsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key: aws.String("Key1"),
+						},
+						{
+							Key: aws.String("Key2"),
+						},
 					},
-					{
-						Key: aws.String("Key2"),
-					},
+					NextToken: aws.String("NextContinuationToken"),
 				},
-				nextToken: aws.String("NextContinuationToken"),
-				err:       nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -1272,8 +1277,7 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:    []types.ObjectIdentifier{},
-				nextToken: nil,
+				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
 					Err:          fmt.Errorf("operation error S3: ListObjectsV2, ListObjectsV2Error"),
@@ -1306,8 +1310,7 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:    []types.ObjectIdentifier{},
-				nextToken: nil,
+				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
 					Err:          fmt.Errorf("operation error S3: ListObjectsV2, exceeded maximum number of attempts, 10, api error SlowDown"),
@@ -1339,9 +1342,8 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:    []types.ObjectIdentifier{},
-				nextToken: nil,
-				err:       nil,
+				output: nil,
+				err:    nil,
 			},
 			wantErr: false,
 		},
@@ -1377,16 +1379,18 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output: []types.ObjectIdentifier{
-					{
-						Key: aws.String("Key1"),
+				output: &ListObjectsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key: aws.String("Key1"),
+						},
+						{
+							Key: aws.String("Key2"),
+						},
 					},
-					{
-						Key: aws.String("Key2"),
-					},
+					NextToken: nil,
 				},
-				nextToken: nil,
-				err:       nil,
+				err: nil,
 			},
 			wantErr: false,
 		},
@@ -1412,8 +1416,7 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				},
 			},
 			want: want{
-				output:    []types.ObjectIdentifier{},
-				nextToken: nil,
+				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
 					Err:          fmt.Errorf("operation error S3: ListObjectsV2, ListObjectsV2Error"),
@@ -1437,7 +1440,7 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client)
 
-			output, nextToken, err := s3Client.ListObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token)
+			output, err := s3Client.ListObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -1446,11 +1449,11 @@ func TestS3_ListObjectsByPage(t *testing.T) {
 				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
 				return
 			}
-			if !reflect.DeepEqual(output, tt.want.output) {
+			if tt.want.output != nil && !reflect.DeepEqual(output, tt.want.output) {
 				t.Errorf("output = %#v, want %#v", output, tt.want.output)
 			}
-			if !reflect.DeepEqual(nextToken, tt.want.nextToken) {
-				t.Errorf("nextToken = %#v, want %#v", nextToken, tt.want.nextToken)
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextToken, tt.want.output.NextToken) {
+				t.Errorf("nextToken = %#v, want %#v", output.NextToken, tt.want.output.NextToken)
 			}
 		})
 	}

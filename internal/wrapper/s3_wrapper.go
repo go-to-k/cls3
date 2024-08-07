@@ -73,17 +73,21 @@ func (s *S3Wrapper) ClearS3Objects(
 	for {
 		var objects []types.ObjectIdentifier
 
+		// TODO: refactor, to one method
 		if directoryBucketsMode {
 			// ListObjects API can only retrieve up to 1000 items, so it is good to pass it
 			// directly to DeleteObjects, which can only delete up to 1000 items.
-			objects, keyMarker, err = s.client.ListObjectsByPage(ctx, aws.String(bucketName), bucketRegion, keyMarker)
+			output, err := s.client.ListObjectsByPage(ctx, aws.String(bucketName), bucketRegion, keyMarker)
 			if err != nil {
 				return err
 			}
+
+			objects = output.ObjectIdentifiers
+			keyMarker = output.NextToken
 		} else {
 			// ListObjectVersions API can only retrieve up to 1000 items, so it is good to pass it
 			// directly to DeleteObjects, which can only delete up to 1000 items.
-			objects, keyMarker, versionIdMarker, err = s.client.ListObjectVersionsByPage(
+			output, err := s.client.ListObjectVersionsByPage(
 				ctx,
 				aws.String(bucketName),
 				bucketRegion,
@@ -94,6 +98,10 @@ func (s *S3Wrapper) ClearS3Objects(
 			if err != nil {
 				return err
 			}
+
+			objects = output.ObjectIdentifiers
+			keyMarker = output.NextKeyMarker
+			versionIdMarker = output.NextVersionIdMarker
 		}
 
 		if len(objects) == 0 {
