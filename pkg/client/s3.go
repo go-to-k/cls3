@@ -60,8 +60,12 @@ type S3 struct {
 
 func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 	retryable := func(err error) bool {
-		isErrorRetryable := strings.Contains(err.Error(), "api error SlowDown")
-		return isErrorRetryable
+		if directoryBucketsMode {
+			// See: https://github.com/go-to-k/cls3/issues/194
+			return strings.Contains(err.Error(), "api error SlowDown") || strings.Contains(err.Error(), "https response error StatusCode: 0")
+		}
+
+		return strings.Contains(err.Error(), "api error SlowDown")
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)
 
