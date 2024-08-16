@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.20.5](https://github.com/go-to-k/cls3/compare/v0.20.4...v0.20.5) - 2024-08-16
+
 ## [v0.20.3](https://github.com/go-to-k/cls3/compare/v0.20.2...v0.20.3) - 2024-08-16
 - chore: use math/rand/v2 by @go-to-k in https://github.com/go-to-k/cls3/pull/197
 - chore: use new gomock by @go-to-k in https://github.com/go-to-k/cls3/pull/198
