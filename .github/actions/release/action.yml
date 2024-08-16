@@ -1,0 +1,21 @@
+name: release
+inputs:
+  github-token:
+    required: true
+  homebrew-tap-github-token:
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v5
+      with:
+        version: latest
+        args: release --clean
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        HOMEBREW_TAP_GITHUB_TOKEN: ${{ inputs.homebrew-tap-github-token }}

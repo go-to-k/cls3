@@ -1,0 +1,23 @@
+name: tagpr
+on:
+  push:
+    branches:
+      - "main"
+jobs:
+  tagpr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: tagpr
+        id: tagpr
+        uses: Songmu/tagpr@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          homebrew-tap-github-token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        if: "steps.tagpr.outputs.tag != ''"
