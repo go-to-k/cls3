@@ -151,6 +151,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 			}
 
 			for _, bucket := range buckets {
+				//nolint:errcheck
 				a.BucketNames.Set(bucket)
 			}
 		}

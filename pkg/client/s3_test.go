@@ -21,6 +21,7 @@ func getTokenForListDirectoryBucketsInitialize(
 ) (
 	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
 ) {
+	//nolint:gocritic
 	switch v := in.Parameters.(type) {
 	case *s3.ListDirectoryBucketsInput:
 		ctx = middleware.WithStackValue(ctx, tokenForListDirectoryBuckets{}, v.ContinuationToken)
@@ -35,6 +36,7 @@ func setTargetObjectsForDeleteObjectsInitialize(
 ) (
 	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
 ) {
+	//nolint:gocritic
 	switch v := in.Parameters.(type) {
 	case *s3.DeleteObjectsInput:
 		ctx = middleware.WithStackValue(ctx, targetObjectsForDeleteObjects{}, v.Delete.Objects)
