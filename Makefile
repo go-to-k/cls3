@@ -30,6 +30,10 @@ test_view:
 	rm cover.out.tmp
 	go tool cover -func=cover.out
 	go tool cover -html=cover.out -o cover.html
+lint:
+	golangci-lint run
+lint_diff:
+	golangci-lint run $$(echo $(DIFF_FILE))
 mockgen:
 	go generate ./...
 shadow:
