@@ -36,6 +36,8 @@ lint_diff:
 	golangci-lint run $$(echo $(DIFF_FILE))
 mockgen:
 	go generate ./...
+deadcode:
+	deadcode ./...
 shadow:
 	find . -type f -name '*.go' | sed -e "s/\/[^\.\/]*\.go//g" | uniq | xargs shadow
 cognit:
