@@ -10,11 +10,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.27
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.58.2
 	github.com/aws/smithy-go v1.20.3
-	github.com/golang/mock v1.6.0
 	github.com/gosuri/uilive v0.0.4
 	github.com/rs/zerolog v1.30.0
 	github.com/urfave/cli/v2 v2.27.4
 	go.uber.org/goleak v1.3.0
+	go.uber.org/mock v0.4.0
 	golang.org/x/sync v0.8.0
 )
 

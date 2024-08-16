@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 /*
