@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"math/rand"
+	"math/rand/v2"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -33,10 +33,9 @@ func (r *Retryer) MaxAttempts() int {
 }
 
 func (r *Retryer) RetryDelay(int, error) (time.Duration, error) {
-	rand.Seed(time.Now().UnixNano())
 	waitTime := 1
 	if r.delayTimeSec > 1 {
-		waitTime += rand.Intn(r.delayTimeSec)
+		waitTime += rand.IntN(r.delayTimeSec)
 	}
 	return time.Duration(waitTime) * time.Second, nil
 }
