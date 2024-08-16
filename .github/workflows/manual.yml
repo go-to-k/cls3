@@ -1,11 +1,11 @@
 # for manual release (No triggering when tagpr is used.)
-name: release
+name: manual
 on:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 jobs:
-  goreleaser:
+  manual:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
