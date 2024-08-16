@@ -32,6 +32,7 @@ jobs:
             ci
           scopes: |
             deps
+            main
             app
             io
             version
