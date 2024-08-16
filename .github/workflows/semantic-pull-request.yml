@@ -25,11 +25,11 @@ jobs:
             fix
             chore
             docs
-            style
-            refactor
-            perf
             test
             ci
+            refactor
+            style
+            perf
           scopes: |
             deps
             main
