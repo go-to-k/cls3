@@ -34,10 +34,9 @@ jobs:
             deps
             main
             app
-            action
             io
-            types
             version
+            wrapper
             client
           requireScope: false
 
