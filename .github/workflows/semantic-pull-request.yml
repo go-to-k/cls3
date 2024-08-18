@@ -39,6 +39,8 @@ jobs:
             wrapper
             client
           requireScope: false
+          ignoreLabels: |
+            tagpr
 
   label:
     name: Manage labels
@@ -76,9 +78,14 @@ jobs:
 
           LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name')
 
+          TAGPR_LABEL=$(echo "$LABELS" | grep -qx "tagpr" && echo "true" || echo "false")
           HAS_MINOR_LABEL=$(echo "$LABELS" | grep -qx "$MINOR_LABEL" && echo "true" || echo "false")
           HAS_MAJOR_LABEL=$(echo "$LABELS" | grep -qx "$MAJOR_LABEL" && echo "true" || echo "false")
           HAS_PATCH_LABEL=$(echo "$LABELS" | grep -qx "$PATCH_LABEL" && echo "true" || echo "false")
+
+          if [ "$TAGPR_LABEL" = "true" ]; then
+            exit 0
+          fi
 
           if [ "$HAS_MAJOR_LABEL" = "true" ]; then
             if [ "$HAS_PATCH_LABEL" = "true" ];then
