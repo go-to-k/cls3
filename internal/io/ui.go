@@ -99,10 +99,12 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u *UI) View() string {
+	bold := color.New(color.Bold)
+
 	s := color.CyanString("? ")
 
 	for _, header := range u.Headers {
-		s += color.New(color.Bold).Sprintln(header)
+		s += bold.Sprintln(header)
 	}
 
 	if u.isEntered {
@@ -125,10 +127,10 @@ func (u *UI) View() string {
 
 		cursor := " " // no cursor
 		if u.Cursor == i {
-			cursor = color.CyanString(">") // cursor!
+			cursor = color.CyanString(bold.Sprint(">")) // cursor!
 		}
 
-		checked := "[ ]" // not selected
+		checked := bold.Sprint("[ ]") // not selected
 		if _, ok := u.Selected[i]; ok {
 			checked = color.GreenString("[x]") // selected!
 		}
