@@ -58,15 +58,15 @@ jobs:
         run: |
           EXISTING_LABELS=$(gh label list --json name --jq '.[].name')
 
-          if ! echo "$EXISTING_LABELS" | grep -q "$MINOR_LABEL"; then
+          if ! echo "$EXISTING_LABELS" | grep -qx "$MINOR_LABEL"; then
             gh label create "$MINOR_LABEL" --color "$MINOR_LABEL_COLOR"
           fi
 
-          if ! echo "$EXISTING_LABELS" | grep -q "$MAJOR_LABEL"; then
+          if ! echo "$EXISTING_LABELS" | grep -qx "$MAJOR_LABEL"; then
             gh label create "$MAJOR_LABEL" --color "$MAJOR_LABEL_COLOR"
           fi
 
-          if ! echo "$EXISTING_LABELS" | grep -q "$PATCH_LABEL"; then
+          if ! echo "$EXISTING_LABELS" | grep -qx "$PATCH_LABEL"; then
             gh label create "$PATCH_LABEL" --color "$PATCH_LABEL_COLOR"
           fi
       - name: Manage labels based on PR title
@@ -76,9 +76,9 @@ jobs:
 
           LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name')
 
-          HAS_MINOR_LABEL=$(echo "$LABELS" | grep -q "$MINOR_LABEL" && echo "true" || echo "false")
-          HAS_MAJOR_LABEL=$(echo "$LABELS" | grep -q "$MAJOR_LABEL" && echo "true" || echo "false")
-          HAS_PATCH_LABEL=$(echo "$LABELS" | grep -q "$PATCH_LABEL" && echo "true" || echo "false")
+          HAS_MINOR_LABEL=$(echo "$LABELS" | grep -qx "$MINOR_LABEL" && echo "true" || echo "false")
+          HAS_MAJOR_LABEL=$(echo "$LABELS" | grep -qx "$MAJOR_LABEL" && echo "true" || echo "false")
+          HAS_PATCH_LABEL=$(echo "$LABELS" | grep -qx "$PATCH_LABEL" && echo "true" || echo "false")
 
           if [ "$HAS_MAJOR_LABEL" = "true" ]; then
             if [ "$HAS_PATCH_LABEL" = "true" ];then
