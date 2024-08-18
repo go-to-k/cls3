@@ -80,28 +80,28 @@ jobs:
           HAS_MAJOR_LABEL=$(echo "$LABELS" | grep -q "$MAJOR_LABEL" && echo "true" || echo "false")
           HAS_PATCH_LABEL=$(echo "$LABELS" | grep -q "$PATCH_LABEL" && echo "true" || echo "false")
 
-          if [ "$HAS_MAJOR_LABEL" == "true" ]; then
-            if [ "$HAS_PATCH_LABEL" == "true" ];then
+          if [ "$HAS_MAJOR_LABEL" = "true" ]; then
+            if [ "$HAS_PATCH_LABEL" = "true" ];then
               gh pr edit $PR_NUMBER --remove-label "$PATCH_LABEL"
             fi
-            if [ "$HAS_MINOR_LABEL" == "true" ];then
+            if [ "$HAS_MINOR_LABEL" = "true" ];then
               gh pr edit $PR_NUMBER --remove-label "$MINOR_LABEL"
             fi
             exit 0
           fi
 
           if [[ $TITLE =~ ^feat.* ]]; then
-            if [ "$HAS_MINOR_LABEL" == "false" ];then
+            if [ "$HAS_MINOR_LABEL" = "false" ];then
               gh pr edit $PR_NUMBER --add-label "$MINOR_LABEL"
             fi
-            if [ "$HAS_PATCH_LABEL" == "true" ];then
+            if [ "$HAS_PATCH_LABEL" = "true" ];then
               gh pr edit $PR_NUMBER --remove-label "$PATCH_LABEL"
             fi
           else
-            if [ "$HAS_PATCH_LABEL" == "false" ];then
+            if [ "$HAS_PATCH_LABEL" = "false" ];then
               gh pr edit $PR_NUMBER --add-label "$PATCH_LABEL"
             fi
-            if [ "$HAS_MINOR_LABEL" == "true" ];then
+            if [ "$HAS_MINOR_LABEL" = "true" ];then
               gh pr edit $PR_NUMBER --remove-label "$MINOR_LABEL"
             fi
           fi
