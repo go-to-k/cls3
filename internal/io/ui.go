@@ -10,7 +10,7 @@ import (
 
 type UI struct {
 	Choices   []string
-	Header    string
+	Headers   []string
 	Cursor    int
 	Selected  map[int]struct{}
 	Keyword   string
@@ -19,10 +19,10 @@ type UI struct {
 
 var _ tea.Model = (*UI)(nil)
 
-func NewUI(choices []string, header string) *UI {
+func NewUI(choices []string, headers []string) *UI {
 	return &UI{
 		Choices:  choices,
-		Header:   header,
+		Headers:  headers,
 		Selected: make(map[int]struct{}),
 	}
 }
@@ -99,7 +99,11 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (u *UI) View() string {
-	s := color.CyanString("? ") + color.New(color.Bold).Sprint(u.Header)
+	s := color.CyanString("? ")
+
+	for _, header := range u.Headers {
+		s += color.New(color.Bold).Sprintln(header)
+	}
 
 	if u.isEntered {
 		return s
@@ -111,8 +115,12 @@ func (u *UI) View() string {
 	s += "\n"
 
 	for i, choice := range u.Choices {
-		if u.Keyword != "" && !strings.Contains(choice, u.Keyword) {
-			continue
+		if u.Keyword != "" {
+			lk := strings.ToLower(u.Keyword)
+			lc := strings.ToLower(choice)
+			if !strings.Contains(lc, lk) {
+				continue
+			}
 		}
 
 		cursor := " " // no cursor
