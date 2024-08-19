@@ -12,7 +12,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.27.0
 	github.com/fatih/color v1.17.0
 	github.com/gosuri/uilive v0.0.4
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.33.0
 	github.com/urfave/cli/v2 v2.27.4
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
