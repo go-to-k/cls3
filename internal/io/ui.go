@@ -8,6 +8,8 @@ import (
 	"github.com/fatih/color"
 )
 
+const SelectionPageSize = 20
+
 type UI struct {
 	Choices    []string
 	Headers    []string
@@ -239,6 +241,7 @@ func (u *UI) View() string {
 	s += color.CyanString(" [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]")
 	s += "\n"
 
+	var contents []string
 	for i, choice := range u.Choices {
 		if _, ok := u.Filtered.Choices[i]; !ok {
 			continue
@@ -254,8 +257,21 @@ func (u *UI) View() string {
 			checked = color.GreenString("[x]") // selected!
 		}
 
-		s += fmt.Sprintf("%s %s %s\n", cursor, checked, choice)
+		contents = append(contents, fmt.Sprintf("%s %s %s\n", cursor, checked, choice))
 	}
 
+	if len(contents) > SelectionPageSize {
+		if u.Cursor < SelectionPageSize/2 {
+			contents = contents[:SelectionPageSize]
+		} else if u.Cursor > len(u.Choices)-SelectionPageSize/2 {
+			contents = contents[len(u.Choices)-SelectionPageSize:]
+		} else {
+			contents = contents[u.Cursor-SelectionPageSize/2 : u.Cursor+SelectionPageSize/2]
+		}
+
+		contents = contents[:SelectionPageSize]
+	}
+
+	s += strings.Join(contents, "")
 	return s
 }
