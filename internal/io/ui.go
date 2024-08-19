@@ -261,11 +261,12 @@ func (u *UI) View() string {
 	}
 
 	if len(contents) > SelectionPageSize {
-		if u.Cursor < SelectionPageSize/2 {
+		switch {
+		case u.Cursor < SelectionPageSize/2:
 			contents = contents[:SelectionPageSize]
-		} else if u.Cursor > len(u.Choices)-SelectionPageSize/2 {
+		case u.Cursor > len(u.Choices)-SelectionPageSize/2:
 			contents = contents[len(u.Choices)-SelectionPageSize:]
-		} else {
+		default:
 			contents = contents[u.Cursor-SelectionPageSize/2 : u.Cursor+SelectionPageSize/2]
 		}
 
