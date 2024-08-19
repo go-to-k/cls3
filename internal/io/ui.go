@@ -76,23 +76,24 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					u.Cursor--
 				}
 
-				if _, ok := u.Filtered.Choices[u.Cursor]; ok {
-					if u.Filtered.Cursor == 0 {
-						u.Filtered.Cursor = len(u.Filtered.Choices) - 1
-					} else if u.Filtered.Cursor > 0 {
-						u.Filtered.Cursor--
-					}
-
-					f := u.Filtered
-					for {
-						if f.Prev == nil {
-							break
-						}
-						f.Prev.Cursor = u.Filtered.Cursor
-						f = f.Prev
-					}
-					break
+				if _, ok := u.Filtered.Choices[u.Cursor]; !ok {
+					continue
 				}
+				if u.Filtered.Cursor == 0 {
+					u.Filtered.Cursor = len(u.Filtered.Choices) - 1
+				} else if u.Filtered.Cursor > 0 {
+					u.Filtered.Cursor--
+				}
+
+				f := u.Filtered
+				for {
+					if f.Prev == nil {
+						break
+					}
+					f.Prev.Cursor = u.Filtered.Cursor
+					f = f.Prev
+				}
+				break
 			}
 
 		case "down":
@@ -106,23 +107,24 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					u.Cursor = 0
 				}
 
-				if _, ok := u.Filtered.Choices[u.Cursor]; ok {
-					if u.Filtered.Cursor < len(u.Filtered.Choices)-1 {
-						u.Filtered.Cursor++
-					} else if u.Filtered.Cursor == len(u.Filtered.Choices)-1 {
-						u.Filtered.Cursor = 0
-					}
-
-					f := u.Filtered
-					for {
-						if f.Prev == nil {
-							break
-						}
-						f.Prev.Cursor = u.Filtered.Cursor
-						f = f.Prev
-					}
-					break
+				if _, ok := u.Filtered.Choices[u.Cursor]; !ok {
+					continue
 				}
+				if u.Filtered.Cursor < len(u.Filtered.Choices)-1 {
+					u.Filtered.Cursor++
+				} else if u.Filtered.Cursor == len(u.Filtered.Choices)-1 {
+					u.Filtered.Cursor = 0
+				}
+
+				f := u.Filtered
+				for {
+					if f.Prev == nil {
+						break
+					}
+					f.Prev.Cursor = u.Filtered.Cursor
+					f = f.Prev
+				}
+				break
 			}
 
 		// select or deselect an item
@@ -160,20 +162,22 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// clear one character from the keyword
 		case "backspace":
-			if len(u.Keyword) > 0 {
-				u.Keyword = u.Keyword[:len(u.Keyword)-1]
-				u.Filtered = u.Filtered.Prev
-				cnt := 0
-				for i := range u.Choices {
-					if _, ok := u.Filtered.Choices[i]; !ok {
-						continue
-					}
-					if cnt == u.Filtered.Cursor {
-						u.Cursor = i
-						break
-					}
-					cnt++
+			if len(u.Keyword) == 0 {
+				return u, nil
+			}
+
+			u.Keyword = u.Keyword[:len(u.Keyword)-1]
+			u.Filtered = u.Filtered.Prev
+			cnt := 0
+			for i := range u.Choices {
+				if _, ok := u.Filtered.Choices[i]; !ok {
+					continue
 				}
+				if cnt == u.Filtered.Cursor {
+					u.Cursor = i
+					break
+				}
+				cnt++
 			}
 
 		// add a character to the keyword
@@ -206,15 +210,16 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
-			if len(u.Filtered.Choices) != 0 {
-				f := u.Filtered
-				for {
-					if f.Prev == nil {
-						break
-					}
-					f.Prev.Cursor = u.Filtered.Cursor
-					f = f.Prev
+			if len(u.Filtered.Choices) == 0 {
+				return u, nil
+			}
+			f := u.Filtered
+			for {
+				if f.Prev == nil {
+					break
 				}
+				f.Prev.Cursor = u.Filtered.Cursor
+				f = f.Prev
 			}
 
 		}
