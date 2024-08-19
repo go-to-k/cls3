@@ -13,17 +13,30 @@ type UI struct {
 	Headers   []string
 	Cursor    int
 	Selected  map[int]struct{}
+	Filtered  *Filtered
 	Keyword   string
 	isEntered bool
+}
+
+type Filtered struct {
+	Choices map[int]struct{}
+	Prev    *Filtered
+	Cursor  int
 }
 
 var _ tea.Model = (*UI)(nil)
 
 func NewUI(choices []string, headers []string) *UI {
+	filtered := make(map[int]struct{})
+	for i := range choices {
+		filtered[i] = struct{}{}
+	}
+
 	return &UI{
 		Choices:  choices,
 		Headers:  headers,
 		Selected: make(map[int]struct{}),
+		Filtered: &Filtered{Choices: filtered},
 	}
 }
 
@@ -50,19 +63,63 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return u, tea.Quit
 
 		case "up":
-			if u.Cursor >= 0 {
-				u.Cursor--
+			if len(u.Filtered.Choices) < 2 {
+				return u, nil
 			}
-			if u.Cursor == -1 {
-				u.Cursor = len(u.Choices) - 1
+			for range u.Choices {
+				if u.Cursor == 0 {
+					u.Cursor = len(u.Choices) - 1
+				} else if u.Cursor > 0 {
+					u.Cursor--
+				}
+
+				if _, ok := u.Filtered.Choices[u.Cursor]; ok {
+					if u.Filtered.Cursor == 0 {
+						u.Filtered.Cursor = len(u.Filtered.Choices) - 1
+					} else if u.Filtered.Cursor > 0 {
+						u.Filtered.Cursor--
+					}
+
+					f := u.Filtered
+					for {
+						if f.Prev == nil {
+							break
+						}
+						f.Prev.Cursor = u.Filtered.Cursor
+						f = f.Prev
+					}
+					break
+				}
 			}
 
 		case "down":
-			if u.Cursor <= len(u.Choices)-1 {
-				u.Cursor++
+			if len(u.Filtered.Choices) < 2 {
+				return u, nil
 			}
-			if u.Cursor == len(u.Choices) {
-				u.Cursor = 0
+			for range u.Choices {
+				if u.Cursor < len(u.Choices)-1 {
+					u.Cursor++
+				} else if u.Cursor == len(u.Choices)-1 {
+					u.Cursor = 0
+				}
+
+				if _, ok := u.Filtered.Choices[u.Cursor]; ok {
+					if u.Filtered.Cursor < len(u.Filtered.Choices)-1 {
+						u.Filtered.Cursor++
+					} else if u.Filtered.Cursor == len(u.Filtered.Choices)-1 {
+						u.Filtered.Cursor = 0
+					}
+
+					f := u.Filtered
+					for {
+						if f.Prev == nil {
+							break
+						}
+						f.Prev.Cursor = u.Filtered.Cursor
+						f = f.Prev
+					}
+					break
+				}
 			}
 
 		// select or deselect an item
@@ -84,13 +141,64 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "left":
 			u.Selected = make(map[int]struct{})
 
+		// clear one character from the keyword
 		case "backspace":
 			if len(u.Keyword) > 0 {
 				u.Keyword = u.Keyword[:len(u.Keyword)-1]
+				u.Filtered = u.Filtered.Prev
+				cnt := 0
+				for i := range u.Choices {
+					if _, ok := u.Filtered.Choices[i]; !ok {
+						continue
+					}
+					if cnt == u.Filtered.Cursor {
+						u.Cursor = i
+						break
+					}
+					cnt++
+				}
 			}
 
+		// add a character to the keyword
 		default:
 			u.Keyword += msg.String()
+			u.Filtered = &Filtered{
+				Choices: make(map[int]struct{}),
+				Prev:    u.Filtered,
+			}
+
+			tmpCursor := u.Cursor
+			for i, choice := range u.Choices {
+				lk := strings.ToLower(u.Keyword)
+				lc := strings.ToLower(choice)
+				contains := strings.Contains(lc, lk)
+
+				fLen := len(u.Filtered.Choices)
+				if contains && fLen != 0 && fLen <= u.Filtered.Prev.Cursor {
+					u.Filtered.Cursor++
+					u.Cursor = i
+				}
+
+				if contains {
+					u.Filtered.Choices[i] = struct{}{}
+					tmpCursor = i
+				} else if u.Cursor == i && u.Cursor < len(u.Choices)-1 {
+					u.Cursor++
+				} else if u.Cursor == i {
+					u.Cursor = tmpCursor
+				}
+			}
+
+			if len(u.Filtered.Choices) != 0 {
+				f := u.Filtered
+				for {
+					if f.Prev == nil {
+						break
+					}
+					f.Prev.Cursor = u.Filtered.Cursor
+					f = f.Prev
+				}
+			}
 
 		}
 	}
@@ -117,12 +225,8 @@ func (u *UI) View() string {
 	s += "\n"
 
 	for i, choice := range u.Choices {
-		if u.Keyword != "" {
-			lk := strings.ToLower(u.Keyword)
-			lc := strings.ToLower(choice)
-			if !strings.Contains(lc, lk) {
-				continue
-			}
+		if _, ok := u.Filtered.Choices[i]; !ok {
+			continue
 		}
 
 		cursor := " " // no cursor
