@@ -30,6 +30,8 @@ jobs:
             refactor
             style
             perf
+            revert
+            Revert
           scopes: |
             deps
             main
