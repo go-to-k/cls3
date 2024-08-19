@@ -156,8 +156,6 @@ func (a *App) getAction() func(c *cli.Context) error {
 			}
 		}
 
-		// FIXME: revert
-		os.Exit(0)
 		for _, bucket := range a.BucketNames.Value() {
 			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
 				return err
