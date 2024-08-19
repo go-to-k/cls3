@@ -131,15 +131,29 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				u.Selected[u.Cursor] = struct{}{}
 			}
 
-		// select all items
+		// select all items in filtered list
 		case "right":
 			for i := range u.Choices {
-				u.Selected[i] = struct{}{}
+				if _, ok := u.Filtered.Choices[i]; !ok {
+					continue
+				}
+				_, ok := u.Selected[i]
+				if !ok {
+					u.Selected[i] = struct{}{}
+				}
 			}
 
-		// clear all selected items
+		// clear all selected items in filtered list
 		case "left":
-			u.Selected = make(map[int]struct{})
+			for i := range u.Choices {
+				if _, ok := u.Filtered.Choices[i]; !ok {
+					continue
+				}
+				_, ok := u.Selected[i]
+				if ok {
+					delete(u.Selected, i)
+				}
+			}
 
 		// clear one character from the keyword
 		case "backspace":
