@@ -9,13 +9,14 @@ import (
 )
 
 type UI struct {
-	Choices   []string
-	Headers   []string
-	Cursor    int
-	Selected  map[int]struct{}
-	Filtered  *Filtered
-	Keyword   string
-	isEntered bool
+	Choices    []string
+	Headers    []string
+	Cursor     int
+	Selected   map[int]struct{}
+	Filtered   *Filtered
+	Keyword    string
+	IsEntered  bool
+	IsCanceled bool
 }
 
 type Filtered struct {
@@ -54,12 +55,12 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Quit the selection
 		case "enter":
-			u.isEntered = true
+			u.IsEntered = true
 			return u, tea.Quit
 
-		// Quit the selection and clear ALL selected items
+		// Quit the selection
 		case "ctrl+c":
-			u.Selected = make(map[int]struct{})
+			u.IsCanceled = true
 			return u, tea.Quit
 
 		case "up":
@@ -229,7 +230,7 @@ func (u *UI) View() string {
 		s += bold.Sprintln(header)
 	}
 
-	if u.isEntered {
+	if u.IsEntered && len(u.Selected) != 0 {
 		return s
 	}
 

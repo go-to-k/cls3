@@ -25,7 +25,13 @@ func GetCheckboxes(headers []string, opts []string) ([]string, bool, error) {
 			}
 		}
 
-		if len(checkboxes) == 0 {
+		switch {
+		case ui.IsCanceled:
+			Logger.Warn().Msg("Canceled!")
+		case len(checkboxes) == 0:
+			Logger.Warn().Msg("Not selected!")
+		}
+		if len(checkboxes) == 0 || ui.IsCanceled {
 			ok := GetYesNo("Do you want to finish?")
 			if ok {
 				Logger.Info().Msg("Finished...")
