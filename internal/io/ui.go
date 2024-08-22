@@ -169,7 +169,9 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return u, nil
 			}
 
-			u.Keyword = u.Keyword[:len(u.Keyword)-1]
+			keywordRunes := []rune(u.Keyword)
+			keywordRunes = keywordRunes[:len(keywordRunes)-1]
+			u.Keyword = string(keywordRunes)
 			u.Filtered = u.Filtered.Prev
 			cnt := 0
 			for i := range u.Choices {
@@ -187,20 +189,23 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyRunes:
 			str := msg.String()
 			if !msg.Paste {
-				u.addCharacter(str)
+				for _, r := range str {
+					u.addCharacter(string(r))
+				}
 			} else {
 				if strings.Contains(str, string('\n')) || strings.Contains(str, string('\r')) {
 					u.IsEntered = true
 					return u, tea.Quit
 				}
 
-				for i := range len(str) {
+				runes := []rune(str)
+				for i, r := range runes {
 					// characters by paste key are enclosed by '[' and ']'
-					if i == 0 || i == len(str)-1 {
+					if i == 0 || i == len(runes)-1 {
 						continue
 					}
-					if str[i] != ' ' && str[i] != '\t' {
-						u.addCharacter(string(str[i]))
+					if r != ' ' && r != '\t' {
+						u.addCharacter(string(r))
 					}
 				}
 			}
