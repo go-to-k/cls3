@@ -5,16 +5,9 @@ on:
     paths-ignore:
       - 'README.md'
     tags-ignore:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     branches:
-      - "*"
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-    paths-ignore:
-      - 'README.md'
+      - '*'
 
 jobs:
   test:
@@ -59,7 +52,7 @@ jobs:
           go_version_file: go.mod
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          level: error 
+          level: error
           filter_mode: nofilter
-          golangci_lint_flags: "--config=.golangci.yml"
+          golangci_lint_flags: '--config=.golangci.yml'
           fail_on_error: true
