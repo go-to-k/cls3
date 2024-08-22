@@ -53,19 +53,19 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 
-		switch msg.String() {
+		switch msg.Type {
 
 		// Quit the selection
-		case "enter":
+		case tea.KeyEnter:
 			u.IsEntered = true
 			return u, tea.Quit
 
 		// Quit the selection
-		case "ctrl+c":
+		case tea.KeyCtrlC:
 			u.IsCanceled = true
 			return u, tea.Quit
 
-		case "up":
+		case tea.KeyUp, tea.KeyShiftTab:
 			if len(u.Filtered.Choices) < 2 {
 				return u, nil
 			}
@@ -96,7 +96,7 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
-		case "down":
+		case tea.KeyDown, tea.KeyTab:
 			if len(u.Filtered.Choices) < 2 {
 				return u, nil
 			}
@@ -128,7 +128,10 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		// select or deselect an item
-		case " ":
+		case tea.KeySpace:
+			if _, ok := u.Filtered.Choices[u.Cursor]; !ok {
+				return u, nil
+			}
 			_, ok := u.Selected[u.Cursor]
 			if ok {
 				delete(u.Selected, u.Cursor)
@@ -137,7 +140,7 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		// select all items in filtered list
-		case "right":
+		case tea.KeyRight:
 			for i := range u.Choices {
 				if _, ok := u.Filtered.Choices[i]; !ok {
 					continue
@@ -149,7 +152,7 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		// clear all selected items in filtered list
-		case "left":
+		case tea.KeyLeft:
 			for i := range u.Choices {
 				if _, ok := u.Filtered.Choices[i]; !ok {
 					continue
@@ -161,7 +164,7 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		// clear one character from the keyword
-		case "backspace":
+		case tea.KeyBackspace:
 			if len(u.Keyword) == 0 {
 				return u, nil
 			}
@@ -181,51 +184,74 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		// add a character to the keyword
-		default:
-			u.Keyword += msg.String()
-			u.Filtered = &Filtered{
-				Choices: make(map[int]struct{}),
-				Prev:    u.Filtered,
-			}
-
-			tmpCursor := u.Cursor
-			for i, choice := range u.Choices {
-				lk := strings.ToLower(u.Keyword)
-				lc := strings.ToLower(choice)
-				contains := strings.Contains(lc, lk)
-
-				fLen := len(u.Filtered.Choices)
-				if contains && fLen != 0 && fLen <= u.Filtered.Prev.Cursor {
-					u.Filtered.Cursor++
-					u.Cursor = i
+		case tea.KeyRunes:
+			str := msg.String()
+			if !msg.Paste {
+				u.addCharacter(str)
+			} else {
+				if strings.Contains(str, string('\n')) || strings.Contains(str, string('\r')) {
+					u.IsEntered = true
+					return u, tea.Quit
 				}
 
-				if contains {
-					u.Filtered.Choices[i] = struct{}{}
-					tmpCursor = i
-				} else if u.Cursor == i && u.Cursor < len(u.Choices)-1 {
-					u.Cursor++
-				} else if u.Cursor == i {
-					u.Cursor = tmpCursor
+				for i := range len(str) {
+					// characters by paste key are enclosed by '[' and ']'
+					if i == 0 || i == len(str)-1 {
+						continue
+					}
+					if str[i] != ' ' && str[i] != '\t' {
+						u.addCharacter(string(str[i]))
+					}
 				}
-			}
-
-			if len(u.Filtered.Choices) == 0 {
-				return u, nil
-			}
-			f := u.Filtered
-			for {
-				if f.Prev == nil {
-					break
-				}
-				f.Prev.Cursor = u.Filtered.Cursor
-				f = f.Prev
 			}
 
 		}
 	}
 
 	return u, nil
+}
+
+func (u *UI) addCharacter(c string) {
+	u.Keyword += c
+	u.Filtered = &Filtered{
+		Choices: make(map[int]struct{}),
+		Prev:    u.Filtered,
+	}
+
+	tmpCursor := u.Cursor
+	for i, choice := range u.Choices {
+		lk := strings.ToLower(u.Keyword)
+		lc := strings.ToLower(choice)
+		contains := strings.Contains(lc, lk)
+
+		fLen := len(u.Filtered.Choices)
+		if contains && fLen != 0 && fLen <= u.Filtered.Prev.Cursor {
+			u.Filtered.Cursor++
+			u.Cursor = i
+		}
+
+		switch {
+		case contains:
+			u.Filtered.Choices[i] = struct{}{}
+			tmpCursor = i
+		case u.Cursor == i && u.Cursor < len(u.Choices)-1:
+			u.Cursor++
+		case u.Cursor == i:
+			u.Cursor = tmpCursor
+		}
+	}
+
+	if len(u.Filtered.Choices) == 0 {
+		return
+	}
+	f := u.Filtered
+	for {
+		if f.Prev == nil {
+			break
+		}
+		f.Prev.Cursor = u.Filtered.Cursor
+		f = f.Prev
+	}
 }
 
 func (u *UI) View() string {
@@ -241,7 +267,7 @@ func (u *UI) View() string {
 		return s
 	}
 
-	s += u.Keyword
+	s += bold.Sprintln(u.Keyword)
 
 	s += color.CyanString(" [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]")
 	s += "\n"
