@@ -20,7 +20,6 @@ linters:
     - ineffassign
     - unconvert
     - unparam
-    - err113
     - errname
     - errorlint
     - nilerr
