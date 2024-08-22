@@ -86,10 +86,7 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				f := u.Filtered
-				for {
-					if f.Prev == nil {
-						break
-					}
+				for f.Prev != nil {
 					f.Prev.Cursor = u.Filtered.Cursor
 					f = f.Prev
 				}
@@ -117,10 +114,7 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				f := u.Filtered
-				for {
-					if f.Prev == nil {
-						break
-					}
+				for f.Prev != nil {
 					f.Prev.Cursor = u.Filtered.Cursor
 					f = f.Prev
 				}
@@ -165,24 +159,12 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// clear one character from the keyword
 		case tea.KeyBackspace:
-			if len(u.Keyword) == 0 {
-				return u, nil
-			}
+			u.backspace()
 
-			keywordRunes := []rune(u.Keyword)
-			keywordRunes = keywordRunes[:len(keywordRunes)-1]
-			u.Keyword = string(keywordRunes)
-			u.Filtered = u.Filtered.Prev
-			cnt := 0
-			for i := range u.Choices {
-				if _, ok := u.Filtered.Choices[i]; !ok {
-					continue
-				}
-				if cnt == u.Filtered.Cursor {
-					u.Cursor = i
-					break
-				}
-				cnt++
+		// clear the keyword
+		case tea.KeyCtrlW:
+			for u.Keyword != "" {
+				u.backspace()
 			}
 
 		// add a character to the keyword
@@ -214,6 +196,28 @@ func (u *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return u, nil
+}
+
+func (u *UI) backspace() {
+	if len(u.Keyword) == 0 {
+		return
+	}
+
+	keywordRunes := []rune(u.Keyword)
+	keywordRunes = keywordRunes[:len(keywordRunes)-1]
+	u.Keyword = string(keywordRunes)
+	u.Filtered = u.Filtered.Prev
+	cnt := 0
+	for i := range u.Choices {
+		if _, ok := u.Filtered.Choices[i]; !ok {
+			continue
+		}
+		if cnt == u.Filtered.Cursor {
+			u.Cursor = i
+			break
+		}
+		cnt++
+	}
 }
 
 func (u *UI) addCharacter(c string) {
@@ -250,10 +254,7 @@ func (u *UI) addCharacter(c string) {
 		return
 	}
 	f := u.Filtered
-	for {
-		if f.Prev == nil {
-			break
-		}
+	for f.Prev != nil {
 		f.Prev.Cursor = u.Filtered.Cursor
 		f = f.Prev
 	}
