@@ -2,7 +2,7 @@ name: tagpr
 on:
   push:
     branches:
-      - "main"
+      - 'main'
 jobs:
   tagpr:
     runs-on: ubuntu-latest
@@ -11,13 +11,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.TAGPR_GITHUB_TOKEN }}
       - name: tagpr
         id: tagpr
         uses: Songmu/tagpr@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TAGPR_GITHUB_TOKEN }}
       - uses: ./.github/actions/release
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           homebrew-tap-github-token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
-        if: "steps.tagpr.outputs.tag != ''"
+        if: steps.tagpr.outputs.tag != ''
