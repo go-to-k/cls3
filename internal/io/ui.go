@@ -30,20 +30,20 @@ type Filtered struct {
 var _ tea.Model = (*UI)(nil)
 
 func NewUI(choices []string, headers []string) *UI {
-	filtered := make(map[int]struct{})
-	for i := range choices {
-		filtered[i] = struct{}{}
-	}
-
 	return &UI{
 		Choices:  choices,
 		Headers:  headers,
 		Selected: make(map[int]struct{}),
-		Filtered: &Filtered{Choices: filtered},
 	}
 }
 
 func (u *UI) Init() tea.Cmd {
+	filtered := make(map[int]struct{})
+	for i := range u.Choices {
+		filtered[i] = struct{}{}
+	}
+	u.Filtered = &Filtered{Choices: filtered}
+
 	return nil
 }
 
