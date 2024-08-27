@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.21.0](https://github.com/go-to-k/cls3/compare/v0.20.5...v0.21.0) - 2024-08-27
+- ci: tweak for pr-lint by @go-to-k in https://github.com/go-to-k/cls3/pull/208
+- ci: Manage labels in PR lint by @go-to-k in https://github.com/go-to-k/cls3/pull/210
+- ci: tweak for semantic-pull-request workflow by @go-to-k in https://github.com/go-to-k/cls3/pull/211
+- ci: fix bug that labels are not created by @go-to-k in https://github.com/go-to-k/cls3/pull/212
+- ci: ignore lint on tagpr PR by @go-to-k in https://github.com/go-to-k/cls3/pull/213
+- ci: add revert type in prlint by @go-to-k in https://github.com/go-to-k/cls3/pull/215
+- ci: change token for tagpr by @go-to-k in https://github.com/go-to-k/cls3/pull/218
+- ci: don't run CI in PR actions by @go-to-k in https://github.com/go-to-k/cls3/pull/219
+- ci: add error linters by @go-to-k in https://github.com/go-to-k/cls3/pull/216
+- ci: change token for tagpr by @go-to-k in https://github.com/go-to-k/cls3/pull/221
+- feat(io): redesign UI implementation with a new library by @go-to-k in https://github.com/go-to-k/cls3/pull/214
+
 ## [v0.20.5](https://github.com/go-to-k/cls3/compare/v0.20.4...v0.20.5) - 2024-08-16
 - ci(deps): upgrade to goreleaser-action@v6 by @go-to-k in https://github.com/go-to-k/cls3/pull/204
 - ci: PR-Lint for PR titles by @go-to-k in https://github.com/go-to-k/cls3/pull/206
