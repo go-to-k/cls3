@@ -167,38 +167,22 @@ func (a *App) getAction() func(c *cli.Context) error {
 }
 
 func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
-	var checkboxes []string
-	var keyword string
-
 	BucketNameLabel := "Filter a keyword of bucket names: "
-	keyword = io.InputKeywordForFilter(BucketNameLabel)
+	keyword := io.InputKeywordForFilter(BucketNameLabel)
 
-	label := "Select buckets." + "\n"
+	label := []string{"Select buckets."}
 	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
-		return checkboxes, false, err
+		return nil, false, err
 	}
 	if len(bucketNames) == 0 {
 		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", keyword)
-		return checkboxes, false, fmt.Errorf("NotExistsError: %v", errMsg)
+		return nil, false, fmt.Errorf("NotExistsError: %v", errMsg)
 	}
 
-	for {
-		checkboxes = io.GetCheckboxes(label, bucketNames)
-
-		if len(checkboxes) == 0 {
-			// The case for interruption(Ctrl + C)
-			ok := io.GetYesNo("Do you want to finish?")
-			if ok {
-				io.Logger.Info().Msg("Finished...")
-				return checkboxes, false, nil
-			}
-			continue
-		}
-
-		ok := io.GetYesNo("OK?")
-		if ok {
-			return checkboxes, true, nil
-		}
+	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
+	if err != nil {
+		return nil, false, err
 	}
+	return checkboxes, continuation, nil
 }

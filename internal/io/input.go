@@ -6,23 +6,47 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/fatih/color"
 )
 
-const SelectionPageSize = 20
+func GetCheckboxes(headers []string, opts []string) ([]string, bool, error) {
+	for {
+		ui := NewUI(opts, headers)
+		p := tea.NewProgram(ui)
+		if _, err := p.Run(); err != nil {
+			return nil, false, err
+		}
 
-func GetCheckboxes(label string, opts []string) []string {
-	res := []string{}
+		checkboxes := []string{}
+		for c := range ui.Choices {
+			if _, ok := ui.Selected[c]; ok {
+				checkboxes = append(checkboxes, ui.Choices[c])
+			}
+		}
 
-	prompt := &survey.MultiSelect{
-		Message:  label,
-		Options:  opts,
-		PageSize: SelectionPageSize,
+		switch {
+		case ui.IsCanceled:
+			Logger.Warn().Msg("Canceled!")
+		case len(checkboxes) == 0:
+			Logger.Warn().Msg("Not selected!")
+		}
+		if len(checkboxes) == 0 || ui.IsCanceled {
+			ok := GetYesNo("Do you want to finish?")
+			if ok {
+				Logger.Info().Msg("Finished...")
+				return checkboxes, false, nil
+			}
+			continue
+		}
+
+		fmt.Fprintf(os.Stderr, " %s\n", color.CyanString(strings.Join(checkboxes, ", ")))
+
+		ok := GetYesNo("OK?")
+		if ok {
+			return checkboxes, true, nil
+		}
 	}
-	//nolint:errcheck
-	survey.AskOne(prompt, &res, survey.WithKeepFilter(true))
-
-	return res
 }
 
 func InputKeywordForFilter(label string) string {
