@@ -5,10 +5,10 @@ go 1.23
 toolchain go1.23.0
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.30.3
+	github.com/aws/aws-sdk-go-v2 v1.32.2
 	github.com/aws/aws-sdk-go-v2/config v1.27.27
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.58.2
-	github.com/aws/smithy-go v1.20.3
+	github.com/aws/smithy-go v1.22.0
 	github.com/charmbracelet/bubbletea v0.27.0
 	github.com/fatih/color v1.17.0
 	github.com/gosuri/uilive v0.0.4
