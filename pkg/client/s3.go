@@ -45,8 +45,11 @@ type IS3 interface {
 		keyMarker *string,
 		versionIdMarker *string,
 	) (*ListObjectsOrVersionsByPageOutput, error)
+	// TODO: remove
 	CheckBucketExists(ctx context.Context, bucketName *string) (bool, error)
+	// TODO: remove
 	ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error)
+	// TODO: remove
 	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
 }
 
@@ -329,6 +332,7 @@ func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, e
 	return false, nil
 }
 
+// TODO: move to wrapper and lower methods to upper (unit tests too)
 func (s *S3) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
 	filteredBucketNames := []string{}
 

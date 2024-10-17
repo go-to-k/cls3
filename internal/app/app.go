@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
@@ -141,6 +143,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		)
 		s3Wrapper := wrapper.NewS3Wrapper(client)
 
+		var bucketList []types.Bucket
 		if a.InteractiveMode {
 			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
 			if err != nil {
@@ -149,15 +152,22 @@ func (a *App) getAction() func(c *cli.Context) error {
 			if !continuation {
 				return nil
 			}
-
-			for _, bucket := range buckets {
-				//nolint:errcheck
-				a.BucketNames.Set(bucket)
+			bucketList = buckets
+		} else {
+			output, err := s3Wrapper.ListBucketsByNames(c.Context, a.BucketNames.Value())
+			if err != nil {
+				return err
 			}
+			// TODO: move to wrapper?
+			if len(output.NonExistingBucketNames) > 0 {
+				errMsg := fmt.Sprintf("The following buckets do not exist: %v", strings.Join(output.NonExistingBucketNames, ", "))
+				return fmt.Errorf("NotExistsError: %v", errMsg)
+			}
+			bucketList = output.ExistingBuckets
 		}
 
-		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
+		for _, bucket := range bucketList {
+			if err := s3Wrapper.ClearS3Objects(c.Context, &bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
 				return err
 			}
 		}
@@ -166,23 +176,38 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]types.Bucket, bool, error) {
 	BucketNameLabel := "Filter a keyword of bucket names: "
 	keyword := io.InputKeywordForFilter(BucketNameLabel)
 
 	label := []string{"Select buckets."}
-	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
+	buckets, err := s3Wrapper.ListBucketsFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
 		return nil, false, err
 	}
-	if len(bucketNames) == 0 {
+	// TODO: move to wrapper?
+	if len(buckets) == 0 {
 		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", keyword)
 		return nil, false, fmt.Errorf("NotExistsError: %v", errMsg)
 	}
 
+	bucketNames := make([]string, 0, len(buckets))
+	for _, bucket := range buckets {
+		bucketNames = append(bucketNames, *bucket.Name)
+	}
 	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
 	if err != nil {
 		return nil, false, err
 	}
-	return checkboxes, continuation, nil
+
+	selectedBuckets := make([]types.Bucket, 0, len(checkboxes))
+	for _, checked := range checkboxes {
+		for _, bucket := range buckets {
+			if checked == *bucket.Name {
+				selectedBuckets = append(selectedBuckets, bucket)
+				break
+			}
+		}
+	}
+	return selectedBuckets, continuation, nil
 }
