@@ -49,11 +49,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      MINOR_LABEL: 'minor'
+      MINOR_LABEL: 'minor-release'
       MINOR_LABEL_COLOR: '#FBCA04'
-      MAJOR_LABEL: 'major'
+      MAJOR_LABEL: 'major-release'
       MAJOR_LABEL_COLOR: '#D93F0B'
-      PATCH_LABEL: 'patch'
+      PATCH_LABEL: 'patch-release'
       PATCH_LABEL_COLOR: '#C5DEF5'
     steps:
       - name: Check out the repository
