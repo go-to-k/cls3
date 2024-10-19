@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.22.0](https://github.com/go-to-k/cls3/compare/v0.21.0...v0.22.0) - 2024-10-19
+- ci: change PR label names for release by @go-to-k in https://github.com/go-to-k/cls3/pull/248
+- docs: improve style for README by @go-to-k in https://github.com/go-to-k/cls3/pull/247
+- feat: check for existence of buckets early by @go-to-k in https://github.com/go-to-k/cls3/pull/251
+- chore(deps): bump github.com/charmbracelet/bubbletea from 0.27.0 to 1.1.1 by @go-to-k in https://github.com/go-to-k/cls3/pull/253
+
 ## [v0.21.0](https://github.com/go-to-k/cls3/compare/v0.20.5...v0.21.0) - 2024-08-27
 - ci: tweak for pr-lint by @go-to-k in https://github.com/go-to-k/cls3/pull/208
 - ci: Manage labels in PR lint by @go-to-k in https://github.com/go-to-k/cls3/pull/210
