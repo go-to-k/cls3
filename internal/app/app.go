@@ -112,32 +112,18 @@ func (a *App) getAction() func(c *cli.Context) error {
 			return err
 		}
 
-		config, err := client.LoadAWSConfig(c.Context, a.Region, a.Profile)
+		s3Wrapper, err := a.createS3Wrapper(c.Context)
 		if err != nil {
 			return err
 		}
 
-		client := client.NewS3(
-			s3.NewFromConfig(config, func(o *s3.Options) {
-				o.RetryMaxAttempts = SDKRetryMaxAttempts
-				o.RetryMode = aws.RetryModeStandard
-			}),
-			a.DirectoryBucketsMode,
-		)
-		s3Wrapper := wrapper.NewS3Wrapper(client)
-
 		if a.InteractiveMode {
-			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
+			continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
 			if err != nil {
 				return err
 			}
 			if !continuation {
 				return nil
-			}
-
-			for _, bucket := range buckets {
-				//nolint:errcheck
-				a.BucketNames.Set(bucket)
 			}
 		} else {
 			err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
@@ -156,19 +142,20 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
-	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
-	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
+func (a *App) createS3Wrapper(ctx context.Context) (*wrapper.S3Wrapper, error) {
+	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	label := []string{"Select buckets."}
-	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
-	if err != nil {
-		return nil, false, err
-	}
-	return checkboxes, continuation, nil
+	client := client.NewS3(
+		s3.NewFromConfig(config, func(o *s3.Options) {
+			o.RetryMaxAttempts = SDKRetryMaxAttempts
+			o.RetryMode = aws.RetryModeStandard
+		}),
+		a.DirectoryBucketsMode,
+	)
+	return wrapper.NewS3Wrapper(client), nil
 }
 
 func (a *App) validateOptions() error {
@@ -192,4 +179,27 @@ func (a *App) validateOptions() error {
 		io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
 	return nil
+}
+
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) (bool, error) {
+	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
+	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
+	if err != nil {
+		return false, err
+	}
+
+	label := []string{"Select buckets."}
+	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
+	if err != nil {
+		return false, err
+	}
+	if !continuation {
+		return false, nil
+	}
+
+	for _, bucket := range checkboxes {
+		//nolint:errcheck
+		a.BucketNames.Set(bucket)
+	}
+	return true, nil
 }
