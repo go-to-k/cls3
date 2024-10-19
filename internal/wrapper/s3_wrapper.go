@@ -164,7 +164,6 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
 	lowerKeyword := strings.ToLower(*keyword)
 
-	// To be series to avoid throttling of S3 API
 	for _, bucket := range buckets {
 		if strings.Contains(*bucket.Name, lowerKeyword) {
 			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
