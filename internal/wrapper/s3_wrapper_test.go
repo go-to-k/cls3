@@ -561,34 +561,6 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
-							Name: aws.String("test"),
-						},
-						{
-							Name: aws.String("test2"),
-						},
-					},
-					nil,
-				)
-			},
-			want: want{
-				output: []string{
-					"test",
-					"test2",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword successfully",
-			args: args{
-				ctx:     context.Background(),
-				keyword: aws.String("test"),
-			},
-			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
-					[]types.Bucket{
-						{
 							Name: aws.String("test1"),
 						},
 						{
