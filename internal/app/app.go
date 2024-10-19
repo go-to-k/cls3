@@ -177,10 +177,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 }
 
 func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]types.Bucket, bool, error) {
-	BucketNameLabel := "Filter a keyword of bucket names: "
-	keyword := io.InputKeywordForFilter(BucketNameLabel)
-
-	label := []string{"Select buckets."}
+	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
 	buckets, err := s3Wrapper.ListBucketsFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
 		return nil, false, err
@@ -195,6 +192,7 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrappe
 	for _, bucket := range buckets {
 		bucketNames = append(bucketNames, *bucket.Name)
 	}
+	label := []string{"Select buckets."}
 	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
 	if err != nil {
 		return nil, false, err
