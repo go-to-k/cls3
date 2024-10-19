@@ -702,6 +702,235 @@ func TestS3_DeleteObjects(t *testing.T) {
 	}
 }
 
+func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
+	type args struct {
+		ctx                  context.Context
+		bucketName           *string
+		region               string
+		oldVersionsOnly      bool
+		keyMarker            *string
+		versionIdMarker      *string
+		directoryBucketsMode bool
+		withAPIOptionsFunc   func(*middleware.Stack) error
+	}
+
+	type want struct {
+		output *ListObjectsOrVersionsByPageOutput
+		err    error
+	}
+
+	cases := []struct {
+		name    string
+		args    args
+		want    want
+		wantErr bool
+	}{
+		{
+			name: "call listObjectsByPage if directoryBucketsMode is true",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{
+											{
+												Key: aws.String("Key1"),
+											},
+											{
+												Key: aws.String("Key2"),
+											},
+										},
+										NextContinuationToken: aws.String("NextContinuationToken"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: &ListObjectsOrVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key: aws.String("Key1"),
+						},
+						{
+							Key: aws.String("Key2"),
+						},
+					},
+					NextKeyMarker: aws.String("NextContinuationToken"),
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "call listObjectsByPage if directoryBucketsMode is false",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: false,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectVersionsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectVersionsOutput{
+										Versions: []types.ObjectVersion{
+											{
+												Key:       aws.String("KeyForVersions"),
+												VersionId: aws.String("VersionIdForVersions"),
+											},
+										},
+										DeleteMarkers: []types.DeleteMarkerEntry{
+											{
+												Key:       aws.String("KeyForDeleteMarkers"),
+												VersionId: aws.String("VersionIdForDeleteMarkers"),
+											},
+										},
+										NextKeyMarker:       aws.String("NextKeyMarker"),
+										NextVersionIdMarker: aws.String("NextVersionIdMarker"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: &ListObjectsOrVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions"),
+							VersionId: aws.String("VersionIdForVersions"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers"),
+							VersionId: aws.String("VersionIdForDeleteMarkers"),
+						},
+					},
+					NextKeyMarker:       aws.String("NextKeyMarker"),
+					NextVersionIdMarker: aws.String("NextVersionIdMarker"),
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "listObjectsByPage errors",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2ErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectsV2Error")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: nil,
+				err:    fmt.Errorf("[resource test] operation error S3: ListObjectsV2, ListObjectsV2Error"),
+			},
+			wantErr: true,
+		},
+		{
+			name: "listObjectVersionsByPage errors",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: false,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectVersionsErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectVersionsOutput{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectVersionsError")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: nil,
+				err:    fmt.Errorf("[resource test] operation error S3: ListObjectVersions, ListObjectVersionsError"),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.LoadDefaultConfig(
+				tt.args.ctx,
+				config.WithRegion("ap-northeast-1"),
+				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := s3.NewFromConfig(cfg)
+			s3Client := NewS3(client, tt.args.directoryBucketsMode)
+
+			output, err := s3Client.ListObjectsOrVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.output) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.output)
+			}
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextKeyMarker, tt.want.output.NextKeyMarker) {
+				t.Errorf("nextKeyMarker = %#v, want %#v", output.NextKeyMarker, tt.want.output.NextKeyMarker)
+			}
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextVersionIdMarker, tt.want.output.NextVersionIdMarker) {
+				t.Errorf("nextVersionIdMarker = %#v, want %#v", output.NextVersionIdMarker, tt.want.output.NextVersionIdMarker)
+			}
+		})
+	}
+}
+
 func TestS3_listObjectVersionsByPage(t *testing.T) {
 	type args struct {
 		ctx                context.Context
@@ -1461,16 +1690,15 @@ func TestS3_listObjectsByPage(t *testing.T) {
 	}
 }
 
-func TestS3_CheckBucketExists(t *testing.T) {
+func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 	type args struct {
 		ctx                  context.Context
-		bucketName           *string
 		directoryBucketsMode bool
 		withAPIOptionsFunc   func(*middleware.Stack) error
 	}
 
 	type want struct {
-		exists bool
+		output []types.Bucket
 		err    error
 	}
 
@@ -1481,10 +1709,50 @@ func TestS3_CheckBucketExists(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "check bucket for bucket exists",
+			name: "call listDirectoryBuckets if directoryBucketsMode is true",
 			args: args{
 				ctx:                  context.Background(),
-				bucketName:           aws.String("test"),
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListDirectoryBucketsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListDirectoryBucketsOutput{
+										Buckets: []types.Bucket{
+											{
+												Name: aws.String("test"),
+											},
+											{
+												Name: aws.String("test2"),
+											},
+										},
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: []types.Bucket{
+					{
+						Name: aws.String("test"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "call listBuckets if directoryBucketsMode is false",
+			args: args{
+				ctx:                  context.Background(),
 				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
@@ -1510,34 +1778,31 @@ func TestS3_CheckBucketExists(t *testing.T) {
 				},
 			},
 			want: want{
-				exists: true,
-				err:    nil,
+				output: []types.Bucket{
+					{
+						Name: aws.String("test"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+				},
+				err: nil,
 			},
 			wantErr: false,
 		},
 		{
-			name: "check bucket for bucket exists on directory buckets mode",
+			name: "listDirectoryBuckets errors",
 			args: args{
 				ctx:                  context.Background(),
-				bucketName:           aws.String("test"),
 				directoryBucketsMode: true,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
-							"ListDirectoryBuckets",
+							"ListDirectoryBucketsErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-									Result: &s3.ListDirectoryBucketsOutput{
-										Buckets: []types.Bucket{
-											{
-												Name: aws.String("test"),
-											},
-											{
-												Name: aws.String("test2"),
-											},
-										},
-									},
-								}, middleware.Metadata{}, nil
+									Result: nil,
+								}, middleware.Metadata{}, fmt.Errorf("ListDirectoryBucketsError")
 							},
 						),
 						middleware.Before,
@@ -1545,51 +1810,15 @@ func TestS3_CheckBucketExists(t *testing.T) {
 				},
 			},
 			want: want{
-				exists: true,
-				err:    nil,
+				output: []types.Bucket{},
+				err:    fmt.Errorf("[resource -] operation error S3: ListDirectoryBuckets, ListDirectoryBucketsError"),
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
-			name: "check bucket for bucket do not exist",
+			name: "listBuckets errors",
 			args: args{
 				ctx:                  context.Background(),
-				bucketName:           aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{
-											{
-												Name: aws.String("test0"),
-											},
-											{
-												Name: aws.String("test2"),
-											},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				exists: false,
-				err:    nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "check bucket exists failure",
-			args: args{
-				ctx:                  context.Background(),
-				bucketName:           aws.String("test"),
 				directoryBucketsMode: false,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
@@ -1606,41 +1835,8 @@ func TestS3_CheckBucketExists(t *testing.T) {
 				},
 			},
 			want: want{
-				exists: false,
-				err: &ClientError{
-					Err: fmt.Errorf("operation error S3: ListBuckets, ListBucketsError"),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "check bucket exists failure for api error SlowDown",
-			args: args{
-				ctx:                  context.Background(),
-				bucketName:           aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsApiErrorMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-										Result: nil,
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxRetryCount,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				exists: false,
-				err: &ClientError{
-					Err: fmt.Errorf("operation error S3: ListBuckets, exceeded maximum number of attempts, 10, api error SlowDown"),
-				},
+				output: []types.Bucket{},
+				err:    fmt.Errorf("[resource -] operation error S3: ListBuckets, ListBucketsError"),
 			},
 			wantErr: true,
 		},
@@ -1660,356 +1856,7 @@ func TestS3_CheckBucketExists(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client, tt.args.directoryBucketsMode)
 
-			output, err := s3Client.CheckBucketExists(tt.args.ctx, tt.args.bucketName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
-				return
-			}
-			if tt.wantErr && err.Error() != tt.want.err.Error() {
-				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
-				return
-			}
-			if !reflect.DeepEqual(output, tt.want.exists) {
-				t.Errorf("output = %#v, want %#v", output, tt.want.exists)
-			}
-		})
-	}
-}
-
-func TestS3_ListBucketNamesFilteredByKeyword(t *testing.T) {
-	type args struct {
-		ctx                  context.Context
-		keyword              *string
-		directoryBucketsMode bool
-		withAPIOptionsFunc   func(*middleware.Stack) error
-	}
-
-	type want struct {
-		output []string
-		err    error
-	}
-
-	cases := []struct {
-		name    string
-		args    args
-		want    want
-		wantErr bool
-	}{
-		{
-			name: "list a bucket filtered by keyword successfully",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{
-											{
-												Name: aws.String("test"),
-											},
-											{
-												Name: aws.String("test2"),
-											},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{
-					"test",
-					"test2",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list a bucket filtered by keyword on directory buckets mode successfully",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("test"),
-				directoryBucketsMode: true,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListDirectoryBuckets",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListDirectoryBucketsOutput{
-										Buckets: []types.Bucket{
-											{
-												Name: aws.String("test"),
-											},
-											{
-												Name: aws.String("test2"),
-											},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{
-					"test",
-					"test2",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword successfully",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{
-											{Name: aws.String("test1")},
-											{Name: aws.String("test2")},
-											{Name: aws.String("other")},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{
-					"test1",
-					"test2",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword successfully when keyword is empty",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String(""),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{
-											{Name: aws.String("test1")},
-											{Name: aws.String("test2")},
-											{Name: aws.String("other")},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{
-					"test1",
-					"test2",
-					"other",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword successfully but not match",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{
-											{Name: aws.String("other1")},
-											{Name: aws.String("other2")},
-											{Name: aws.String("other3")},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{},
-				err:    nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword successfully but not return buckets",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{},
-				err:    nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword successfully but not return buckets when keyword is empty",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String(""),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{},
-				err:    nil,
-			},
-			wantErr: false,
-		},
-		{
-			name: "list buckets filtered by keyword failure",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("test"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsErrorMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: nil,
-								}, middleware.Metadata{}, fmt.Errorf("ListBucketsError")
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{},
-				err: &ClientError{
-					Err: fmt.Errorf("operation error S3: ListBuckets, ListBucketsError"),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "list buckets filtered by keyword successfully for case-insensitive search",
-			args: args{
-				ctx:                  context.Background(),
-				keyword:              aws.String("TEST"),
-				directoryBucketsMode: false,
-				withAPIOptionsFunc: func(stack *middleware.Stack) error {
-					return stack.Finalize.Add(
-						middleware.FinalizeMiddlewareFunc(
-							"ListBucketsNotExistMock",
-							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
-								return middleware.FinalizeOutput{
-									Result: &s3.ListBucketsOutput{
-										Buckets: []types.Bucket{
-											{Name: aws.String("test1")},
-											{Name: aws.String("test2")},
-											{Name: aws.String("other")},
-										},
-									},
-								}, middleware.Metadata{}, nil
-							},
-						),
-						middleware.Before,
-					)
-				},
-			},
-			want: want{
-				output: []string{
-					"test1",
-					"test2",
-				},
-				err: nil,
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := config.LoadDefaultConfig(
-				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
-				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, tt.args.directoryBucketsMode)
-
-			output, err := s3Client.ListBucketNamesFilteredByKeyword(tt.args.ctx, tt.args.keyword)
+			output, err := s3Client.ListBucketsOrDirectoryBuckets(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

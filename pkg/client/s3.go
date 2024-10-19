@@ -45,8 +45,7 @@ type IS3 interface {
 		keyMarker *string,
 		versionIdMarker *string,
 	) (*ListObjectsOrVersionsByPageOutput, error)
-	CheckBucketExists(ctx context.Context, bucketName *string) (bool, error)
-	ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error)
+	ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error)
 	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
 }
 
@@ -307,8 +306,9 @@ func (s *S3) listObjectsByPage(
 	}, nil
 }
 
-func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
+func (s *S3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
+
 	if s.directoryBucketsMode {
 		listBucketsFunc = s.listDirectoryBuckets
 	} else {
@@ -317,44 +317,9 @@ func (s *S3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, e
 
 	buckets, err := listBucketsFunc(ctx)
 	if err != nil {
-		return false, err
+		return []types.Bucket{}, err
 	}
-
-	for _, bucket := range buckets {
-		if *bucket.Name == *bucketName {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-func (s *S3) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
-	filteredBucketNames := []string{}
-
-	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
-	if s.directoryBucketsMode {
-		listBucketsFunc = s.listDirectoryBuckets
-	} else {
-		listBucketsFunc = s.listBuckets
-	}
-
-	buckets, err := listBucketsFunc(ctx)
-	if err != nil {
-		return filteredBucketNames, err
-	}
-
-	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
-	lowerKeyword := strings.ToLower(*keyword)
-
-	// To be series to avoid throttling of S3 API
-	for _, bucket := range buckets {
-		if strings.Contains(*bucket.Name, lowerKeyword) {
-			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
-		}
-	}
-
-	return filteredBucketNames, nil
+	return buckets, nil
 }
 
 func (s *S3) listBuckets(ctx context.Context) ([]types.Bucket, error) {

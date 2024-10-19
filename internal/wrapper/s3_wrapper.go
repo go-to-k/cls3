@@ -3,6 +3,7 @@ package wrapper
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -30,15 +31,6 @@ func (s *S3Wrapper) ClearS3Objects(
 	oldVersionsOnly bool,
 	quietMode bool,
 ) error {
-	exists, err := s.client.CheckBucketExists(ctx, aws.String(bucketName))
-	if err != nil {
-		return err
-	}
-	if !exists {
-		io.Logger.Info().Msgf("A bucket does not exist: %v", bucketName)
-		return nil
-	}
-
 	// This `bucketRegion` allows buckets outside the specified region to be deleted.
 	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
 	// buckets can be operated on.
@@ -163,5 +155,57 @@ func (s *S3Wrapper) ClearS3Objects(
 }
 
 func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
-	return s.client.ListBucketNamesFilteredByKeyword(ctx, keyword)
+	filteredBucketNames := []string{}
+	buckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
+	if err != nil {
+		return filteredBucketNames, err
+	}
+
+	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
+	lowerKeyword := strings.ToLower(*keyword)
+
+	for _, bucket := range buckets {
+		if strings.Contains(*bucket.Name, lowerKeyword) {
+			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
+		}
+	}
+
+	if len(filteredBucketNames) == 0 {
+		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", *keyword)
+		return filteredBucketNames, &client.ClientError{
+			Err: fmt.Errorf("NotExistsError: %v", errMsg),
+		}
+	}
+
+	return filteredBucketNames, nil
+}
+
+func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) error {
+	nonExistingBucketNames := []string{}
+
+	outputBuckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range bucketNames {
+		found := false
+		for _, bucket := range outputBuckets {
+			if *bucket.Name == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			nonExistingBucketNames = append(nonExistingBucketNames, name)
+		}
+	}
+
+	if len(nonExistingBucketNames) > 0 {
+		errMsg := fmt.Sprintf("The following buckets do not exist: %v", strings.Join(nonExistingBucketNames, ", "))
+		return &client.ClientError{
+			Err: fmt.Errorf("NotExistsError: %v", errMsg),
+		}
+	}
+	return nil
 }

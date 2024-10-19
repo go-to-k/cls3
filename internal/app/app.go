@@ -107,57 +107,33 @@ func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		io.Logger.Debug().Msg("Debug mode...")
 
-		if !a.InteractiveMode && len(a.BucketNames.Value()) == 0 {
-			errMsg := fmt.Sprintln("At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.InteractiveMode && len(a.BucketNames.Value()) != 0 {
-			errMsg := fmt.Sprintln("When specifying -i, do not specify the -b option.")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.ForceMode && a.OldVersionsOnly {
-			errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.DirectoryBucketsMode && a.OldVersionsOnly {
-			errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.DirectoryBucketsMode && a.Region == "" {
-			io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
-		}
-
-		config, err := client.LoadAWSConfig(c.Context, a.Region, a.Profile)
+		err := a.validateOptions()
 		if err != nil {
 			return err
 		}
 
-		client := client.NewS3(
-			s3.NewFromConfig(config, func(o *s3.Options) {
-				o.RetryMaxAttempts = SDKRetryMaxAttempts
-				o.RetryMode = aws.RetryModeStandard
-			}),
-			a.DirectoryBucketsMode,
-		)
-		s3Wrapper := wrapper.NewS3Wrapper(client)
+		s3Wrapper, err := a.createS3Wrapper(c.Context)
+		if err != nil {
+			return err
+		}
 
 		if a.InteractiveMode {
-			buckets, continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
+			continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
 			if err != nil {
 				return err
 			}
 			if !continuation {
 				return nil
 			}
-
-			for _, bucket := range buckets {
-				//nolint:errcheck
-				a.BucketNames.Set(bucket)
+		} else {
+			err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
+			if err != nil {
+				return err
 			}
 		}
 
-		for _, bucket := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucket, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
+		for _, bucketName := range a.BucketNames.Value() {
+			if err := s3Wrapper.ClearS3Objects(c.Context, bucketName, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
 				return err
 			}
 		}
@@ -166,23 +142,64 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) ([]string, bool, error) {
-	BucketNameLabel := "Filter a keyword of bucket names: "
-	keyword := io.InputKeywordForFilter(BucketNameLabel)
+func (a *App) createS3Wrapper(ctx context.Context) (*wrapper.S3Wrapper, error) {
+	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
+	if err != nil {
+		return nil, err
+	}
 
-	label := []string{"Select buckets."}
+	client := client.NewS3(
+		s3.NewFromConfig(config, func(o *s3.Options) {
+			o.RetryMaxAttempts = SDKRetryMaxAttempts
+			o.RetryMode = aws.RetryModeStandard
+		}),
+		a.DirectoryBucketsMode,
+	)
+	return wrapper.NewS3Wrapper(client), nil
+}
+
+func (a *App) validateOptions() error {
+	if !a.InteractiveMode && len(a.BucketNames.Value()) == 0 {
+		errMsg := fmt.Sprintln("At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.InteractiveMode && len(a.BucketNames.Value()) != 0 {
+		errMsg := fmt.Sprintln("When specifying -i, do not specify the -b option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.ForceMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.Region == "" {
+		io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+	}
+	return nil
+}
+
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) (bool, error) {
+	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
 	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
-		return nil, false, err
-	}
-	if len(bucketNames) == 0 {
-		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", keyword)
-		return nil, false, fmt.Errorf("NotExistsError: %v", errMsg)
+		return false, err
 	}
 
+	label := []string{"Select buckets."}
 	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
-	return checkboxes, continuation, nil
+	if !continuation {
+		return false, nil
+	}
+
+	for _, bucket := range checkboxes {
+		//nolint:errcheck
+		a.BucketNames.Set(bucket)
+	}
+	return true, nil
 }

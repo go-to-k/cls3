@@ -37,21 +37,6 @@ func (m *MockIS3) EXPECT() *MockIS3MockRecorder {
 	return m.recorder
 }
 
-// CheckBucketExists mocks base method.
-func (m *MockIS3) CheckBucketExists(ctx context.Context, bucketName *string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckBucketExists", ctx, bucketName)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckBucketExists indicates an expected call of CheckBucketExists.
-func (mr *MockIS3MockRecorder) CheckBucketExists(ctx, bucketName any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckBucketExists", reflect.TypeOf((*MockIS3)(nil).CheckBucketExists), ctx, bucketName)
-}
-
 // DeleteBucket mocks base method.
 func (m *MockIS3) DeleteBucket(ctx context.Context, bucketName *string, region string) error {
 	m.ctrl.T.Helper()
@@ -96,19 +81,19 @@ func (mr *MockIS3MockRecorder) GetBucketLocation(ctx, bucketName any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBucketLocation", reflect.TypeOf((*MockIS3)(nil).GetBucketLocation), ctx, bucketName)
 }
 
-// ListBucketNamesFilteredByKeyword mocks base method.
-func (m *MockIS3) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
+// ListBucketsOrDirectoryBuckets mocks base method.
+func (m *MockIS3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListBucketNamesFilteredByKeyword", ctx, keyword)
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "ListBucketsOrDirectoryBuckets", ctx)
+	ret0, _ := ret[0].([]types.Bucket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListBucketNamesFilteredByKeyword indicates an expected call of ListBucketNamesFilteredByKeyword.
-func (mr *MockIS3MockRecorder) ListBucketNamesFilteredByKeyword(ctx, keyword any) *gomock.Call {
+// ListBucketsOrDirectoryBuckets indicates an expected call of ListBucketsOrDirectoryBuckets.
+func (mr *MockIS3MockRecorder) ListBucketsOrDirectoryBuckets(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBucketNamesFilteredByKeyword", reflect.TypeOf((*MockIS3)(nil).ListBucketNamesFilteredByKeyword), ctx, keyword)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBucketsOrDirectoryBuckets", reflect.TypeOf((*MockIS3)(nil).ListBucketsOrDirectoryBuckets), ctx)
 }
 
 // ListObjectsOrVersionsByPage mocks base method.
