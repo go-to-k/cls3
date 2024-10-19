@@ -174,11 +174,6 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrappe
 	if err != nil {
 		return nil, false, err
 	}
-	// TODO: move to wrapper?
-	if len(bucketNames) == 0 {
-		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", keyword)
-		return nil, false, fmt.Errorf("NotExistsError: %v", errMsg)
-	}
 
 	label := []string{"Select buckets."}
 	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)

@@ -171,6 +171,13 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 		}
 	}
 
+	if len(filteredBucketNames) == 0 {
+		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", keyword)
+		return filteredBucketNames, &client.ClientError{
+			Err: fmt.Errorf("NotExistsError: %v", errMsg),
+		}
+	}
+
 	return filteredBucketNames, nil
 }
 
