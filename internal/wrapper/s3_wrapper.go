@@ -3,19 +3,16 @@ package wrapper
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/gosuri/uilive"
 	"golang.org/x/sync/errgroup"
 )
-
-type ListBucketsOutput struct {
-	ExistingBuckets        []types.Bucket
-	NonExistingBucketNames []string
-}
 
 type S3Wrapper struct {
 	client client.IS3
@@ -29,11 +26,19 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 
 func (s *S3Wrapper) ClearS3Objects(
 	ctx context.Context,
-	bucket *types.Bucket,
+	bucketName string,
 	forceMode bool,
 	oldVersionsOnly bool,
 	quietMode bool,
 ) error {
+	// This `bucketRegion` allows buckets outside the specified region to be deleted.
+	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
+	// buckets can be operated on.
+	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(bucketName))
+	if err != nil {
+		return err
+	}
+
 	eg := errgroup.Group{}
 	errorStr := ""
 	errorsCount := 0
@@ -48,7 +53,7 @@ func (s *S3Wrapper) ClearS3Objects(
 		defer writer.Stop()
 	}
 
-	io.Logger.Info().Msgf("%v Checking...", *bucket.Name)
+	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
 	var keyMarker *string
 	var versionIdMarker *string
@@ -59,8 +64,8 @@ func (s *S3Wrapper) ClearS3Objects(
 		// directly to DeleteObjects, which can only delete up to 1000 items.
 		output, err := s.client.ListObjectsOrVersionsByPage(
 			ctx,
-			bucket.Name,
-			*bucket.BucketRegion,
+			aws.String(bucketName),
+			bucketRegion,
 			oldVersionsOnly,
 			keyMarker,
 			versionIdMarker,
@@ -89,7 +94,7 @@ func (s *S3Wrapper) ClearS3Objects(
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
 			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, bucket.Name, objects, *bucket.BucketRegion)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), objects, bucketRegion)
 			if err != nil {
 				return err
 			}
@@ -128,33 +133,73 @@ func (s *S3Wrapper) ClearS3Objects(
 		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
-			ResourceName: bucket.Name,
+			ResourceName: aws.String(bucketName),
 			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
 		}
 	}
 
 	if deletedObjectsCount == 0 {
-		io.Logger.Info().Msgf("%v No objects.", *bucket.Name)
+		io.Logger.Info().Msgf("%v No objects.", bucketName)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", *bucket.Name, deletedObjectsCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedObjectsCount)
 	}
 
 	if forceMode {
-		if err := s.client.DeleteBucket(ctx, bucket.Name, *bucket.BucketRegion); err != nil {
+		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), bucketRegion); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", *bucket.Name)
+		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
 	}
 
 	return nil
 }
 
-func (s *S3Wrapper) ListBucketsFilteredByKeyword(ctx context.Context, keyword *string) ([]types.Bucket, error) {
-	// TODO: copy ListBucketNamesFilteredByKeyword here from client
-	// return s.client.ListBucketNamesFilteredByKeyword(ctx, keyword)
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
+	filteredBucketNames := []string{}
+	buckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
+	if err != nil {
+		return filteredBucketNames, err
+	}
+
+	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
+	lowerKeyword := strings.ToLower(*keyword)
+
+	// To be series to avoid throttling of S3 API
+	for _, bucket := range buckets {
+		if strings.Contains(*bucket.Name, lowerKeyword) {
+			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
+		}
+	}
+
+	return filteredBucketNames, nil
 }
 
-func (s *S3Wrapper) ListBucketsByNames(ctx context.Context, bucketNames []string) (ListBucketsOutput, error) {
-	// TODO: get buckets and separate existing and non-existing buckets
-	// return s.client.ListBucketNamesFilteredByKeyword(ctx, keyword)
+func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) error {
+	nonExistingBucketNames := []string{}
+
+	outputBuckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range bucketNames {
+		found := false
+		for _, bucket := range outputBuckets {
+			if *bucket.Name == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			nonExistingBucketNames = append(nonExistingBucketNames, name)
+		}
+	}
+
+	if len(nonExistingBucketNames) > 0 {
+		errMsg := fmt.Sprintf("The following buckets do not exist: %v", strings.Join(nonExistingBucketNames, ", "))
+		return &client.ClientError{
+			Err: fmt.Errorf("NotExistsError: %v", errMsg),
+		}
+	}
+	return nil
 }
