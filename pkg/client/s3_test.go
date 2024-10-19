@@ -702,6 +702,235 @@ func TestS3_DeleteObjects(t *testing.T) {
 	}
 }
 
+func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
+	type args struct {
+		ctx                  context.Context
+		bucketName           *string
+		region               string
+		oldVersionsOnly      bool
+		keyMarker            *string
+		versionIdMarker      *string
+		directoryBucketsMode bool
+		withAPIOptionsFunc   func(*middleware.Stack) error
+	}
+
+	type want struct {
+		output *ListObjectsOrVersionsByPageOutput
+		err    error
+	}
+
+	cases := []struct {
+		name    string
+		args    args
+		want    want
+		wantErr bool
+	}{
+		{
+			name: "call listObjectsByPage if directoryBucketsMode is true",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2Mock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{
+										Contents: []types.Object{
+											{
+												Key: aws.String("Key1"),
+											},
+											{
+												Key: aws.String("Key2"),
+											},
+										},
+										NextContinuationToken: aws.String("NextContinuationToken"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: &ListObjectsOrVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key: aws.String("Key1"),
+						},
+						{
+							Key: aws.String("Key2"),
+						},
+					},
+					NextKeyMarker: aws.String("NextContinuationToken"),
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "call listObjectsByPage if directoryBucketsMode is false",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: false,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectVersionsMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectVersionsOutput{
+										Versions: []types.ObjectVersion{
+											{
+												Key:       aws.String("KeyForVersions"),
+												VersionId: aws.String("VersionIdForVersions"),
+											},
+										},
+										DeleteMarkers: []types.DeleteMarkerEntry{
+											{
+												Key:       aws.String("KeyForDeleteMarkers"),
+												VersionId: aws.String("VersionIdForDeleteMarkers"),
+											},
+										},
+										NextKeyMarker:       aws.String("NextKeyMarker"),
+										NextVersionIdMarker: aws.String("NextVersionIdMarker"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: &ListObjectsOrVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("KeyForVersions"),
+							VersionId: aws.String("VersionIdForVersions"),
+						},
+						{
+							Key:       aws.String("KeyForDeleteMarkers"),
+							VersionId: aws.String("VersionIdForDeleteMarkers"),
+						},
+					},
+					NextKeyMarker:       aws.String("NextKeyMarker"),
+					NextVersionIdMarker: aws.String("NextVersionIdMarker"),
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "listObjectsByPage errors",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: true,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectsV2ErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectsV2Error")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: nil,
+				err:    fmt.Errorf("[resource test] operation error S3: ListObjectsV2, ListObjectsV2Error"),
+			},
+			wantErr: true,
+		},
+		{
+			name: "listObjectVersionsByPage errors",
+			args: args{
+				ctx:                  context.Background(),
+				bucketName:           aws.String("test"),
+				region:               "ap-northeast-1",
+				oldVersionsOnly:      false,
+				keyMarker:            nil,
+				versionIdMarker:      nil,
+				directoryBucketsMode: false,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListObjectVersionsErrorMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3.ListObjectVersionsOutput{},
+								}, middleware.Metadata{}, fmt.Errorf("ListObjectVersionsError")
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: nil,
+				err:    fmt.Errorf("[resource test] operation error S3: ListObjectVersions, ListObjectVersionsError"),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := config.LoadDefaultConfig(
+				tt.args.ctx,
+				config.WithRegion("ap-northeast-1"),
+				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			client := s3.NewFromConfig(cfg)
+			s3Client := NewS3(client, tt.args.directoryBucketsMode)
+
+			output, err := s3Client.ListObjectsOrVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.want.err.Error() {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
+				return
+			}
+			if !reflect.DeepEqual(output, tt.want.output) {
+				t.Errorf("output = %#v, want %#v", output, tt.want.output)
+			}
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextKeyMarker, tt.want.output.NextKeyMarker) {
+				t.Errorf("nextKeyMarker = %#v, want %#v", output.NextKeyMarker, tt.want.output.NextKeyMarker)
+			}
+			if tt.want.output != nil && !reflect.DeepEqual(output.NextVersionIdMarker, tt.want.output.NextVersionIdMarker) {
+				t.Errorf("nextVersionIdMarker = %#v, want %#v", output.NextVersionIdMarker, tt.want.output.NextVersionIdMarker)
+			}
+		})
+	}
+}
+
 func TestS3_listObjectVersionsByPage(t *testing.T) {
 	type args struct {
 		ctx                context.Context
