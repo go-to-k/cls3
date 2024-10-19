@@ -107,24 +107,9 @@ func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		io.Logger.Debug().Msg("Debug mode...")
 
-		if !a.InteractiveMode && len(a.BucketNames.Value()) == 0 {
-			errMsg := fmt.Sprintln("At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.InteractiveMode && len(a.BucketNames.Value()) != 0 {
-			errMsg := fmt.Sprintln("When specifying -i, do not specify the -b option.")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.ForceMode && a.OldVersionsOnly {
-			errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.DirectoryBucketsMode && a.OldVersionsOnly {
-			errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
-			return fmt.Errorf("InvalidOptionError: %v", errMsg)
-		}
-		if a.DirectoryBucketsMode && a.Region == "" {
-			io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+		err := a.validateOptions()
+		if err != nil {
+			return err
 		}
 
 		config, err := client.LoadAWSConfig(c.Context, a.Region, a.Profile)
@@ -154,8 +139,11 @@ func (a *App) getAction() func(c *cli.Context) error {
 				//nolint:errcheck
 				a.BucketNames.Set(bucket)
 			}
-		} else if s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value()) != nil {
-			return err
+		} else {
+			err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, bucketName := range a.BucketNames.Value() {
@@ -181,4 +169,27 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrappe
 		return nil, false, err
 	}
 	return checkboxes, continuation, nil
+}
+
+func (a *App) validateOptions() error {
+	if !a.InteractiveMode && len(a.BucketNames.Value()) == 0 {
+		errMsg := fmt.Sprintln("At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.InteractiveMode && len(a.BucketNames.Value()) != 0 {
+		errMsg := fmt.Sprintln("When specifying -i, do not specify the -b option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.ForceMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.Region == "" {
+		io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+	}
+	return nil
 }
