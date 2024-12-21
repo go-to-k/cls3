@@ -86,6 +86,22 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
   aqua g -i go-to-k/cls3
   ```
 
+- asdf
+
+  ```bash
+  # Add the plugin
+  asdf plugin add cls3 https://github.com/xavbourdeau/cls3-asdf-plugin.git
+
+  # Show all installable versions
+  asdf list-all cls3
+
+  # Install specific version
+  asdf install cls3 latest
+
+  # Set a version globally (on your ~/.tool-versions file)
+  asdf global cls3 latest
+  ```
+
 - Binary
   - [Releases](https://github.com/go-to-k/cls3/releases)
 - Git Clone and install(for developers)
