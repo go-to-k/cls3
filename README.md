@@ -123,7 +123,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode]
   ```
 
 - -b, --bucketName: optional
