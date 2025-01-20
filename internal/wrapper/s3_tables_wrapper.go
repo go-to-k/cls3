@@ -11,6 +11,7 @@ import (
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/gosuri/uilive"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 )
 
 var _ IWrapper = (*S3TablesWrapper)(nil)
@@ -28,6 +29,9 @@ func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
 func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string, namespace string) (int, error) {
 	eg := errgroup.Group{}
 
+	// (Currently, Too Many Requests error occurs immediately, so we will make it a series once.
+	sem := semaphore.NewWeighted(1)
+
 	deletedTablesCount := 0
 	var continuationToken *string
 	for {
@@ -40,7 +44,11 @@ func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string,
 		}
 
 		for _, table := range output.Tables {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return 0, err
+			}
 			eg.Go(func() error {
+				defer sem.Release(1)
 				return s.client.DeleteTable(ctx, aws.String(*table.Name), aws.String(namespace), aws.String(bucketArn))
 			})
 		}
@@ -68,6 +76,10 @@ func (s *S3TablesWrapper) ClearBucket(
 	input ClearBucketInput,
 ) error {
 	eg := errgroup.Group{}
+
+	// (Currently, Too Many Requests error occurs immediately, so we will make it a series once.
+	sem := semaphore.NewWeighted(1)
+
 	deletedTablesCount := 0
 	deletedTablesCountMtx := sync.Mutex{}
 
@@ -96,7 +108,11 @@ func (s *S3TablesWrapper) ClearBucket(
 
 		for _, summary := range output.Namespaces {
 			for _, namespace := range summary.Namespace {
+				if err := sem.Acquire(ctx, 1); err != nil {
+					return err
+				}
 				eg.Go(func() error {
+					defer sem.Release(1)
 					tableCounts, err := s.deleteNamespace(ctx, input.TargetBucket, namespace)
 					if err != nil {
 						return err
