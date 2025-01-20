@@ -25,6 +25,7 @@ type App struct {
 	OldVersionsOnly      bool
 	QuietMode            bool
 	DirectoryBucketsMode bool
+	TableBucketsMode     bool
 }
 
 func NewApp(version string) *App {
@@ -88,6 +89,13 @@ func NewApp(version string) *App {
 				Value:       false,
 				Usage:       "Clear Directory Buckets for S3 Express One Zone",
 				Destination: &app.DirectoryBucketsMode,
+			},
+			&cli.BoolFlag{
+				Name:        "tableBucketsMode",
+				Aliases:     []string{"t"},
+				Value:       false,
+				Usage:       "Clear Table Buckets for S3 Tables",
+				Destination: &app.TableBucketsMode,
 			},
 		},
 	}
@@ -177,6 +185,13 @@ func (a *App) validateOptions() error {
 	}
 	if a.DirectoryBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+	}
+	if a.TableBucketsMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -t, do not specify the -o option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.TableBucketsMode && a.Region == "" {
+		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
 	return nil
 }
