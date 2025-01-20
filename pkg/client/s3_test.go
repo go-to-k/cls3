@@ -1690,7 +1690,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 	}
 }
 
-func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
+func TestS3_ListBucketsByBucketMode(t *testing.T) {
 	type args struct {
 		ctx                context.Context
 		bucketsMode        BucketMode
@@ -1750,7 +1750,7 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "call listBuckets if bucketsMode is GeneralMode",
+			name: "call listGeneralBuckets if bucketsMode is GeneralMode",
 			args: args{
 				ctx:         context.Background(),
 				bucketsMode: GeneralMode,
@@ -1816,7 +1816,7 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "listBuckets errors",
+			name: "listGeneralBuckets errors",
 			args: args{
 				ctx:         context.Background(),
 				bucketsMode: GeneralMode,
@@ -1856,7 +1856,7 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client, tt.args.bucketsMode)
 
-			output, err := s3Client.ListBucketsOrDirectoryBuckets(tt.args.ctx)
+			output, err := s3Client.ListBucketsByBucketMode(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -1872,7 +1872,7 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 	}
 }
 
-func TestS3_listBuckets(t *testing.T) {
+func TestS3_listGeneralBuckets(t *testing.T) {
 	type args struct {
 		ctx                context.Context
 		withAPIOptionsFunc func(*middleware.Stack) error
@@ -2026,7 +2026,7 @@ func TestS3_listBuckets(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client, GeneralMode)
 
-			output, err := s3Client.listBuckets(tt.args.ctx)
+			output, err := s3Client.listGeneralBuckets(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
