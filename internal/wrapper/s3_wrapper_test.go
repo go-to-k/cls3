@@ -837,8 +837,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				)
 			},
 			want: want{
-				bucketNames: []string{"test2"},
-				err:         fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1"),
+				bucketNames: []string{},
+				err:         fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1, test2"),
 			},
 			wantErr: true,
 		},
