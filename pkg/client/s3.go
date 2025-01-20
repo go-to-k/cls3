@@ -12,8 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
-var SleepTimeSecForS3 = 10
-
 type ListObjectsOrVersionsByPageOutput struct {
 	ObjectIdentifiers   []types.ObjectIdentifier
 	NextKeyMarker       *string
@@ -322,6 +320,7 @@ func (s *S3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket,
 	return buckets, nil
 }
 
+// TODO: continuationToken
 func (s *S3) listBuckets(ctx context.Context) ([]types.Bucket, error) {
 	input := &s3.ListBucketsInput{}
 
