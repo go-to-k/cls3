@@ -14,6 +14,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var _ IWrapper = (*S3Wrapper)(nil)
+
 type S3Wrapper struct {
 	client client.IS3
 }
@@ -26,15 +28,12 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 
 func (s *S3Wrapper) ClearBucket(
 	ctx context.Context,
-	bucketName string,
-	forceMode bool,
-	oldVersionsOnly bool,
-	quietMode bool,
+	input ClearBucketInput,
 ) error {
 	// This `bucketRegion` allows buckets outside the specified region to be deleted.
 	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
 	// buckets can be operated on.
-	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(bucketName))
+	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(input.BucketName))
 	if err != nil {
 		return err
 	}
@@ -47,13 +46,13 @@ func (s *S3Wrapper) ClearBucket(
 	deletedObjectsCountMtx := sync.Mutex{}
 
 	var writer *uilive.Writer
-	if !quietMode {
+	if !input.QuietMode {
 		writer = uilive.New()
 		writer.Start()
 		defer writer.Stop()
 	}
 
-	io.Logger.Info().Msgf("%v Checking...", bucketName)
+	io.Logger.Info().Msgf("%v Checking...", input.BucketName)
 
 	var keyMarker *string
 	var versionIdMarker *string
@@ -64,9 +63,9 @@ func (s *S3Wrapper) ClearBucket(
 		// directly to DeleteObjects, which can only delete up to 1000 items.
 		output, err := s.client.ListObjectsOrVersionsByPage(
 			ctx,
-			aws.String(bucketName),
+			aws.String(input.BucketName),
 			bucketRegion,
-			oldVersionsOnly,
+			input.OldVersionsOnly,
 			keyMarker,
 			versionIdMarker,
 		)
@@ -85,7 +84,7 @@ func (s *S3Wrapper) ClearBucket(
 		eg.Go(func() error {
 			deletedObjectsCountMtx.Lock()
 			deletedObjectsCount += len(objects)
-			if !quietMode {
+			if !input.QuietMode {
 				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedObjectsCount)
 			}
 			deletedObjectsCountMtx.Unlock()
@@ -94,7 +93,7 @@ func (s *S3Wrapper) ClearBucket(
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
 			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), objects, bucketRegion)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.BucketName), objects, bucketRegion)
 			if err != nil {
 				return err
 			}
@@ -123,7 +122,7 @@ func (s *S3Wrapper) ClearBucket(
 		return err
 	}
 
-	if !quietMode {
+	if !input.QuietMode {
 		if err := writer.Flush(); err != nil {
 			return err
 		}
@@ -133,22 +132,22 @@ func (s *S3Wrapper) ClearBucket(
 		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
-			ResourceName: aws.String(bucketName),
+			ResourceName: aws.String(input.BucketName),
 			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
 		}
 	}
 
 	if deletedObjectsCount == 0 {
-		io.Logger.Info().Msgf("%v No objects.", bucketName)
+		io.Logger.Info().Msgf("%v No objects.", input.BucketName)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedObjectsCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.BucketName, deletedObjectsCount)
 	}
 
-	if forceMode {
-		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), bucketRegion); err != nil {
+	if input.ForceMode {
+		if err := s.client.DeleteBucket(ctx, aws.String(input.BucketName), bucketRegion); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
+		io.Logger.Info().Msgf("%v Deleted!!", input.BucketName)
 	}
 
 	return nil

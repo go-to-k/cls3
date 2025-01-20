@@ -518,7 +518,11 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
-			err := s3.ClearBucket(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, false, tt.args.quietMode)
+			err := s3.ClearBucket(tt.args.ctx, ClearBucketInput{
+				BucketName: tt.args.bucketName,
+				ForceMode:  tt.args.forceMode,
+				QuietMode:  tt.args.quietMode,
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

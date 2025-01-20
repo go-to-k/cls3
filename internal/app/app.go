@@ -141,7 +141,12 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucketName := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearBucket(c.Context, bucketName, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
+			if err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
+				BucketName:      bucketName,
+				ForceMode:       a.ForceMode,
+				OldVersionsOnly: a.OldVersionsOnly,
+				QuietMode:       a.QuietMode,
+			}); err != nil {
 				return err
 			}
 		}
@@ -150,7 +155,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) createS3Wrapper(ctx context.Context) (*wrapper.S3Wrapper, error) {
+func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
 	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
 	if err != nil {
 		return nil, err
@@ -200,7 +205,7 @@ func (a *App) validateOptions() error {
 	return nil
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) (bool, error) {
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper) (bool, error) {
 	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
 	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
