@@ -52,6 +52,12 @@ The `-d | --directoryBucketsMode` option allows you to delete the Directory Buck
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
+### Deletion of Table Buckets for S3 Tables
+
+The `-t | --tableBucketsMode` option allows you to delete the Table Buckets for S3 Tables.
+
+In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
+
 ### Number of objects that can be deleted
 
 The delete-objects API provided by the CLI and SDK has a limit of "the number of objects that can be deleted in one command is limited to 1000", but This tool has no limit on the number.
@@ -135,6 +141,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
     - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), you should specify the region. The mode is not available across regions.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
+    - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
 - -o, --oldVersionsOnly: optional
@@ -147,6 +154,9 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
   - Directory Buckets Mode for **S3 Express One Zone**
   - Operation across regions is not possible, but only in **one region**.
     - You can specify the region with the `-r` option.
+- -t, --tableBucketsMode: optional
+  - Table Buckets Mode for **S3 Tables**
+  - If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.
 
 ## Interactive Mode
 
@@ -180,8 +190,8 @@ You can use cls3 in GitHub Actions Workflow.
 The `quiet` allows you to hive live display of number of deletions (**default: true in GitHub Actions ONLY**).
 
 Basically, you do not need to specify a `region` parameter, since you can delete buckets across regions. However,
-in Directory Buckets mode (`directory-buckets-mode`) for S3 Express One Zone, the region must be specified. This mode cannot
-be used across regions.
+in Directory Buckets mode (`directory-buckets-mode`) for S3 Express One Zone and Table Buckets mode (`table-buckets-mode`)
+for S3 Tables, the region must be specified. These modes cannot be used across regions.
 
 To delete multiple buckets, specify bucket names separated by commas.
 
@@ -209,7 +219,8 @@ jobs:
           quiet: false # Hide live display of number of deletions (default: true in GitHub Actions ONLY.)
           old-versions-only: false # Delete old version objects only (including all delete-markers) (default: false)
           directory-buckets-mode: false # Directory Buckets Mode for S3 Express One Zone (default: false)
-          region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone
+          table-buckets-mode: false # Table Buckets Mode for S3 Tables (default: false)
+          region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone and Table Buckets Mode for S3 Tables
 ```
 
 You can also run raw commands after installing the cls3 binary.

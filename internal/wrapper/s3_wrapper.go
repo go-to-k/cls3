@@ -14,6 +14,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var _ IWrapper = (*S3Wrapper)(nil)
+
 type S3Wrapper struct {
 	client client.IS3
 }
@@ -24,17 +26,14 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s *S3Wrapper) ClearS3Objects(
+func (s *S3Wrapper) ClearBucket(
 	ctx context.Context,
-	bucketName string,
-	forceMode bool,
-	oldVersionsOnly bool,
-	quietMode bool,
+	input ClearBucketInput,
 ) error {
 	// This `bucketRegion` allows buckets outside the specified region to be deleted.
 	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
 	// buckets can be operated on.
-	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(bucketName))
+	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(input.TargetBucket))
 	if err != nil {
 		return err
 	}
@@ -47,13 +46,13 @@ func (s *S3Wrapper) ClearS3Objects(
 	deletedObjectsCountMtx := sync.Mutex{}
 
 	var writer *uilive.Writer
-	if !quietMode {
+	if !input.QuietMode {
 		writer = uilive.New()
 		writer.Start()
 		defer writer.Stop()
 	}
 
-	io.Logger.Info().Msgf("%v Checking...", bucketName)
+	io.Logger.Info().Msgf("%v Checking...", input.TargetBucket)
 
 	var keyMarker *string
 	var versionIdMarker *string
@@ -64,9 +63,9 @@ func (s *S3Wrapper) ClearS3Objects(
 		// directly to DeleteObjects, which can only delete up to 1000 items.
 		output, err := s.client.ListObjectsOrVersionsByPage(
 			ctx,
-			aws.String(bucketName),
+			aws.String(input.TargetBucket),
 			bucketRegion,
-			oldVersionsOnly,
+			input.OldVersionsOnly,
 			keyMarker,
 			versionIdMarker,
 		)
@@ -85,7 +84,7 @@ func (s *S3Wrapper) ClearS3Objects(
 		eg.Go(func() error {
 			deletedObjectsCountMtx.Lock()
 			deletedObjectsCount += len(objects)
-			if !quietMode {
+			if !input.QuietMode {
 				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedObjectsCount)
 			}
 			deletedObjectsCountMtx.Unlock()
@@ -94,7 +93,7 @@ func (s *S3Wrapper) ClearS3Objects(
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
 			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(bucketName), objects, bucketRegion)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.TargetBucket), objects, bucketRegion)
 			if err != nil {
 				return err
 			}
@@ -123,7 +122,7 @@ func (s *S3Wrapper) ClearS3Objects(
 		return err
 	}
 
-	if !quietMode {
+	if !input.QuietMode {
 		if err := writer.Flush(); err != nil {
 			return err
 		}
@@ -133,32 +132,32 @@ func (s *S3Wrapper) ClearS3Objects(
 		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
-			ResourceName: aws.String(bucketName),
+			ResourceName: aws.String(input.TargetBucket),
 			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
 		}
 	}
 
 	if deletedObjectsCount == 0 {
-		io.Logger.Info().Msgf("%v No objects.", bucketName)
+		io.Logger.Info().Msgf("%v No objects.", input.TargetBucket)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucketName, deletedObjectsCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.TargetBucket, deletedObjectsCount)
 	}
 
-	if forceMode {
-		if err := s.client.DeleteBucket(ctx, aws.String(bucketName), bucketRegion); err != nil {
+	if input.ForceMode {
+		if err := s.client.DeleteBucket(ctx, aws.String(input.TargetBucket), bucketRegion); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
+		io.Logger.Info().Msgf("%v Deleted!!", input.TargetBucket)
 	}
 
 	return nil
 }
 
-func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
-	filteredBucketNames := []string{}
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]ListBucketNamesFilteredByKeywordOutput, error) {
+	filteredBuckets := []ListBucketNamesFilteredByKeywordOutput{}
 	buckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
-		return filteredBucketNames, err
+		return filteredBuckets, err
 	}
 
 	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
@@ -166,26 +165,30 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 
 	for _, bucket := range buckets {
 		if strings.Contains(*bucket.Name, lowerKeyword) {
-			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
+			filteredBuckets = append(filteredBuckets, ListBucketNamesFilteredByKeywordOutput{
+				BucketName:   *bucket.Name,
+				TargetBucket: *bucket.Name,
+			})
 		}
 	}
 
-	if len(filteredBucketNames) == 0 {
+	if len(filteredBuckets) == 0 {
 		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", *keyword)
-		return filteredBucketNames, &client.ClientError{
+		return filteredBuckets, &client.ClientError{
 			Err: fmt.Errorf("NotExistsError: %v", errMsg),
 		}
 	}
 
-	return filteredBucketNames, nil
+	return filteredBuckets, nil
 }
 
-func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) error {
+func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) ([]string, error) {
+	targetBucketNames := []string{}
 	nonExistingBucketNames := []string{}
 
 	outputBuckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
-		return err
+		return targetBucketNames, err
 	}
 
 	for _, name := range bucketNames {
@@ -193,6 +196,7 @@ func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []stri
 		for _, bucket := range outputBuckets {
 			if *bucket.Name == name {
 				found = true
+				targetBucketNames = append(targetBucketNames, *bucket.Name)
 				break
 			}
 		}
@@ -203,9 +207,9 @@ func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []stri
 
 	if len(nonExistingBucketNames) > 0 {
 		errMsg := fmt.Sprintf("The following buckets do not exist: %v", strings.Join(nonExistingBucketNames, ", "))
-		return &client.ClientError{
+		return targetBucketNames, &client.ClientError{
 			Err: fmt.Errorf("NotExistsError: %v", errMsg),
 		}
 	}
-	return nil
+	return targetBucketNames, nil
 }

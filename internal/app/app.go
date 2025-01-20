@@ -6,14 +6,11 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
 )
-
-const SDKRetryMaxAttempts = 3
 
 type App struct {
 	Cli                  *cli.App
@@ -25,12 +22,15 @@ type App struct {
 	OldVersionsOnly      bool
 	QuietMode            bool
 	DirectoryBucketsMode bool
+	TableBucketsMode     bool
+	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
 }
 
 func NewApp(version string) *App {
 	app := App{}
 
 	app.BucketNames = cli.NewStringSlice()
+	app.targetBuckets = []string{}
 
 	app.Cli = &cli.App{
 		Name:  "cls3",
@@ -58,7 +58,7 @@ func NewApp(version string) *App {
 				Name:        "force",
 				Aliases:     []string{"f"},
 				Value:       false,
-				Usage:       "Delete a bucket together",
+				Usage:       "Delete a bucket together. If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.",
 				Destination: &app.ForceMode,
 			},
 			&cli.BoolFlag{
@@ -88,6 +88,13 @@ func NewApp(version string) *App {
 				Value:       false,
 				Usage:       "Clear Directory Buckets for S3 Express One Zone",
 				Destination: &app.DirectoryBucketsMode,
+			},
+			&cli.BoolFlag{
+				Name:        "tableBucketsMode",
+				Aliases:     []string{"t"},
+				Value:       false,
+				Usage:       "Clear Table Buckets for S3 Tables. If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.",
+				Destination: &app.TableBucketsMode,
 			},
 		},
 	}
@@ -126,14 +133,20 @@ func (a *App) getAction() func(c *cli.Context) error {
 				return nil
 			}
 		} else {
-			err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
+			outputBuckets, err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
 			if err != nil {
 				return err
 			}
+			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
 		}
 
-		for _, bucketName := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucketName, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
+		for _, bucket := range a.targetBuckets {
+			if err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
+				TargetBucket:    bucket,
+				ForceMode:       a.ForceMode,
+				OldVersionsOnly: a.OldVersionsOnly,
+				QuietMode:       a.QuietMode,
+			}); err != nil {
 				return err
 			}
 		}
@@ -142,20 +155,13 @@ func (a *App) getAction() func(c *cli.Context) error {
 	}
 }
 
-func (a *App) createS3Wrapper(ctx context.Context) (*wrapper.S3Wrapper, error) {
+func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
 	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
 	if err != nil {
 		return nil, err
 	}
 
-	client := client.NewS3(
-		s3.NewFromConfig(config, func(o *s3.Options) {
-			o.RetryMaxAttempts = SDKRetryMaxAttempts
-			o.RetryMode = aws.RetryModeStandard
-		}),
-		a.DirectoryBucketsMode,
-	)
-	return wrapper.NewS3Wrapper(client), nil
+	return wrapper.CreateS3Wrapper(config, a.TableBucketsMode, a.DirectoryBucketsMode), nil
 }
 
 func (a *App) validateOptions() error {
@@ -171,6 +177,10 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
+	if a.DirectoryBucketsMode && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("You cannot specify both -d and -t options.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
@@ -178,14 +188,26 @@ func (a *App) validateOptions() error {
 	if a.DirectoryBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
+	if a.TableBucketsMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -t, do not specify the -o option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.TableBucketsMode && a.Region == "" {
+		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+	}
 	return nil
 }
 
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrapper) (bool, error) {
+func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper) (bool, error) {
 	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
-	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
+	outputs, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
 		return false, err
+	}
+
+	bucketNames := []string{}
+	for _, output := range outputs {
+		bucketNames = append(bucketNames, output.BucketName)
 	}
 
 	label := []string{"Select buckets."}
@@ -198,8 +220,11 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper *wrapper.S3Wrappe
 	}
 
 	for _, bucket := range checkboxes {
-		//nolint:errcheck
-		a.BucketNames.Set(bucket)
+		for _, output := range outputs {
+			if output.BucketName == bucket {
+				a.targetBuckets = append(a.targetBuckets, output.TargetBucket)
+			}
+		}
 	}
 	return true, nil
 }

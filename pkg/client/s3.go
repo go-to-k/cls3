@@ -322,6 +322,7 @@ func (s *S3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket,
 	return buckets, nil
 }
 
+// TODO: continuationToken
 func (s *S3) listBuckets(ctx context.Context) ([]types.Bucket, error) {
 	input := &s3.ListBucketsInput{}
 
