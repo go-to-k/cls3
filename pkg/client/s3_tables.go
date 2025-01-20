@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
 
-var SleepTimeSecForS3Tables = 5
+var SleepTimeSecForS3Tables = 3
 
 type ListNamespacesByPageOutput struct {
 	Namespaces        []types.NamespaceSummary

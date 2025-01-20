@@ -14,6 +14,9 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+// Too Many Requests error often occurs, so limit the value
+const SemaphoreWeight = 5
+
 var _ IWrapper = (*S3TablesWrapper)(nil)
 
 type S3TablesWrapper struct {
@@ -29,8 +32,7 @@ func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
 func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string, namespace string) (int, error) {
 	eg := errgroup.Group{}
 
-	// Currently, Too Many Requests error occurs immediately, so we will keep it to a small number.
-	sem := semaphore.NewWeighted(5)
+	sem := semaphore.NewWeighted(SemaphoreWeight)
 
 	deletedTablesCount := 0
 	var continuationToken *string
@@ -77,8 +79,7 @@ func (s *S3TablesWrapper) ClearBucket(
 ) error {
 	eg := errgroup.Group{}
 
-	// Currently, Too Many Requests error occurs immediately, so we will keep it to a small number.
-	sem := semaphore.NewWeighted(5)
+	sem := semaphore.NewWeighted(SemaphoreWeight)
 
 	deletedTablesCount := 0
 	deletedTablesCountMtx := sync.Mutex{}
