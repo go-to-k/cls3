@@ -6,15 +6,11 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
 )
-
-const SDKRetryMaxAttempts = 3
 
 type App struct {
 	Cli                  *cli.App
@@ -165,24 +161,7 @@ func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
 		return nil, err
 	}
 
-	if a.TableBucketsMode {
-		client := client.NewS3Tables(
-			s3tables.NewFromConfig(config, func(o *s3tables.Options) {
-				o.RetryMaxAttempts = SDKRetryMaxAttempts
-				o.RetryMode = aws.RetryModeStandard
-			}),
-		)
-		return wrapper.NewS3TablesWrapper(client), nil
-	}
-
-	client := client.NewS3(
-		s3.NewFromConfig(config, func(o *s3.Options) {
-			o.RetryMaxAttempts = SDKRetryMaxAttempts
-			o.RetryMode = aws.RetryModeStandard
-		}),
-		a.DirectoryBucketsMode,
-	)
-	return wrapper.NewS3Wrapper(client), nil
+	return wrapper.CreateS3Wrapper(config, a.TableBucketsMode, a.DirectoryBucketsMode), nil
 }
 
 func (a *App) validateOptions() error {
