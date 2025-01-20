@@ -81,19 +81,19 @@ func (mr *MockIS3MockRecorder) GetBucketLocation(ctx, bucketName any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBucketLocation", reflect.TypeOf((*MockIS3)(nil).GetBucketLocation), ctx, bucketName)
 }
 
-// ListBucketsByBucketMode mocks base method.
-func (m *MockIS3) ListBucketsByBucketMode(ctx context.Context) ([]types.Bucket, error) {
+// ListBucketsOrDirectoryBuckets mocks base method.
+func (m *MockIS3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListBucketsByBucketMode", ctx)
+	ret := m.ctrl.Call(m, "ListBucketsOrDirectoryBuckets", ctx)
 	ret0, _ := ret[0].([]types.Bucket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListBucketsByBucketMode indicates an expected call of ListBucketsByBucketMode.
-func (mr *MockIS3MockRecorder) ListBucketsByBucketMode(ctx any) *gomock.Call {
+// ListBucketsOrDirectoryBuckets indicates an expected call of ListBucketsOrDirectoryBuckets.
+func (mr *MockIS3MockRecorder) ListBucketsOrDirectoryBuckets(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBucketsByBucketMode", reflect.TypeOf((*MockIS3)(nil).ListBucketsByBucketMode), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBucketsOrDirectoryBuckets", reflect.TypeOf((*MockIS3)(nil).ListBucketsOrDirectoryBuckets), ctx)
 }
 
 // ListObjectsOrVersionsByPage mocks base method.

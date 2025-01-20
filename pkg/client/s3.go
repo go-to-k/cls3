@@ -45,7 +45,7 @@ type IS3 interface {
 		keyMarker *string,
 		versionIdMarker *string,
 	) (*ListObjectsOrVersionsByPageOutput, error)
-	ListBucketsByBucketMode(ctx context.Context) ([]types.Bucket, error)
+	ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error)
 	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
 }
 
@@ -314,13 +314,13 @@ func (s *S3) listObjectsByPage(
 	}, nil
 }
 
-func (s *S3) ListBucketsByBucketMode(ctx context.Context) ([]types.Bucket, error) {
+func (s *S3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
 
 	if s.mode == DirectoryBucketsMode {
 		listBucketsFunc = s.listDirectoryBuckets
 	} else {
-		listBucketsFunc = s.listGeneralBuckets
+		listBucketsFunc = s.listBuckets
 	}
 
 	buckets, err := listBucketsFunc(ctx)
@@ -330,7 +330,7 @@ func (s *S3) ListBucketsByBucketMode(ctx context.Context) ([]types.Bucket, error
 	return buckets, nil
 }
 
-func (s *S3) listGeneralBuckets(ctx context.Context) ([]types.Bucket, error) {
+func (s *S3) listBuckets(ctx context.Context) ([]types.Bucket, error) {
 	input := &s3.ListBucketsInput{}
 
 	optFn := func(o *s3.Options) {

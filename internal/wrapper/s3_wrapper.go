@@ -156,7 +156,7 @@ func (s *S3Wrapper) ClearS3Objects(
 
 func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
 	filteredBucketNames := []string{}
-	buckets, err := s.client.ListBucketsByBucketMode(ctx)
+	buckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
 		return filteredBucketNames, err
 	}
@@ -183,7 +183,7 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) error {
 	nonExistingBucketNames := []string{}
 
-	outputBuckets, err := s.client.ListBucketsByBucketMode(ctx)
+	outputBuckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
 		return err
 	}

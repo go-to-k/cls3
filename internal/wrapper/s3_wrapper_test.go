@@ -558,7 +558,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String("test"),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("test1"),
@@ -589,7 +589,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String(""),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("test1"),
@@ -621,7 +621,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String("test"),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("other1"),
@@ -649,7 +649,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String("test"),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{},
 					nil,
 				)
@@ -667,7 +667,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String(""),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{},
 					nil,
 				)
@@ -685,7 +685,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String("test"),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{},
 					fmt.Errorf("ListBucketError"),
 				)
@@ -703,7 +703,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				keyword: aws.String("TEST"),
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("test1"),
@@ -779,7 +779,7 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				bucketNames: []string{"test1", "test2"},
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("test1"),
@@ -803,7 +803,7 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				bucketNames: []string{"test1", "test2"},
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("test2"),
@@ -818,13 +818,13 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "ListBucketsByBucketMode returns empty",
+			name: "ListBucketsOrDirectoryBuckets returns empty",
 			args: args{
 				ctx:         context.Background(),
 				bucketNames: []string{"test1", "test2"},
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{},
 					nil,
 				)
@@ -835,13 +835,13 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "ListBucketsByBucketMode returns an error",
+			name: "ListBucketsOrDirectoryBuckets returns an error",
 			args: args{
 				ctx:         context.Background(),
 				bucketNames: []string{"test1", "test2"},
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{},
 					fmt.Errorf("ListBucketError"),
 				)
@@ -858,7 +858,7 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				bucketNames: []string{},
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().ListBucketsByBucketMode(gomock.Any()).Return(
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
 					[]types.Bucket{
 						{
 							Name: aws.String("test1"),
