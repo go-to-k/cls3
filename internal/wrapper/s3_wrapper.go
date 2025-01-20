@@ -33,7 +33,7 @@ func (s *S3Wrapper) ClearBucket(
 	// This `bucketRegion` allows buckets outside the specified region to be deleted.
 	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
 	// buckets can be operated on.
-	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(input.BucketName))
+	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(input.TargetBucket))
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (s *S3Wrapper) ClearBucket(
 		defer writer.Stop()
 	}
 
-	io.Logger.Info().Msgf("%v Checking...", input.BucketName)
+	io.Logger.Info().Msgf("%v Checking...", input.TargetBucket)
 
 	var keyMarker *string
 	var versionIdMarker *string
@@ -63,7 +63,7 @@ func (s *S3Wrapper) ClearBucket(
 		// directly to DeleteObjects, which can only delete up to 1000 items.
 		output, err := s.client.ListObjectsOrVersionsByPage(
 			ctx,
-			aws.String(input.BucketName),
+			aws.String(input.TargetBucket),
 			bucketRegion,
 			input.OldVersionsOnly,
 			keyMarker,
@@ -93,7 +93,7 @@ func (s *S3Wrapper) ClearBucket(
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
 			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
 			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.BucketName), objects, bucketRegion)
+			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.TargetBucket), objects, bucketRegion)
 			if err != nil {
 				return err
 			}
@@ -132,22 +132,22 @@ func (s *S3Wrapper) ClearBucket(
 		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
-			ResourceName: aws.String(input.BucketName),
+			ResourceName: aws.String(input.TargetBucket),
 			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
 		}
 	}
 
 	if deletedObjectsCount == 0 {
-		io.Logger.Info().Msgf("%v No objects.", input.BucketName)
+		io.Logger.Info().Msgf("%v No objects.", input.TargetBucket)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.BucketName, deletedObjectsCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.TargetBucket, deletedObjectsCount)
 	}
 
 	if input.ForceMode {
-		if err := s.client.DeleteBucket(ctx, aws.String(input.BucketName), bucketRegion); err != nil {
+		if err := s.client.DeleteBucket(ctx, aws.String(input.TargetBucket), bucketRegion); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", input.BucketName)
+		io.Logger.Info().Msgf("%v Deleted!!", input.TargetBucket)
 	}
 
 	return nil
@@ -179,12 +179,13 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 	return filteredBucketNames, nil
 }
 
-func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) error {
+func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) ([]string, error) {
+	targetBucketNames := []string{}
 	nonExistingBucketNames := []string{}
 
 	outputBuckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
-		return err
+		return targetBucketNames, err
 	}
 
 	for _, name := range bucketNames {
@@ -192,6 +193,7 @@ func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []stri
 		for _, bucket := range outputBuckets {
 			if *bucket.Name == name {
 				found = true
+				targetBucketNames = append(targetBucketNames, *bucket.Name)
 				break
 			}
 		}
@@ -202,9 +204,9 @@ func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []stri
 
 	if len(nonExistingBucketNames) > 0 {
 		errMsg := fmt.Sprintf("The following buckets do not exist: %v", strings.Join(nonExistingBucketNames, ", "))
-		return &client.ClientError{
+		return targetBucketNames, &client.ClientError{
 			Err: fmt.Errorf("NotExistsError: %v", errMsg),
 		}
 	}
-	return nil
+	return targetBucketNames, nil
 }

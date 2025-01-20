@@ -125,6 +125,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 			return err
 		}
 
+		targetBuckets := []string{} // bucket names for S3, bucket arns for S3Tables
 		if a.InteractiveMode {
 			continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
 			if err != nil {
@@ -134,15 +135,16 @@ func (a *App) getAction() func(c *cli.Context) error {
 				return nil
 			}
 		} else {
-			err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
+			outputBuckets, err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
 			if err != nil {
 				return err
 			}
+			targetBuckets = append(targetBuckets, outputBuckets...)
 		}
 
-		for _, bucketName := range a.BucketNames.Value() {
+		for _, bucket := range targetBuckets {
 			if err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
-				BucketName:      bucketName,
+				TargetBucket:    bucket,
 				ForceMode:       a.ForceMode,
 				OldVersionsOnly: a.OldVersionsOnly,
 				QuietMode:       a.QuietMode,

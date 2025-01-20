@@ -519,9 +519,9 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 			s3 := NewS3Wrapper(s3Mock)
 
 			err := s3.ClearBucket(tt.args.ctx, ClearBucketInput{
-				BucketName: tt.args.bucketName,
-				ForceMode:  tt.args.forceMode,
-				QuietMode:  tt.args.quietMode,
+				TargetBucket: tt.args.bucketName,
+				ForceMode:    tt.args.forceMode,
+				QuietMode:    tt.args.quietMode,
 			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
@@ -766,7 +766,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 	}
 
 	type want struct {
-		err error
+		bucketNames []string
+		err         error
 	}
 
 	cases := []struct {
@@ -796,7 +797,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				)
 			},
 			want: want{
-				err: nil,
+				bucketNames: []string{"test1", "test2"},
+				err:         nil,
 			},
 			wantErr: false,
 		},
@@ -817,7 +819,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				)
 			},
 			want: want{
-				err: fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1"),
+				bucketNames: []string{"test2"},
+				err:         fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1"),
 			},
 			wantErr: true,
 		},
@@ -834,7 +837,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				)
 			},
 			want: want{
-				err: fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1, test2"),
+				bucketNames: []string{"test2"},
+				err:         fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1"),
 			},
 			wantErr: true,
 		},
@@ -851,7 +855,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				)
 			},
 			want: want{
-				err: fmt.Errorf("ListBucketError"),
+				bucketNames: []string{},
+				err:         fmt.Errorf("ListBucketError"),
 			},
 			wantErr: true,
 		},
@@ -875,7 +880,8 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 				)
 			},
 			want: want{
-				err: nil,
+				bucketNames: []string{},
+				err:         nil,
 			},
 			wantErr: false,
 		},
@@ -889,7 +895,7 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
-			err := s3.CheckAllBucketsExist(tt.args.ctx, tt.args.bucketNames)
+			bucketNames, err := s3.CheckAllBucketsExist(tt.args.ctx, tt.args.bucketNames)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -897,6 +903,9 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 			if tt.wantErr && err.Error() != tt.want.err.Error() {
 				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
 				return
+			}
+			if !reflect.DeepEqual(bucketNames, tt.want.bucketNames) {
+				t.Errorf("bucketNames = %#v, want %#v", bucketNames, tt.want.bucketNames)
 			}
 		})
 	}
