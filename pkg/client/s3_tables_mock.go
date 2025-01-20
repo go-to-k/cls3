@@ -38,88 +38,88 @@ func (m *MockIS3Tables) EXPECT() *MockIS3TablesMockRecorder {
 }
 
 // DeleteNamespace mocks base method.
-func (m *MockIS3Tables) DeleteNamespace(ctx context.Context, bucketName, namespace, tableBucketARN *string, region string) error {
+func (m *MockIS3Tables) DeleteNamespace(ctx context.Context, namespace, tableBucketARN *string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteNamespace", ctx, bucketName, namespace, tableBucketARN, region)
+	ret := m.ctrl.Call(m, "DeleteNamespace", ctx, namespace, tableBucketARN)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteNamespace indicates an expected call of DeleteNamespace.
-func (mr *MockIS3TablesMockRecorder) DeleteNamespace(ctx, bucketName, namespace, tableBucketARN, region any) *gomock.Call {
+func (mr *MockIS3TablesMockRecorder) DeleteNamespace(ctx, namespace, tableBucketARN any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNamespace", reflect.TypeOf((*MockIS3Tables)(nil).DeleteNamespace), ctx, bucketName, namespace, tableBucketARN, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNamespace", reflect.TypeOf((*MockIS3Tables)(nil).DeleteNamespace), ctx, namespace, tableBucketARN)
 }
 
 // DeleteTable mocks base method.
-func (m *MockIS3Tables) DeleteTable(ctx context.Context, bucketName, tableName, namespace, tableBucketARN *string, region string) error {
+func (m *MockIS3Tables) DeleteTable(ctx context.Context, tableName, namespace, tableBucketARN *string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteTable", ctx, bucketName, tableName, namespace, tableBucketARN, region)
+	ret := m.ctrl.Call(m, "DeleteTable", ctx, tableName, namespace, tableBucketARN)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteTable indicates an expected call of DeleteTable.
-func (mr *MockIS3TablesMockRecorder) DeleteTable(ctx, bucketName, tableName, namespace, tableBucketARN, region any) *gomock.Call {
+func (mr *MockIS3TablesMockRecorder) DeleteTable(ctx, tableName, namespace, tableBucketARN any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTable", reflect.TypeOf((*MockIS3Tables)(nil).DeleteTable), ctx, bucketName, tableName, namespace, tableBucketARN, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTable", reflect.TypeOf((*MockIS3Tables)(nil).DeleteTable), ctx, tableName, namespace, tableBucketARN)
 }
 
 // DeleteTableBucket mocks base method.
-func (m *MockIS3Tables) DeleteTableBucket(ctx context.Context, bucketName, tableBucketARN *string, region string) error {
+func (m *MockIS3Tables) DeleteTableBucket(ctx context.Context, tableBucketARN *string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteTableBucket", ctx, bucketName, tableBucketARN, region)
+	ret := m.ctrl.Call(m, "DeleteTableBucket", ctx, tableBucketARN)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteTableBucket indicates an expected call of DeleteTableBucket.
-func (mr *MockIS3TablesMockRecorder) DeleteTableBucket(ctx, bucketName, tableBucketARN, region any) *gomock.Call {
+func (mr *MockIS3TablesMockRecorder) DeleteTableBucket(ctx, tableBucketARN any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTableBucket", reflect.TypeOf((*MockIS3Tables)(nil).DeleteTableBucket), ctx, bucketName, tableBucketARN, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTableBucket", reflect.TypeOf((*MockIS3Tables)(nil).DeleteTableBucket), ctx, tableBucketARN)
 }
 
-// ListNamespaces mocks base method.
-func (m *MockIS3Tables) ListNamespaces(ctx context.Context, bucketName, tableBucketARN *string, region string) ([]types.NamespaceSummary, error) {
+// ListNamespacesByPage mocks base method.
+func (m *MockIS3Tables) ListNamespacesByPage(ctx context.Context, tableBucketARN, continuationToken *string) (*ListNamespacesByPageOutput, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListNamespaces", ctx, bucketName, tableBucketARN, region)
-	ret0, _ := ret[0].([]types.NamespaceSummary)
+	ret := m.ctrl.Call(m, "ListNamespacesByPage", ctx, tableBucketARN, continuationToken)
+	ret0, _ := ret[0].(*ListNamespacesByPageOutput)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListNamespaces indicates an expected call of ListNamespaces.
-func (mr *MockIS3TablesMockRecorder) ListNamespaces(ctx, bucketName, tableBucketARN, region any) *gomock.Call {
+// ListNamespacesByPage indicates an expected call of ListNamespacesByPage.
+func (mr *MockIS3TablesMockRecorder) ListNamespacesByPage(ctx, tableBucketARN, continuationToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNamespaces", reflect.TypeOf((*MockIS3Tables)(nil).ListNamespaces), ctx, bucketName, tableBucketARN, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNamespacesByPage", reflect.TypeOf((*MockIS3Tables)(nil).ListNamespacesByPage), ctx, tableBucketARN, continuationToken)
 }
 
 // ListTableBuckets mocks base method.
-func (m *MockIS3Tables) ListTableBuckets(ctx context.Context, region string) ([]types.TableBucketSummary, error) {
+func (m *MockIS3Tables) ListTableBuckets(ctx context.Context) ([]types.TableBucketSummary, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListTableBuckets", ctx, region)
+	ret := m.ctrl.Call(m, "ListTableBuckets", ctx)
 	ret0, _ := ret[0].([]types.TableBucketSummary)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListTableBuckets indicates an expected call of ListTableBuckets.
-func (mr *MockIS3TablesMockRecorder) ListTableBuckets(ctx, region any) *gomock.Call {
+func (mr *MockIS3TablesMockRecorder) ListTableBuckets(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTableBuckets", reflect.TypeOf((*MockIS3Tables)(nil).ListTableBuckets), ctx, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTableBuckets", reflect.TypeOf((*MockIS3Tables)(nil).ListTableBuckets), ctx)
 }
 
-// ListTables mocks base method.
-func (m *MockIS3Tables) ListTables(ctx context.Context, bucketName, tableBucketARN, namespace *string, region string) ([]types.TableSummary, error) {
+// ListTablesByPage mocks base method.
+func (m *MockIS3Tables) ListTablesByPage(ctx context.Context, tableBucketARN, namespace, continuationToken *string) (*ListTablesByPageOutput, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListTables", ctx, bucketName, tableBucketARN, namespace, region)
-	ret0, _ := ret[0].([]types.TableSummary)
+	ret := m.ctrl.Call(m, "ListTablesByPage", ctx, tableBucketARN, namespace, continuationToken)
+	ret0, _ := ret[0].(*ListTablesByPageOutput)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListTables indicates an expected call of ListTables.
-func (mr *MockIS3TablesMockRecorder) ListTables(ctx, bucketName, tableBucketARN, namespace, region any) *gomock.Call {
+// ListTablesByPage indicates an expected call of ListTablesByPage.
+func (mr *MockIS3TablesMockRecorder) ListTablesByPage(ctx, tableBucketARN, namespace, continuationToken any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTables", reflect.TypeOf((*MockIS3Tables)(nil).ListTables), ctx, bucketName, tableBucketARN, namespace, region)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTablesByPage", reflect.TypeOf((*MockIS3Tables)(nil).ListTablesByPage), ctx, tableBucketARN, namespace, continuationToken)
 }
