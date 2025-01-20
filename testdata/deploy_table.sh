@@ -44,7 +44,7 @@ fi
 
 exist=$(aws s3tables list-table-buckets ${option} | jq -r '.tableBuckets[] | select(.name == "'${lower_bucket_name}'")' || true)
 if [ -z "${exist}" ]; then
-	aws s3tables create-table-bucket --name ${lower_bucket_name} ${option}
+	aws s3tables create-table-bucket --name ${lower_bucket_name} ${option} >/dev/null
 fi
 
 account_id=$(aws sts get-caller-identity --query Account --output text ${option})
@@ -55,14 +55,14 @@ table_bucket_arn="arn:aws:s3tables:${region}:${account_id}:bucket/${lower_bucket
 for i in {1..5}; do
 	aws s3tables create-namespace \
 		--table-bucket-arn ${table_bucket_arn} \
-		--namespace "my_namespace_${i}" ${option}
+		--namespace "my_namespace_${i}" ${option} >/dev/null
 
 	for table in {1..20}; do
 		aws s3tables create-table \
 			--table-bucket-arn ${table_bucket_arn} \
 			--namespace "my_namespace_${i}" \
 			--name "my_table_${table}" \
-			--format "ICEBERG" ${option} &
+			--format "ICEBERG" ${option} >/dev/null &
 	done
 	wait
 done
