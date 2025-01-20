@@ -26,12 +26,14 @@ type App struct {
 	QuietMode            bool
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
+	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
 }
 
 func NewApp(version string) *App {
 	app := App{}
 
 	app.BucketNames = cli.NewStringSlice()
+	app.targetBuckets = []string{}
 
 	app.Cli = &cli.App{
 		Name:  "cls3",
@@ -125,7 +127,6 @@ func (a *App) getAction() func(c *cli.Context) error {
 			return err
 		}
 
-		targetBuckets := []string{} // bucket names for S3, bucket arns for S3Tables
 		if a.InteractiveMode {
 			continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
 			if err != nil {
@@ -139,10 +140,10 @@ func (a *App) getAction() func(c *cli.Context) error {
 			if err != nil {
 				return err
 			}
-			targetBuckets = append(targetBuckets, outputBuckets...)
+			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
 		}
 
-		for _, bucket := range targetBuckets {
+		for _, bucket := range a.targetBuckets {
 			if err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
 				TargetBucket:    bucket,
 				ForceMode:       a.ForceMode,
