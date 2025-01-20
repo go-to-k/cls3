@@ -12,6 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
+var SleepTimeSecForS3 = 10
+
 type ListObjectsOrVersionsByPageOutput struct {
 	ObjectIdentifiers   []types.ObjectIdentifier
 	NextKeyMarker       *string

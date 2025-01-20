@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
 
+var SleepTimeSecForS3Tables = 5
+
 type ListNamespacesByPageOutput struct {
 	Namespaces        []types.NamespaceSummary
 	ContinuationToken *string
@@ -39,9 +41,11 @@ type S3Tables struct {
 
 func NewS3Tables(client *s3tables.Client) *S3Tables {
 	retryable := func(err error) bool {
-		return strings.Contains(err.Error(), "api error SlowDown")
+		return strings.Contains(err.Error(), "api error SlowDown") ||
+			strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
+			strings.Contains(err.Error(), "StatusCode: 429")
 	}
-	retryer := NewRetryer(retryable, SleepTimeSecForS3)
+	retryer := NewRetryer(retryable, SleepTimeSecForS3Tables)
 
 	return &S3Tables{
 		client,
