@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
@@ -162,6 +163,16 @@ func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
 	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
 	if err != nil {
 		return nil, err
+	}
+
+	if a.TableBucketsMode {
+		client := client.NewS3Tables(
+			s3tables.NewFromConfig(config, func(o *s3tables.Options) {
+				o.RetryMaxAttempts = SDKRetryMaxAttempts
+				o.RetryMode = aws.RetryModeStandard
+			}),
+		)
+		return wrapper.NewS3TablesWrapper(client), nil
 	}
 
 	client := client.NewS3(
