@@ -141,7 +141,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		}
 
 		for _, bucketName := range a.BucketNames.Value() {
-			if err := s3Wrapper.ClearS3Objects(c.Context, bucketName, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
+			if err := s3Wrapper.ClearBucket(c.Context, bucketName, a.ForceMode, a.OldVersionsOnly, a.QuietMode); err != nil {
 				return err
 			}
 		}

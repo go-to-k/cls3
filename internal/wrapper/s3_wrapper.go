@@ -24,7 +24,7 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
-func (s *S3Wrapper) ClearS3Objects(
+func (s *S3Wrapper) ClearBucket(
 	ctx context.Context,
 	bucketName string,
 	forceMode bool,

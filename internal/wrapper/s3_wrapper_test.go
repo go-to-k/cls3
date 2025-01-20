@@ -17,7 +17,7 @@ import (
 	Test Cases
 */
 
-func TestS3Wrapper_ClearS3Objects(t *testing.T) {
+func TestS3Wrapper_ClearBucket(t *testing.T) {
 	io.NewLogger(false)
 
 	type args struct {
@@ -518,7 +518,7 @@ func TestS3Wrapper_ClearS3Objects(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
-			err := s3.ClearS3Objects(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, false, tt.args.quietMode)
+			err := s3.ClearBucket(tt.args.ctx, tt.args.bucketName, tt.args.forceMode, false, tt.args.quietMode)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
