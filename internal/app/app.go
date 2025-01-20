@@ -156,7 +156,7 @@ func (a *App) createS3Wrapper(ctx context.Context) (*wrapper.S3Wrapper, error) {
 		return nil, err
 	}
 
-	bucketsMode := client.GeneralMode
+	bucketsMode := client.StandardMode
 	if a.DirectoryBucketsMode {
 		bucketsMode = client.DirectoryBucketsMode
 	} else if a.TableBucketsMode {

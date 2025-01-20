@@ -154,7 +154,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			}
 
 			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, GeneralMode)
+			s3Client := NewS3(client, StandardMode)
 
 			err = s3Client.DeleteBucket(tt.args.ctx, tt.args.bucketName, tt.args.region)
 			if (err != nil) != tt.wantErr {
@@ -684,7 +684,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			}
 
 			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, GeneralMode)
+			s3Client := NewS3(client, StandardMode)
 
 			output, err := s3Client.DeleteObjects(tt.args.ctx, tt.args.bucketName, tt.args.objects, tt.args.region)
 			if (err != nil) != tt.wantErr {
@@ -776,7 +776,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "call listObjectsByPage if bucketsMode is GeneralMode",
+			name: "call listObjectsByPage if bucketsMode is StandardMode",
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
@@ -784,7 +784,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
-				bucketsMode:     GeneralMode,
+				bucketsMode:     StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -872,7 +872,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
-				bucketsMode:     GeneralMode,
+				bucketsMode:     StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1395,7 +1395,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			}
 
 			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, GeneralMode)
+			s3Client := NewS3(client, StandardMode)
 
 			output, err := s3Client.listObjectVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
 			if (err != nil) != tt.wantErr {
@@ -1750,10 +1750,10 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "call listBuckets if bucketsMode is GeneralMode",
+			name: "call listBuckets if bucketsMode is StandardMode",
 			args: args{
 				ctx:         context.Background(),
-				bucketsMode: GeneralMode,
+				bucketsMode: StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1819,7 +1819,7 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 			name: "listBuckets errors",
 			args: args{
 				ctx:         context.Background(),
-				bucketsMode: GeneralMode,
+				bucketsMode: StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -2024,7 +2024,7 @@ func TestS3_listBuckets(t *testing.T) {
 			}
 
 			client := s3.NewFromConfig(cfg)
-			s3Client := NewS3(client, GeneralMode)
+			s3Client := NewS3(client, StandardMode)
 
 			output, err := s3Client.listBuckets(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
@@ -2415,7 +2415,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 			args: args{
 				ctx:         context.Background(),
 				bucketName:  aws.String("test"),
-				bucketsMode: GeneralMode,
+				bucketsMode: StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -2459,7 +2459,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 			args: args{
 				ctx:         context.Background(),
 				bucketName:  aws.String("test"),
-				bucketsMode: GeneralMode,
+				bucketsMode: StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -2487,7 +2487,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 			args: args{
 				ctx:         context.Background(),
 				bucketName:  aws.String("test"),
-				bucketsMode: GeneralMode,
+				bucketsMode: StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -2516,7 +2516,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 			args: args{
 				ctx:         context.Background(),
 				bucketName:  aws.String("test"),
-				bucketsMode: GeneralMode,
+				bucketsMode: StandardMode,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(

@@ -54,7 +54,7 @@ var _ IS3 = (*S3)(nil)
 type BucketMode int
 
 const (
-	GeneralMode BucketMode = iota
+	StandardMode BucketMode = iota
 	DirectoryBucketsMode
 	TableBucketsMode
 )
