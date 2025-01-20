@@ -56,7 +56,7 @@ func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string,
 		return 0, err
 	}
 
-	if err := s.client.DeleteNamespace(ctx, aws.String(bucketArn), aws.String(namespace)); err != nil {
+	if err := s.client.DeleteNamespace(ctx, aws.String(namespace), aws.String(bucketArn)); err != nil {
 		return 0, err
 	}
 
