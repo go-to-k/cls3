@@ -91,13 +91,22 @@ func (s *S3TablesWrapper) ClearBucket(
 		defer writer.Stop()
 	}
 
-	io.Logger.Info().Msgf("%v Checking...", input.TargetBucket)
+	bucketArn := input.TargetBucket
+	parts := strings.Split(bucketArn, "/")
+	if len(parts) < 2 {
+		return &client.ClientError{
+			Err: fmt.Errorf("InvalidBucketArnError: %v, got %v", "invalid bucket ARN format without a slash", bucketArn),
+		}
+	}
+	bucketName := parts[1]
+
+	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
 	var continuationToken *string
 	for {
 		output, err := s.client.ListNamespacesByPage(
 			ctx,
-			aws.String(input.TargetBucket),
+			aws.String(bucketArn),
 			continuationToken,
 		)
 		if err != nil {
@@ -114,7 +123,7 @@ func (s *S3TablesWrapper) ClearBucket(
 				}
 				eg.Go(func() error {
 					defer sem.Release(1)
-					tableCounts, err := s.deleteNamespace(ctx, input.TargetBucket, namespace)
+					tableCounts, err := s.deleteNamespace(ctx, bucketArn, namespace)
 					if err != nil {
 						return err
 					}
@@ -146,16 +155,16 @@ func (s *S3TablesWrapper) ClearBucket(
 	}
 
 	if deletedTablesCount == 0 {
-		io.Logger.Info().Msgf("%v No tables.", input.TargetBucket)
+		io.Logger.Info().Msgf("%v No tables.", bucketName)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", input.TargetBucket, deletedTablesCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", bucketName, deletedTablesCount)
 	}
 
 	if input.ForceMode {
-		if err := s.client.DeleteTableBucket(ctx, aws.String(input.TargetBucket)); err != nil {
+		if err := s.client.DeleteTableBucket(ctx, aws.String(bucketArn)); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", input.TargetBucket)
+		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
 	}
 
 	return nil
