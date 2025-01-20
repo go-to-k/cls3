@@ -29,7 +29,7 @@ func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
 func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string, namespace string) (int, error) {
 	eg := errgroup.Group{}
 
-	// (Currently, Too Many Requests error occurs immediately, so we will make it a series once.
+	// Currently, Too Many Requests error occurs immediately, so we will make it a series once.
 	sem := semaphore.NewWeighted(1)
 
 	deletedTablesCount := 0
@@ -77,7 +77,7 @@ func (s *S3TablesWrapper) ClearBucket(
 ) error {
 	eg := errgroup.Group{}
 
-	// (Currently, Too Many Requests error occurs immediately, so we will make it a series once.
+	// Currently, Too Many Requests error occurs immediately, so we will make it a series once.
 	sem := semaphore.NewWeighted(1)
 
 	deletedTablesCount := 0
