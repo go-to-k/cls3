@@ -135,6 +135,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
     - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), you should specify the region. The mode is not available across regions.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
+    - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
 - -o, --oldVersionsOnly: optional
@@ -147,6 +148,9 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
   - Directory Buckets Mode for **S3 Express One Zone**
   - Operation across regions is not possible, but only in **one region**.
     - You can specify the region with the `-r` option.
+- -t, --tableBucketsMode: optional
+  - Table Buckets Mode for **S3 Tables**
+  - If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.
 
 ## Interactive Mode
 

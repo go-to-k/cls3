@@ -59,7 +59,7 @@ func NewApp(version string) *App {
 				Name:        "force",
 				Aliases:     []string{"f"},
 				Value:       false,
-				Usage:       "Delete a bucket together",
+				Usage:       "Delete a bucket together. If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.",
 				Destination: &app.ForceMode,
 			},
 			&cli.BoolFlag{
@@ -94,7 +94,7 @@ func NewApp(version string) *App {
 				Name:        "tableBucketsMode",
 				Aliases:     []string{"t"},
 				Value:       false,
-				Usage:       "Clear Table Buckets for S3 Tables",
+				Usage:       "Clear Table Buckets for S3 Tables. If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.",
 				Destination: &app.TableBucketsMode,
 			},
 		},
