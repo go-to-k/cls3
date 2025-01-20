@@ -51,10 +51,18 @@ account_id=$(aws sts get-caller-identity --query Account --output text ${option}
 
 table_bucket_arn="arn:aws:s3tables:${region}:${account_id}:bucket/${lower_bucket_name}"
 
-aws s3tables create-namespace --table-bucket-arn ${table_bucket_arn} --namespace "my_namespace_1" ${option}
-aws s3tables create-namespace --table-bucket-arn ${table_bucket_arn} --namespace "my_namespace_2" ${option}
+# 5 * 20 = 100 (max size of tables per table bucket)
+for i in {1..5}; do
+	aws s3tables create-namespace \
+		--table-bucket-arn ${table_bucket_arn} \
+		--namespace "my_namespace_${i}" ${option}
 
-aws s3tables create-table --table-bucket-arn ${table_bucket_arn} --namespace "my_namespace_1" --name "my_table_1" --format "ICEBERG" ${option}
-aws s3tables create-table --table-bucket-arn ${table_bucket_arn} --namespace "my_namespace_1" --name "my_table_2" --format "ICEBERG" ${option}
-aws s3tables create-table --table-bucket-arn ${table_bucket_arn} --namespace "my_namespace_2" --name "my_table_1" --format "ICEBERG" ${option}
-aws s3tables create-table --table-bucket-arn ${table_bucket_arn} --namespace "my_namespace_2" --name "my_table_2" --format "ICEBERG" ${option}
+	for table in {1..20}; do
+		aws s3tables create-table \
+			--table-bucket-arn ${table_bucket_arn} \
+			--namespace "my_namespace_${i}" \
+			--name "my_table_${table}" \
+			--format "ICEBERG" ${option} &
+	done
+	wait
+done
