@@ -135,6 +135,64 @@ func TestS3TablesWrapper_ClearBucket(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "clear tables with quiet mode successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				forceMode:  false,
+				quietMode:  true,
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListNamespacesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					nil,
+				).Return(
+					&client.ListNamespacesByPageOutput{
+						Namespaces: []types.NamespaceSummary{
+							{
+								Namespace: []string{"namespace1"},
+							},
+						},
+						ContinuationToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().ListTablesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					aws.String("namespace1"),
+					nil,
+				).Return(
+					&client.ListTablesByPageOutput{
+						Tables: []types.TableSummary{
+							{
+								Name: aws.String("table1"),
+							},
+						},
+						ContinuationToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().DeleteTable(
+					gomock.Any(),
+					aws.String("table1"),
+					aws.String("namespace1"),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(nil)
+
+				m.EXPECT().DeleteNamespace(
+					gomock.Any(),
+					aws.String("namespace1"),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(nil)
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
 			name: "delete bucket successfully",
 			args: args{
 				ctx:        context.Background(),
@@ -149,11 +207,45 @@ func TestS3TablesWrapper_ClearBucket(t *testing.T) {
 					nil,
 				).Return(
 					&client.ListNamespacesByPageOutput{
-						Namespaces:        []types.NamespaceSummary{},
+						Namespaces: []types.NamespaceSummary{
+							{
+								Namespace: []string{"namespace1"},
+							},
+						},
 						ContinuationToken: nil,
 					},
 					nil,
 				)
+
+				m.EXPECT().ListTablesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					aws.String("namespace1"),
+					nil,
+				).Return(
+					&client.ListTablesByPageOutput{
+						Tables: []types.TableSummary{
+							{
+								Name: aws.String("table1"),
+							},
+						},
+						ContinuationToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().DeleteTable(
+					gomock.Any(),
+					aws.String("table1"),
+					aws.String("namespace1"),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(nil)
+
+				m.EXPECT().DeleteNamespace(
+					gomock.Any(),
+					aws.String("namespace1"),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(nil)
 
 				m.EXPECT().DeleteTableBucket(
 					gomock.Any(),
@@ -193,6 +285,104 @@ func TestS3TablesWrapper_ClearBucket(t *testing.T) {
 				).Return(nil, fmt.Errorf("ListNamespacesError"))
 			},
 			want:    fmt.Errorf("ListNamespacesError"),
+			wantErr: true,
+		},
+		{
+			name: "list tables failure in deleteNamespace",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				forceMode:  false,
+				quietMode:  false,
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListNamespacesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					nil,
+				).Return(
+					&client.ListNamespacesByPageOutput{
+						Namespaces: []types.NamespaceSummary{
+							{
+								Namespace: []string{"namespace1"},
+							},
+						},
+						ContinuationToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().ListTablesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					aws.String("namespace1"),
+					nil,
+				).Return(nil, fmt.Errorf("ListTablesError"))
+			},
+			want:    fmt.Errorf("ListTablesError"),
+			wantErr: true,
+		},
+		{
+			name: "delete table bucket failure",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				forceMode:  true,
+				quietMode:  false,
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListNamespacesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					nil,
+				).Return(
+					&client.ListNamespacesByPageOutput{
+						Namespaces: []types.NamespaceSummary{
+							{
+								Namespace: []string{"namespace1"},
+							},
+						},
+						ContinuationToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().ListTablesByPage(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+					aws.String("namespace1"),
+					nil,
+				).Return(
+					&client.ListTablesByPageOutput{
+						Tables: []types.TableSummary{
+							{
+								Name: aws.String("table1"),
+							},
+						},
+						ContinuationToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().DeleteTable(
+					gomock.Any(),
+					aws.String("table1"),
+					aws.String("namespace1"),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(nil)
+
+				m.EXPECT().DeleteNamespace(
+					gomock.Any(),
+					aws.String("namespace1"),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(nil)
+
+				m.EXPECT().DeleteTableBucket(
+					gomock.Any(),
+					aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
+				).Return(fmt.Errorf("DeleteTableBucketError"))
+			},
+			want:    fmt.Errorf("DeleteTableBucketError"),
 			wantErr: true,
 		},
 	}
@@ -537,6 +727,113 @@ func TestS3TablesWrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "list buckets filtered by keyword successfully when keyword is empty",
+			args: args{
+				ctx:     context.Background(),
+				keyword: aws.String(""),
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{
+						{
+							Name: aws.String("test1"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test1"),
+						},
+						{
+							Name: aws.String("test2"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test2"),
+						},
+						{
+							Name: aws.String("other"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/other"),
+						},
+					},
+					nil,
+				)
+			},
+			want: want{
+				output: []ListBucketNamesFilteredByKeywordOutput{
+					{
+						BucketName:   "test1",
+						TargetBucket: "arn:aws:s3:us-east-1:123456789012:table-bucket/test1",
+					},
+					{
+						BucketName:   "test2",
+						TargetBucket: "arn:aws:s3:us-east-1:123456789012:table-bucket/test2",
+					},
+					{
+						BucketName:   "other",
+						TargetBucket: "arn:aws:s3:us-east-1:123456789012:table-bucket/other",
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets filtered by keyword successfully but not match",
+			args: args{
+				ctx:     context.Background(),
+				keyword: aws.String("test"),
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{
+						{
+							Name: aws.String("other1"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/other1"),
+						},
+						{
+							Name: aws.String("other2"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/other2"),
+						},
+					},
+					nil,
+				)
+			},
+			want: want{
+				output: []ListBucketNamesFilteredByKeywordOutput{},
+				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword test."),
+			},
+			wantErr: true,
+		},
+		{
+			name: "list buckets filtered by keyword successfully but not return buckets",
+			args: args{
+				ctx:     context.Background(),
+				keyword: aws.String("test"),
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{},
+					nil,
+				)
+			},
+			want: want{
+				output: []ListBucketNamesFilteredByKeywordOutput{},
+				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword test."),
+			},
+			wantErr: true,
+		},
+		{
+			name: "list buckets filtered by keyword successfully but not return buckets when keyword is empty",
+			args: args{
+				ctx:     context.Background(),
+				keyword: aws.String(""),
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{},
+					nil,
+				)
+			},
+			want: want{
+				output: []ListBucketNamesFilteredByKeywordOutput{},
+				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword ."),
+			},
+			wantErr: true,
+		},
+		{
 			name: "list buckets filtered by keyword failure",
 			args: args{
 				ctx:     context.Background(),
@@ -553,6 +850,34 @@ func TestS3TablesWrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				err:    fmt.Errorf("ListTableBucketsError"),
 			},
 			wantErr: true,
+		},
+		{
+			name: "list buckets filtered by keyword successfully for case-insensitive search",
+			args: args{
+				ctx:     context.Background(),
+				keyword: aws.String("TEST"),
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{
+						{
+							Name: aws.String("test1"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test1"),
+						},
+					},
+					nil,
+				)
+			},
+			want: want{
+				output: []ListBucketNamesFilteredByKeywordOutput{
+					{
+						BucketName:   "test1",
+						TargetBucket: "arn:aws:s3:us-east-1:123456789012:table-bucket/test1",
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
 		},
 	}
 
@@ -654,7 +979,25 @@ func TestS3TablesWrapper_CheckAllBucketsExist(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "list buckets failure",
+			name: "list table buckets returns empty",
+			args: args{
+				ctx:         context.Background(),
+				bucketNames: []string{"test1", "test2"},
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{},
+					nil,
+				)
+			},
+			want: want{
+				bucketArns: []string{},
+				err:        fmt.Errorf("[resource -] NotExistsError: The following buckets do not exist: test1, test2"),
+			},
+			wantErr: true,
+		},
+		{
+			name: "list table buckets failure",
 			args: args{
 				ctx:         context.Background(),
 				bucketNames: []string{"test1", "test2"},
@@ -670,6 +1013,33 @@ func TestS3TablesWrapper_CheckAllBucketsExist(t *testing.T) {
 				err:        fmt.Errorf("ListTableBucketsError"),
 			},
 			wantErr: true,
+		},
+		{
+			name: "args.bucketNames is empty",
+			args: args{
+				ctx:         context.Background(),
+				bucketNames: []string{},
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{
+						{
+							Name: aws.String("test1"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test1"),
+						},
+						{
+							Name: aws.String("test2"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test2"),
+						},
+					},
+					nil,
+				)
+			},
+			want: want{
+				bucketArns: []string{},
+				err:        nil,
+			},
+			wantErr: false,
 		},
 	}
 
