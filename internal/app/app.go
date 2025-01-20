@@ -210,9 +210,14 @@ func (a *App) validateOptions() error {
 
 func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper) (bool, error) {
 	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
-	bucketNames, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
+	outputs, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
 	if err != nil {
 		return false, err
+	}
+
+	bucketNames := []string{}
+	for _, output := range outputs {
+		bucketNames = append(bucketNames, output.BucketName)
 	}
 
 	label := []string{"Select buckets."}
@@ -225,8 +230,11 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper)
 	}
 
 	for _, bucket := range checkboxes {
-		//nolint:errcheck
-		a.BucketNames.Set(bucket)
+		for _, output := range outputs {
+			if output.BucketName == bucket {
+				a.targetBuckets = append(a.targetBuckets, output.TargetBucket)
+			}
+		}
 	}
 	return true, nil
 }

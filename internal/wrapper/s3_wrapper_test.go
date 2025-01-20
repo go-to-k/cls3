@@ -544,7 +544,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 	}
 
 	type want struct {
-		output []string
+		output []ListBucketNamesFilteredByKeywordOutput
 		err    error
 	}
 
@@ -578,9 +578,15 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{
-					"test1",
-					"test2",
+				output: []ListBucketNamesFilteredByKeywordOutput{
+					{
+						BucketName:   "test1",
+						TargetBucket: "test1",
+					},
+					{
+						BucketName:   "test2",
+						TargetBucket: "test2",
+					},
 				},
 				err: nil,
 			},
@@ -609,10 +615,19 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{
-					"test1",
-					"test2",
-					"other",
+				output: []ListBucketNamesFilteredByKeywordOutput{
+					{
+						BucketName:   "test1",
+						TargetBucket: "test1",
+					},
+					{
+						BucketName:   "test2",
+						TargetBucket: "test2",
+					},
+					{
+						BucketName:   "other",
+						TargetBucket: "other",
+					},
 				},
 				err: nil,
 			},
@@ -641,7 +656,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{},
+				output: []ListBucketNamesFilteredByKeywordOutput{},
 				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword test."),
 			},
 			wantErr: true,
@@ -659,7 +674,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{},
+				output: []ListBucketNamesFilteredByKeywordOutput{},
 				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword test."),
 			},
 			wantErr: true,
@@ -677,7 +692,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{},
+				output: []ListBucketNamesFilteredByKeywordOutput{},
 				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword ."),
 			},
 			wantErr: true,
@@ -695,7 +710,7 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{},
+				output: []ListBucketNamesFilteredByKeywordOutput{},
 				err:    fmt.Errorf("ListBucketError"),
 			},
 			wantErr: true,
@@ -723,9 +738,15 @@ func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 				)
 			},
 			want: want{
-				output: []string{
-					"test1",
-					"test2",
+				output: []ListBucketNamesFilteredByKeywordOutput{
+					{
+						BucketName:   "test1",
+						TargetBucket: "test1",
+					},
+					{
+						BucketName:   "test2",
+						TargetBucket: "test2",
+					},
 				},
 				err: nil,
 			},

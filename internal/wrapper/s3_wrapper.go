@@ -153,11 +153,11 @@ func (s *S3Wrapper) ClearBucket(
 	return nil
 }
 
-func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]string, error) {
-	filteredBucketNames := []string{}
+func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]ListBucketNamesFilteredByKeywordOutput, error) {
+	filteredBuckets := []ListBucketNamesFilteredByKeywordOutput{}
 	buckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
-		return filteredBucketNames, err
+		return filteredBuckets, err
 	}
 
 	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
@@ -165,18 +165,21 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 
 	for _, bucket := range buckets {
 		if strings.Contains(*bucket.Name, lowerKeyword) {
-			filteredBucketNames = append(filteredBucketNames, *bucket.Name)
+			filteredBuckets = append(filteredBuckets, ListBucketNamesFilteredByKeywordOutput{
+				BucketName:   *bucket.Name,
+				TargetBucket: *bucket.Name,
+			})
 		}
 	}
 
-	if len(filteredBucketNames) == 0 {
+	if len(filteredBuckets) == 0 {
 		errMsg := fmt.Sprintf("No buckets matching the keyword %s.", *keyword)
-		return filteredBucketNames, &client.ClientError{
+		return filteredBuckets, &client.ClientError{
 			Err: fmt.Errorf("NotExistsError: %v", errMsg),
 		}
 	}
 
-	return filteredBucketNames, nil
+	return filteredBuckets, nil
 }
 
 func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []string) ([]string, error) {
