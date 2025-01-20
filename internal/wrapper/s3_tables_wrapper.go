@@ -51,7 +51,7 @@ func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string,
 			}
 			eg.Go(func() error {
 				defer sem.Release(1)
-				return s.client.DeleteTable(ctx, aws.String(*table.Name), aws.String(namespace), aws.String(bucketArn))
+				return s.client.DeleteTable(ctx, table.Name, aws.String(namespace), aws.String(bucketArn))
 			})
 		}
 		deletedTablesCount += len(output.Tables)
