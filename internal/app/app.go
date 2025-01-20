@@ -179,6 +179,10 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
+	if a.DirectoryBucketsMode && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("You cannot specify both -d and -t options.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
