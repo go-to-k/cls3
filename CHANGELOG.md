@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.23.0](https://github.com/go-to-k/cls3/compare/v0.22.0...v0.23.0) - 2025-01-20
+- docs: add how to install with asdf in README by @go-to-k in https://github.com/go-to-k/cls3/pull/271
+- docs: add gif in README by @go-to-k in https://github.com/go-to-k/cls3/pull/277
+- feat(app): add Table Buckets Mode for clearing Table Buckets of S3 Tables by @go-to-k in https://github.com/go-to-k/cls3/pull/279
+
 ## [v0.22.0](https://github.com/go-to-k/cls3/compare/v0.21.0...v0.22.0) - 2024-10-19
 - ci: change PR label names for release by @go-to-k in https://github.com/go-to-k/cls3/pull/248
 - docs: improve style for README by @go-to-k in https://github.com/go-to-k/cls3/pull/247
