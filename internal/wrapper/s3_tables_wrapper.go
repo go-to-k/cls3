@@ -4,8 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
+	"github.com/gosuri/uilive"
+	"golang.org/x/sync/errgroup"
 )
 
 var _ IWrapper = (*S3TablesWrapper)(nil)
@@ -20,120 +25,117 @@ func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
 	}
 }
 
+func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string, namespace string) (int, error) {
+	eg := errgroup.Group{}
+
+	deletedTablesCount := 0
+	var continuationToken *string
+	for {
+		output, err := s.client.ListTablesByPage(ctx, aws.String(bucketArn), aws.String(namespace), continuationToken)
+		if err != nil {
+			return 0, err
+		}
+		if len(output.Tables) == 0 {
+			break
+		}
+
+		for _, table := range output.Tables {
+			eg.Go(func() error {
+				return s.client.DeleteTable(ctx, aws.String(*table.Name), aws.String(namespace), aws.String(bucketArn))
+			})
+		}
+		deletedTablesCount += len(output.Tables)
+
+		continuationToken = output.ContinuationToken
+		if continuationToken == nil {
+			break
+		}
+	}
+
+	if err := eg.Wait(); err != nil {
+		return 0, err
+	}
+
+	return deletedTablesCount, nil
+}
+
 func (s *S3TablesWrapper) ClearBucket(
 	ctx context.Context,
 	input ClearBucketInput,
 ) error {
-	// eg := errgroup.Group{}
-	// errorStr := ""
-	// errorsCount := 0
-	// errorsMtx := sync.Mutex{}
-	// deletedObjectsCount := 0
-	// deletedObjectsCountMtx := sync.Mutex{}
+	eg := errgroup.Group{}
+	deletedTablesCount := 0
+	deletedTablesCountMtx := sync.Mutex{}
 
-	// var writer *uilive.Writer
-	// if !input.QuietMode {
-	// 	writer = uilive.New()
-	// 	writer.Start()
-	// 	defer writer.Stop()
-	// }
+	var writer *uilive.Writer
+	if !input.QuietMode {
+		writer = uilive.New()
+		writer.Start()
+		defer writer.Stop()
+	}
 
-	// io.Logger.Info().Msgf("%v Checking...", input.BucketName)
+	io.Logger.Info().Msgf("%v Checking...", input.TargetBucket)
 
-	// var keyMarker *string
-	// var versionIdMarker *string
-	// for {
-	// 	var objects []types.ObjectIdentifier
+	var continuationToken *string
+	for {
+		output, err := s.client.ListNamespacesByPage(
+			ctx,
+			aws.String(input.TargetBucket),
+			continuationToken,
+		)
+		if err != nil {
+			return err
+		}
+		if len(output.Namespaces) == 0 {
+			break
+		}
 
-	// 	// ListObjectVersions/ListObjectsV2 API can only retrieve up to 1000 items, so it is good to pass it
-	// 	// directly to DeleteObjects, which can only delete up to 1000 items.
-	// 	output, err := s.client.ListTables(
-	// 		ctx,
-	// 		aws.String(input.BucketName),
-	// 		input.OldVersionsOnly,
-	// 		keyMarker,
-	// 		versionIdMarker,
-	// 	)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+		for _, summary := range output.Namespaces {
+			for _, namespace := range summary.Namespace {
+				eg.Go(func() error {
+					tableCounts, err := s.deleteNamespace(ctx, input.TargetBucket, namespace)
+					if err != nil {
+						return err
+					}
+					deletedTablesCountMtx.Lock()
+					deletedTablesCount += tableCounts
+					if !input.QuietMode {
+						fmt.Fprintf(writer, "Clearing... %d tables\n", deletedTablesCount)
+					}
+					deletedTablesCountMtx.Unlock()
+					return nil
+				})
+			}
+		}
 
-	// 	objects = output.ObjectIdentifiers
-	// 	keyMarker = output.NextKeyMarker
-	// 	versionIdMarker = output.NextVersionIdMarker
+		continuationToken = output.ContinuationToken
+		if continuationToken == nil {
+			break
+		}
+	}
 
-	// 	if len(objects) == 0 {
-	// 		break
-	// 	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
 
-	// 	eg.Go(func() error {
-	// 		deletedObjectsCountMtx.Lock()
-	// 		deletedObjectsCount += len(objects)
-	// 		if !input.QuietMode {
-	// 			fmt.Fprintf(writer, "Clearing... %d objects\n", deletedObjectsCount)
-	// 		}
-	// 		deletedObjectsCountMtx.Unlock()
+	if !input.QuietMode {
+		if err := writer.Flush(); err != nil {
+			return err
+		}
+	}
 
-	// 		// One DeleteObjects is executed for each loop of the List, and it usually ends during
-	// 		// the next loop. Therefore, there seems to be no throttling concern, so the number of
-	// 		// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
-	// 		// per second.)
-	// 		gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.BucketName), objects, bucketRegion)
-	// 		if err != nil {
-	// 			return err
-	// 		}
+	if deletedTablesCount == 0 {
+		io.Logger.Info().Msgf("%v No tables.", input.TargetBucket)
+	} else {
+		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", input.TargetBucket, deletedTablesCount)
+	}
 
-	// 		if len(gotErrors) > 0 {
-	// 			errorsMtx.Lock()
-	// 			errorsCount += len(gotErrors)
-	// 			for _, error := range gotErrors {
-	// 				errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-	// 				errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-	// 				errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-	// 				errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
-	// 			}
-	// 			errorsMtx.Unlock()
-	// 		}
-
-	// 		return nil
-	// 	})
-
-	// 	if keyMarker == nil && versionIdMarker == nil {
-	// 		break
-	// 	}
-	// }
-
-	// if err := eg.Wait(); err != nil {
-	// 	return err
-	// }
-
-	// if !input.QuietMode {
-	// 	if err := writer.Flush(); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// if errorsCount > 0 {
-	// 	// The error is from `DeleteObjectsOutput.Errors`, not `err`.
-	// 	// However, we want to treat it as an error, so we use `client.ClientError`.
-	// 	return &client.ClientError{
-	// 		ResourceName: aws.String(input.BucketName),
-	// 		Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", errorsCount, errorStr),
-	// 	}
-	// }
-
-	// if deletedObjectsCount == 0 {
-	// 	io.Logger.Info().Msgf("%v No objects.", input.BucketName)
-	// } else {
-	// 	io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.BucketName, deletedObjectsCount)
-	// }
-
-	// if input.ForceMode {
-	// 	if err := s.client.DeleteBucket(ctx, aws.String(input.BucketName), bucketRegion); err != nil {
-	// 		return err
-	// 	}
-	// 	io.Logger.Info().Msgf("%v Deleted!!", input.BucketName)
-	// }
+	if input.ForceMode {
+		if err := s.client.DeleteTableBucket(ctx, aws.String(input.TargetBucket)); err != nil {
+			return err
+		}
+		io.Logger.Info().Msgf("%v Deleted!!", input.TargetBucket)
+	}
 
 	return nil
 }
