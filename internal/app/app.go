@@ -182,6 +182,7 @@ func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
 		}),
 		a.DirectoryBucketsMode,
 	)
+
 	return wrapper.NewS3Wrapper(client), nil
 }
 
