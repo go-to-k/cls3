@@ -156,12 +156,19 @@ func (a *App) createS3Wrapper(ctx context.Context) (*wrapper.S3Wrapper, error) {
 		return nil, err
 	}
 
+	bucketsMode := client.StandardMode
+	if a.DirectoryBucketsMode {
+		bucketsMode = client.DirectoryBucketsMode
+	} else if a.TableBucketsMode {
+		bucketsMode = client.TableBucketsMode
+	}
+
 	client := client.NewS3(
 		s3.NewFromConfig(config, func(o *s3.Options) {
 			o.RetryMaxAttempts = SDKRetryMaxAttempts
 			o.RetryMode = aws.RetryModeStandard
 		}),
-		a.DirectoryBucketsMode,
+		bucketsMode,
 	)
 	return wrapper.NewS3Wrapper(client), nil
 }
@@ -177,6 +184,10 @@ func (a *App) validateOptions() error {
 	}
 	if a.ForceMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -o, do not specify the -f option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("You cannot specify both -d and -t options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {

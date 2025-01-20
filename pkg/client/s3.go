@@ -51,15 +51,23 @@ type IS3 interface {
 
 var _ IS3 = (*S3)(nil)
 
+type BucketMode int
+
+const (
+	StandardMode BucketMode = iota
+	DirectoryBucketsMode
+	TableBucketsMode
+)
+
 type S3 struct {
-	client               *s3.Client
-	directoryBucketsMode bool
-	retryer              *Retryer
+	client  *s3.Client
+	mode    BucketMode
+	retryer *Retryer
 }
 
-func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
+func NewS3(client *s3.Client, mode BucketMode) *S3 {
 	retryable := func(err error) bool {
-		if directoryBucketsMode {
+		if mode == DirectoryBucketsMode {
 			// See: https://github.com/go-to-k/cls3/issues/194
 			return strings.Contains(err.Error(), "api error SlowDown") || strings.Contains(err.Error(), "https response error StatusCode: 0")
 		}
@@ -70,7 +78,7 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 
 	return &S3{
 		client,
-		directoryBucketsMode,
+		mode,
 		retryer,
 	}
 }
@@ -184,7 +192,7 @@ func (s *S3) ListObjectsOrVersionsByPage(
 	var nextKeyMarker *string
 	var nextVersionIdMarker *string
 
-	if s.directoryBucketsMode {
+	if s.mode == DirectoryBucketsMode {
 		output, err := s.listObjectsByPage(ctx, bucketName, region, keyMarker)
 		if err != nil {
 			return nil, err
@@ -309,7 +317,7 @@ func (s *S3) listObjectsByPage(
 func (s *S3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 	var listBucketsFunc func(ctx context.Context) ([]types.Bucket, error)
 
-	if s.directoryBucketsMode {
+	if s.mode == DirectoryBucketsMode {
 		listBucketsFunc = s.listDirectoryBuckets
 	} else {
 		listBucketsFunc = s.listBuckets
@@ -387,7 +395,7 @@ func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string,
 	// The return string value allows buckets outside the specified region to be deleted.
 	// If the `directoryBucketsMode` is true, the value is empty because only one region's
 	// buckets can be operated on.
-	if s.directoryBucketsMode {
+	if s.mode == DirectoryBucketsMode {
 		return "", nil
 	}
 
