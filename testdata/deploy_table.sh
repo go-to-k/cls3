@@ -51,13 +51,13 @@ account_id=$(aws sts get-caller-identity --query Account --output text ${option}
 
 table_bucket_arn="arn:aws:s3tables:${region}:${account_id}:bucket/${lower_bucket_name}"
 
-# 5 * 20 = 100 (max size of tables per table bucket)
-for i in {1..5}; do
+# 10 * 10 = 100 (max size of tables per table bucket)
+for i in {1..10}; do
 	aws s3tables create-namespace \
 		--table-bucket-arn ${table_bucket_arn} \
 		--namespace "my_namespace_${i}" ${option} >/dev/null
 
-	for table in {1..20}; do
+	for table in {1..10}; do
 		aws s3tables create-table \
 			--table-bucket-arn ${table_bucket_arn} \
 			--namespace "my_namespace_${i}" \
