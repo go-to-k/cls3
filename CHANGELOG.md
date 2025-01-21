@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.24.0](https://github.com/go-to-k/cls3/compare/v0.23.0...v0.24.0) - 2025-01-21
+- docs: add command option sample for -t in README by @go-to-k in https://github.com/go-to-k/cls3/pull/280
+- fix(wrapper): TooManyRequestsException often occurs by @go-to-k in https://github.com/go-to-k/cls3/pull/283
+- feat(wrapper): count the number of table deletions more finely in the s3 tables wrapper by @go-to-k in https://github.com/go-to-k/cls3/pull/282
+- feat(client): handle ContinuationToken for ListBuckets by @go-to-k in https://github.com/go-to-k/cls3/pull/284
+
 ## [v0.23.0](https://github.com/go-to-k/cls3/compare/v0.22.0...v0.23.0) - 2025-01-20
 - docs: add how to install with asdf in README by @go-to-k in https://github.com/go-to-k/cls3/pull/271
 - docs: add gif in README by @go-to-k in https://github.com/go-to-k/cls3/pull/277
