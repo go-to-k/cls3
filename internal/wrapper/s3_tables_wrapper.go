@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
@@ -29,17 +29,20 @@ func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
 	}
 }
 
-func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string, namespace string) (int, error) {
+func (s *S3TablesWrapper) deleteNamespace(
+	ctx context.Context,
+	bucketArn string,
+	namespace string,
+	progressCh chan<- struct{},
+) error {
 	eg := errgroup.Group{}
-
 	sem := semaphore.NewWeighted(SemaphoreWeight)
 
-	deletedTablesCount := 0
 	var continuationToken *string
 	for {
 		output, err := s.client.ListTablesByPage(ctx, aws.String(bucketArn), aws.String(namespace), continuationToken)
 		if err != nil {
-			return 0, err
+			return err
 		}
 		if len(output.Tables) == 0 {
 			break
@@ -47,14 +50,17 @@ func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string,
 
 		for _, table := range output.Tables {
 			if err := sem.Acquire(ctx, 1); err != nil {
-				return 0, err
+				return err
 			}
 			eg.Go(func() error {
 				defer sem.Release(1)
-				return s.client.DeleteTable(ctx, table.Name, aws.String(namespace), aws.String(bucketArn))
+				if err := s.client.DeleteTable(ctx, table.Name, aws.String(namespace), aws.String(bucketArn)); err != nil {
+					return err
+				}
+				progressCh <- struct{}{}
+				return nil
 			})
 		}
-		deletedTablesCount += len(output.Tables)
 
 		continuationToken = output.ContinuationToken
 		if continuationToken == nil {
@@ -63,27 +69,16 @@ func (s *S3TablesWrapper) deleteNamespace(ctx context.Context, bucketArn string,
 	}
 
 	if err := eg.Wait(); err != nil {
-		return 0, err
+		return err
 	}
 
-	if err := s.client.DeleteNamespace(ctx, aws.String(namespace), aws.String(bucketArn)); err != nil {
-		return 0, err
-	}
-
-	return deletedTablesCount, nil
+	return s.client.DeleteNamespace(ctx, aws.String(namespace), aws.String(bucketArn))
 }
 
 func (s *S3TablesWrapper) ClearBucket(
 	ctx context.Context,
 	input ClearBucketInput,
 ) error {
-	eg := errgroup.Group{}
-
-	sem := semaphore.NewWeighted(SemaphoreWeight)
-
-	deletedTablesCount := 0
-	deletedTablesCountMtx := sync.Mutex{}
-
 	var writer *uilive.Writer
 	if !input.QuietMode {
 		writer = uilive.New()
@@ -102,6 +97,19 @@ func (s *S3TablesWrapper) ClearBucket(
 
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
+	progressCh := make(chan struct{})
+	var deletedTablesCount atomic.Int64
+	go func() {
+		for range progressCh {
+			count := deletedTablesCount.Add(1)
+			if !input.QuietMode {
+				fmt.Fprintf(writer, "Clearing... %d tables\n", count)
+			}
+		}
+	}()
+
+	eg := errgroup.Group{}
+	sem := semaphore.NewWeighted(SemaphoreWeight)
 	var continuationToken *string
 	for {
 		output, err := s.client.ListNamespacesByPage(
@@ -110,6 +118,7 @@ func (s *S3TablesWrapper) ClearBucket(
 			continuationToken,
 		)
 		if err != nil {
+			close(progressCh)
 			return err
 		}
 		if len(output.Namespaces) == 0 {
@@ -119,21 +128,12 @@ func (s *S3TablesWrapper) ClearBucket(
 		for _, summary := range output.Namespaces {
 			for _, namespace := range summary.Namespace {
 				if err := sem.Acquire(ctx, 1); err != nil {
+					close(progressCh)
 					return err
 				}
 				eg.Go(func() error {
 					defer sem.Release(1)
-					tableCounts, err := s.deleteNamespace(ctx, bucketArn, namespace)
-					if err != nil {
-						return err
-					}
-					deletedTablesCountMtx.Lock()
-					deletedTablesCount += tableCounts
-					if !input.QuietMode {
-						fmt.Fprintf(writer, "Clearing... %d tables\n", deletedTablesCount)
-					}
-					deletedTablesCountMtx.Unlock()
-					return nil
+					return s.deleteNamespace(ctx, bucketArn, namespace, progressCh)
 				})
 			}
 		}
@@ -145,8 +145,10 @@ func (s *S3TablesWrapper) ClearBucket(
 	}
 
 	if err := eg.Wait(); err != nil {
+		close(progressCh)
 		return err
 	}
+	close(progressCh)
 
 	if !input.QuietMode {
 		if err := writer.Flush(); err != nil {
@@ -154,10 +156,11 @@ func (s *S3TablesWrapper) ClearBucket(
 		}
 	}
 
-	if deletedTablesCount == 0 {
+	finalCount := deletedTablesCount.Load()
+	if finalCount == 0 {
 		io.Logger.Info().Msgf("%v No tables.", bucketName)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", bucketName, deletedTablesCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", bucketName, finalCount)
 	}
 
 	if input.ForceMode {

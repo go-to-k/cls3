@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sync/atomic"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -650,7 +651,17 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 
 			s3Tables := NewS3TablesWrapper(s3TablesMock)
 
-			deletedCount, err := s3Tables.deleteNamespace(tt.args.ctx, tt.args.bucketArn, tt.args.namespace)
+			progressCh := make(chan struct{})
+			var deletedCount atomic.Int64
+			go func() {
+				for range progressCh {
+					deletedCount.Add(1)
+				}
+			}()
+
+			err := s3Tables.deleteNamespace(tt.args.ctx, tt.args.bucketArn, tt.args.namespace, progressCh)
+			close(progressCh)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -659,8 +670,8 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.err.Error())
 				return
 			}
-			if deletedCount != tt.want.deletedCount {
-				t.Errorf("deletedCount = %d, want %d", deletedCount, tt.want.deletedCount)
+			if deletedCount.Load() != int64(tt.want.deletedCount) {
+				t.Errorf("deletedCount = %d, want %d", deletedCount.Load(), tt.want.deletedCount)
 			}
 		})
 	}
