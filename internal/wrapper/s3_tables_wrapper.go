@@ -79,10 +79,6 @@ func (s *S3TablesWrapper) ClearBucket(
 	ctx context.Context,
 	input ClearBucketInput,
 ) error {
-	eg := errgroup.Group{}
-	sem := semaphore.NewWeighted(SemaphoreWeight)
-	progressCh := make(chan struct{})
-
 	var writer *uilive.Writer
 	if !input.QuietMode {
 		writer = uilive.New()
@@ -101,6 +97,7 @@ func (s *S3TablesWrapper) ClearBucket(
 
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
+	progressCh := make(chan struct{})
 	var deletedTablesCount atomic.Int64
 	go func() {
 		for range progressCh {
@@ -111,6 +108,8 @@ func (s *S3TablesWrapper) ClearBucket(
 		}
 	}()
 
+	eg := errgroup.Group{}
+	sem := semaphore.NewWeighted(SemaphoreWeight)
 	var continuationToken *string
 	for {
 		output, err := s.client.ListNamespacesByPage(
