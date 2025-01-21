@@ -14,6 +14,21 @@ import (
 	"github.com/aws/smithy-go/middleware"
 )
 
+type tokenForListBuckets struct{}
+
+func getTokenForListBucketsInitialize(
+	ctx context.Context, in middleware.InitializeInput, next middleware.InitializeHandler,
+) (
+	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
+) {
+	//nolint:gocritic
+	switch v := in.Parameters.(type) {
+	case *s3.ListBucketsInput:
+		ctx = middleware.WithStackValue(ctx, tokenForListBuckets{}, v.ContinuationToken)
+	}
+	return next.HandleInitialize(ctx, in)
+}
+
 type tokenForListDirectoryBuckets struct{}
 
 func getTokenForListDirectoryBucketsInitialize(
@@ -2006,6 +2021,132 @@ func TestS3_listBuckets(t *testing.T) {
 				buckets: []types.Bucket{},
 				err: &ClientError{
 					Err: fmt.Errorf("operation error S3: ListBuckets, exceeded maximum number of attempts, 10, api error SlowDown"),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "list buckets with token successfully",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"GetToken",
+							getTokenForListBucketsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListBucketsWithTokenMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								continuationToken := middleware.GetStackValue(ctx, tokenForListBuckets{}).(*string)
+
+								var nextToken *string
+								var buckets []types.Bucket
+								if continuationToken == nil {
+									nextToken = aws.String("NextToken")
+									buckets = []types.Bucket{
+										{
+											Name: aws.String("test1"),
+										},
+									}
+									return middleware.FinalizeOutput{
+										Result: &s3.ListBucketsOutput{
+											Buckets:           buckets,
+											ContinuationToken: nextToken,
+										},
+									}, middleware.Metadata{}, nil
+								} else {
+									buckets = []types.Bucket{
+										{
+											Name: aws.String("test2"),
+										},
+									}
+									return middleware.FinalizeOutput{
+										Result: &s3.ListBucketsOutput{
+											Buckets: buckets,
+										},
+									}, middleware.Metadata{}, nil
+								}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test1"),
+					},
+					{
+						Name: aws.String("test2"),
+					},
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list buckets with token failure",
+			args: args{
+				ctx: context.Background(),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					err := stack.Initialize.Add(
+						middleware.InitializeMiddlewareFunc(
+							"GetToken",
+							getTokenForListBucketsInitialize,
+						), middleware.Before,
+					)
+					if err != nil {
+						return err
+					}
+
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListBucketsWithTokenErrorMock",
+							func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								continuationToken := middleware.GetStackValue(ctx, tokenForListBuckets{}).(*string)
+
+								var nextToken *string
+								var buckets []types.Bucket
+								if continuationToken == nil {
+									nextToken = aws.String("NextToken")
+									buckets = []types.Bucket{
+										{
+											Name: aws.String("test1"),
+										},
+									}
+									return middleware.FinalizeOutput{
+										Result: &s3.ListBucketsOutput{
+											Buckets:           buckets,
+											ContinuationToken: nextToken,
+										},
+									}, middleware.Metadata{}, nil
+								} else {
+									return middleware.FinalizeOutput{
+										Result: &s3.ListBucketsOutput{},
+									}, middleware.Metadata{}, fmt.Errorf("ListBucketsError")
+								}
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				buckets: []types.Bucket{
+					{
+						Name: aws.String("test1"),
+					},
+				},
+				err: &ClientError{
+					Err: fmt.Errorf("operation error S3: ListBuckets, ListBucketsError"),
 				},
 			},
 			wantErr: true,
