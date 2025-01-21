@@ -322,22 +322,43 @@ func (s *S3) ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket,
 	return buckets, nil
 }
 
-// TODO: continuationToken
 func (s *S3) listBuckets(ctx context.Context) ([]types.Bucket, error) {
-	input := &s3.ListBucketsInput{}
+	buckets := []types.Bucket{}
+	var continuationToken *string
 
-	optFn := func(o *s3.Options) {
-		o.Retryer = s.retryer
-	}
-
-	output, err := s.client.ListBuckets(ctx, input, optFn)
-	if err != nil {
-		return []types.Bucket{}, &ClientError{
-			Err: err,
+	for {
+		select {
+		case <-ctx.Done():
+			return buckets, &ClientError{
+				Err: ctx.Err(),
+			}
+		default:
 		}
+
+		input := &s3.ListBucketsInput{
+			ContinuationToken: continuationToken,
+		}
+
+		optFn := func(o *s3.Options) {
+			o.Retryer = s.retryer
+		}
+
+		output, err := s.client.ListBuckets(ctx, input, optFn)
+		if err != nil {
+			return buckets, &ClientError{
+				Err: err,
+			}
+		}
+
+		buckets = append(buckets, output.Buckets...)
+
+		if output.ContinuationToken == nil {
+			break
+		}
+		continuationToken = output.ContinuationToken
 	}
 
-	return output.Buckets, nil
+	return buckets, nil
 }
 
 func (s *S3) listDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
