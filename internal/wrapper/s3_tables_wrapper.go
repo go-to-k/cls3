@@ -15,7 +15,7 @@ import (
 )
 
 // Too Many Requests error often occurs, so limit the value
-const SemaphoreWeight = 5
+const SemaphoreWeight = 4
 
 var _ IWrapper = (*S3TablesWrapper)(nil)
 
