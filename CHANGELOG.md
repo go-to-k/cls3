@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.24.1](https://github.com/go-to-k/cls3/compare/v0.24.0...v0.24.1) - 2025-01-22
+- refactor(wrapper): use atomic instead of mutex for deletion counts in S3 wrapper by @go-to-k in https://github.com/go-to-k/cls3/pull/285
+- chore(deps): bump golang.org/x/sync from 0.8.0 to 0.10.0 by @dependabot in https://github.com/go-to-k/cls3/pull/268
+- chore(deps): bump github.com/fatih/color from 1.17.0 to 1.18.0 by @dependabot in https://github.com/go-to-k/cls3/pull/255
+- chore: handle loop cancel when context done by @go-to-k in https://github.com/go-to-k/cls3/pull/286
+
 ## [v0.24.0](https://github.com/go-to-k/cls3/compare/v0.23.0...v0.24.0) - 2025-01-21
 - docs: add command option sample for -t in README by @go-to-k in https://github.com/go-to-k/cls3/pull/280
 - fix(wrapper): TooManyRequestsException often occurs by @go-to-k in https://github.com/go-to-k/cls3/pull/283
