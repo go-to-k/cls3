@@ -42,8 +42,8 @@ mkdir -p ${dir}
 
 # about 1000,000 versions
 ## NOTE: It'll cost you about $3.75 (0.005 USD / 1000 PUT)(`aws s3 rm` is free because it's DELETE operation)
-for i in $(seq 1 80); do
-	touch ${dir}/${i}_{1..100}_${RANDOM}.txt
+for i in $(seq 1 250); do
+	touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
 
 	# version
 	pids=()
