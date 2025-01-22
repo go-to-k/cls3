@@ -32,6 +32,7 @@ func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
 func (s *S3TablesWrapper) deleteNamespace(
 	ctx context.Context,
 	bucketArn string,
+	bucketName string,
 	namespace string,
 	progressCh chan<- struct{},
 ) error {
@@ -40,6 +41,15 @@ func (s *S3TablesWrapper) deleteNamespace(
 
 	var continuationToken *string
 	for {
+		select {
+		case <-ctx.Done():
+			return &client.ClientError{
+				ResourceName: aws.String(bucketName + "/" + namespace),
+				Err:          ctx.Err(),
+			}
+		default:
+		}
+
 		output, err := s.client.ListTablesByPage(ctx, aws.String(bucketArn), aws.String(namespace), continuationToken)
 		if err != nil {
 			return err
@@ -112,6 +122,16 @@ func (s *S3TablesWrapper) ClearBucket(
 	sem := semaphore.NewWeighted(SemaphoreWeight)
 	var continuationToken *string
 	for {
+		select {
+		case <-ctx.Done():
+			close(progressCh)
+			return &client.ClientError{
+				ResourceName: aws.String(bucketName),
+				Err:          ctx.Err(),
+			}
+		default:
+		}
+
 		output, err := s.client.ListNamespacesByPage(
 			ctx,
 			aws.String(bucketArn),
@@ -133,7 +153,7 @@ func (s *S3TablesWrapper) ClearBucket(
 				}
 				eg.Go(func() error {
 					defer sem.Release(1)
-					return s.deleteNamespace(ctx, bucketArn, namespace, progressCh)
+					return s.deleteNamespace(ctx, bucketArn, bucketName, namespace, progressCh)
 				})
 			}
 		}

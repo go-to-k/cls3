@@ -57,6 +57,15 @@ func (s *S3Wrapper) ClearBucket(
 	var keyMarker *string
 	var versionIdMarker *string
 	for {
+		select {
+		case <-ctx.Done():
+			return &client.ClientError{
+				ResourceName: aws.String(input.TargetBucket),
+				Err:          ctx.Err(),
+			}
+		default:
+		}
+
 		var objects []types.ObjectIdentifier
 
 		// ListObjectVersions/ListObjectsV2 API can only retrieve up to 1000 items, so it is good to pass it

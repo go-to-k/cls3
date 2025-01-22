@@ -107,6 +107,15 @@ func (s *S3) DeleteObjects(
 	retryCounts := 0
 
 	for {
+		select {
+		case <-ctx.Done():
+			return errors, &ClientError{
+				ResourceName: bucketName,
+				Err:          ctx.Err(),
+			}
+		default:
+		}
+
 		// Assuming that the number of objects received as an argument does not
 		// exceed 1000, so no slice splitting and validation whether exceeds
 		// 1000 or not are good.
