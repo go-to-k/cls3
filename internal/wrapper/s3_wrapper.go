@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
@@ -42,8 +43,7 @@ func (s *S3Wrapper) ClearBucket(
 	errorStr := ""
 	errorsCount := 0
 	errorsMtx := sync.Mutex{}
-	deletedObjectsCount := 0
-	deletedObjectsCountMtx := sync.Mutex{}
+	var deletedObjectsCount atomic.Int64
 
 	var writer *uilive.Writer
 	if !input.QuietMode {
@@ -91,12 +91,10 @@ func (s *S3Wrapper) ClearBucket(
 		}
 
 		eg.Go(func() error {
-			deletedObjectsCountMtx.Lock()
-			deletedObjectsCount += len(objects)
+			count := deletedObjectsCount.Add(int64(len(objects)))
 			if !input.QuietMode {
-				fmt.Fprintf(writer, "Clearing... %d objects\n", deletedObjectsCount)
+				fmt.Fprintf(writer, "Clearing... %d objects\n", count)
 			}
-			deletedObjectsCountMtx.Unlock()
 
 			// One DeleteObjects is executed for each loop of the List, and it usually ends during
 			// the next loop. Therefore, there seems to be no throttling concern, so the number of
@@ -146,10 +144,11 @@ func (s *S3Wrapper) ClearBucket(
 		}
 	}
 
-	if deletedObjectsCount == 0 {
+	finalCount := deletedObjectsCount.Load()
+	if finalCount == 0 {
 		io.Logger.Info().Msgf("%v No objects.", input.TargetBucket)
 	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.TargetBucket, deletedObjectsCount)
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.TargetBucket, finalCount)
 	}
 
 	if input.ForceMode {
