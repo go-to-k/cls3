@@ -10,6 +10,8 @@ import (
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 )
 
 type App struct {
@@ -21,6 +23,8 @@ type App struct {
 	InteractiveMode      bool
 	OldVersionsOnly      bool
 	QuietMode            bool
+	ConcurrentMode       bool
+	ConcurrencyNumber    int
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
 	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
@@ -83,6 +87,20 @@ func NewApp(version string) *App {
 				Destination: &app.QuietMode,
 			},
 			&cli.BoolFlag{
+				Name:        "concurrentMode",
+				Aliases:     []string{"c"},
+				Value:       false,
+				Usage:       "Delete multiple buckets in parallel. If you want to limit the number of parallel deletions, specify the -n option.",
+				Destination: &app.ConcurrentMode,
+			},
+			&cli.IntFlag{
+				Name:        "concurrencyNumber",
+				Aliases:     []string{"n"},
+				Value:       1,
+				Usage:       "Specify the number of parallel deletions. To specify this option, the -c option must be specified. The default is to delete all buckets in parallel if only the -c option is specified.",
+				Destination: &app.ConcurrencyNumber,
+			},
+			&cli.BoolFlag{
 				Name:        "directoryBucketsMode",
 				Aliases:     []string{"d"},
 				Value:       false,
@@ -140,15 +158,27 @@ func (a *App) getAction() func(c *cli.Context) error {
 			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
 		}
 
+		eg, ctx := errgroup.WithContext(c.Context)
+		sem := semaphore.NewWeighted(int64(a.ConcurrencyNumber))
 		for _, bucket := range a.targetBuckets {
-			if err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
-				TargetBucket:    bucket,
-				ForceMode:       a.ForceMode,
-				OldVersionsOnly: a.OldVersionsOnly,
-				QuietMode:       a.QuietMode,
-			}); err != nil {
+			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
 			}
+			bucket := bucket
+
+			eg.Go(func() error {
+				defer sem.Release(1)
+				return s3Wrapper.ClearBucket(ctx, wrapper.ClearBucketInput{
+					TargetBucket:    bucket,
+					ForceMode:       a.ForceMode,
+					OldVersionsOnly: a.OldVersionsOnly,
+					QuietMode:       a.QuietMode,
+				})
+			})
+		}
+
+		if err := eg.Wait(); err != nil {
+			return err
 		}
 
 		return nil
@@ -194,6 +224,10 @@ func (a *App) validateOptions() error {
 	}
 	if a.TableBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+	}
+	if a.ConcurrencyNumber > 1 && !a.ConcurrentMode {
+		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	return nil
 }
