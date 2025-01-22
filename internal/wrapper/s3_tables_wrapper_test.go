@@ -417,9 +417,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 	io.NewLogger(false)
 
 	type args struct {
-		ctx       context.Context
-		bucketArn string
-		namespace string
+		ctx        context.Context
+		bucketArn  string
+		bucketName string
+		namespace  string
 	}
 
 	type want struct {
@@ -437,9 +438,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 		{
 			name: "delete namespace and tables successfully",
 			args: args{
-				ctx:       context.Background(),
-				bucketArn: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
-				namespace: "namespace1",
+				ctx:        context.Background(),
+				bucketArn:  "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				bucketName: "test",
+				namespace:  "namespace1",
 			},
 			prepareMockFn: func(m *client.MockIS3Tables) {
 				// First page of tables
@@ -519,9 +521,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 		{
 			name: "delete empty namespace successfully",
 			args: args{
-				ctx:       context.Background(),
-				bucketArn: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
-				namespace: "namespace1",
+				ctx:        context.Background(),
+				bucketArn:  "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				bucketName: "test",
+				namespace:  "namespace1",
 			},
 			prepareMockFn: func(m *client.MockIS3Tables) {
 				m.EXPECT().ListTablesByPage(
@@ -552,9 +555,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 		{
 			name: "list tables failure",
 			args: args{
-				ctx:       context.Background(),
-				bucketArn: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
-				namespace: "namespace1",
+				ctx:        context.Background(),
+				bucketArn:  "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				bucketName: "test",
+				namespace:  "namespace1",
 			},
 			prepareMockFn: func(m *client.MockIS3Tables) {
 				m.EXPECT().ListTablesByPage(
@@ -573,9 +577,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 		{
 			name: "delete table failure",
 			args: args{
-				ctx:       context.Background(),
-				bucketArn: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
-				namespace: "namespace1",
+				ctx:        context.Background(),
+				bucketArn:  "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				bucketName: "test",
+				namespace:  "namespace1",
 			},
 			prepareMockFn: func(m *client.MockIS3Tables) {
 				m.EXPECT().ListTablesByPage(
@@ -611,9 +616,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 		{
 			name: "delete namespace failure",
 			args: args{
-				ctx:       context.Background(),
-				bucketArn: "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
-				namespace: "namespace1",
+				ctx:        context.Background(),
+				bucketArn:  "arn:aws:s3:us-east-1:123456789012:table-bucket/test",
+				bucketName: "test",
+				namespace:  "namespace1",
 			},
 			prepareMockFn: func(m *client.MockIS3Tables) {
 				m.EXPECT().ListTablesByPage(
@@ -659,7 +665,7 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 				}
 			}()
 
-			err := s3Tables.deleteNamespace(tt.args.ctx, tt.args.bucketArn, tt.args.namespace, progressCh)
+			err := s3Tables.deleteNamespace(tt.args.ctx, tt.args.bucketArn, tt.args.bucketName, tt.args.namespace, progressCh)
 			close(progressCh)
 
 			if (err != nil) != tt.wantErr {
