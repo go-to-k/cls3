@@ -14,6 +14,10 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+const (
+	ForbiddenConcurrencyNumber = -999
+)
+
 type App struct {
 	Cli                  *cli.App
 	BucketNames          *cli.StringSlice
@@ -96,7 +100,7 @@ func NewApp(version string) *App {
 			&cli.IntFlag{
 				Name:        "concurrencyNumber",
 				Aliases:     []string{"n"},
-				Value:       1,
+				Value:       ForbiddenConcurrencyNumber,
 				Usage:       "Specify the number of parallel deletions. To specify this option, the -c option must be specified. The default is to delete all buckets in parallel if only the -c option is specified.",
 				Destination: &app.ConcurrencyNumber,
 			},
@@ -158,8 +162,15 @@ func (a *App) getAction() func(c *cli.Context) error {
 			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
 		}
 
+		concurrencyNumber := 1
+		if a.ConcurrentMode && a.ConcurrencyNumber == ForbiddenConcurrencyNumber {
+			concurrencyNumber = len(a.targetBuckets)
+		} else if a.ConcurrentMode {
+			concurrencyNumber = a.ConcurrencyNumber
+		}
+
+		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg, ctx := errgroup.WithContext(c.Context)
-		sem := semaphore.NewWeighted(int64(a.ConcurrencyNumber))
 		for _, bucket := range a.targetBuckets {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
@@ -225,8 +236,12 @@ func (a *App) validateOptions() error {
 	if a.TableBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
-	if a.ConcurrencyNumber > 1 && !a.ConcurrentMode {
+	if !a.ConcurrentMode && a.ConcurrencyNumber != ForbiddenConcurrencyNumber {
 		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.ConcurrentMode && a.ConcurrencyNumber < 1 {
+		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	return nil
