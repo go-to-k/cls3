@@ -171,6 +171,8 @@ func (a *App) getAction() func(c *cli.Context) error {
 
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg, ctx := errgroup.WithContext(c.Context)
+		// TODO: attach -q or handle messages
+		// TODO: Only one bucket now Deleted! is not displayed.
 		for _, bucket := range a.targetBuckets {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
