@@ -162,17 +162,12 @@ func (a *App) getAction() func(c *cli.Context) error {
 			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
 		}
 
-		concurrencyNumber := 1
-		if a.ConcurrentMode && a.ConcurrencyNumber == ForbiddenConcurrencyNumber {
-			concurrencyNumber = len(a.targetBuckets)
-		} else if a.ConcurrentMode {
-			concurrencyNumber = a.ConcurrencyNumber
-		}
+		concurrencyNumber := a.determineConcurrencyNumber()
 
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg, ctx := errgroup.WithContext(c.Context)
-		// TODO: attach -q or handle messages
-		// TODO: Only one bucket now Deleted! is not displayed (often).
+		// FIXME: handle messages
+		// FIXME: Only one bucket now Deleted! is not displayed (often).
 		for _, bucket := range a.targetBuckets {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
@@ -278,4 +273,21 @@ func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper)
 		}
 	}
 	return true, nil
+}
+
+func (a *App) determineConcurrencyNumber() int {
+	// Series when ConcurrentMode is off.
+	if !a.ConcurrentMode {
+		return 1
+	}
+
+	// No real-time deletion counts
+	a.QuietMode = true
+
+	// Cases where ConcurrencyNumber is unspecified.
+	if a.ConcurrencyNumber == ForbiddenConcurrencyNumber {
+		return len(a.targetBuckets)
+	}
+
+	return a.ConcurrencyNumber
 }
