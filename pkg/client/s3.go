@@ -61,7 +61,7 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 	retryable := func(err error) bool {
 		return strings.Contains(err.Error(), "api error SlowDown") ||
 			strings.Contains(err.Error(), "https response error StatusCode: 0") || // See: https://github.com/go-to-k/cls3/issues/194
-			strings.Contains(err.Error(), "EOF")
+			strings.Contains(err.Error(), "EOF") // ex: ERR [resource par-cls-019] operation error S3: DeleteObjects, https response error StatusCode: 0, RequestID: , HostID: , request send failed, Post "https://par-cls-019.s3.us-east-1.amazonaws.com/?delete=": EOF
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)
 

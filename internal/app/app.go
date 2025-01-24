@@ -167,35 +167,6 @@ func (a *App) getAction() func(c *cli.Context) error {
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg := errgroup.Group{}
 		// FIXME: handle messages
-		// FIXME: error occurs
-		// INF par-cls-020 Checking...
-		// INF par-cls-016 Checking...
-		// INF par-cls-022 Checking...
-		// INF par-cls-025 Checking...
-		// INF par-cls-018 Checking...
-		// INF par-cls-021 Checking...
-		// INF par-cls-019 Checking...
-		// INF par-cls-024 Checking...
-		// INF par-cls-023 Checking...
-		// INF par-cls-017 Checking...
-		// INF par-cls-016 Cleared!!: 13000 objects.
-		// INF par-cls-016 Deleted!!
-		// INF par-cls-024 Cleared!!: 32000 objects.
-		// INF par-cls-025 Cleared!!: 32000 objects.
-		// INF par-cls-020 Cleared!!: 32000 objects.
-		// INF par-cls-023 Cleared!!: 32000 objects.
-		// INF par-cls-017 Cleared!!: 32000 objects.
-		// INF par-cls-024 Deleted!!
-		// INF par-cls-025 Deleted!!
-		// INF par-cls-020 Deleted!!
-		// INF par-cls-023 Deleted!!
-		// INF par-cls-017 Deleted!!
-		// INF par-cls-018 Cleared!!: 32000 objects.
-		// INF par-cls-018 Deleted!!
-		// INF par-cls-022 Cleared!!: 32000 objects.
-		// INF par-cls-022 Deleted!!
-		// ERR [resource par-cls-019] operation error S3: DeleteObjects, https response error StatusCode: 0, RequestID: , HostID: , request send failed, Post "https://par-cls-019.s3.us-east-1.amazonaws.com/?delete=": EOF
-		// exit status 1
 		for _, bucket := range a.targetBuckets {
 			bucket := bucket
 			if err := sem.Acquire(c.Context, 1); err != nil {
