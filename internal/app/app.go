@@ -167,7 +167,6 @@ func (a *App) getAction() func(c *cli.Context) error {
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg := errgroup.Group{}
 		// FIXME: handle messages
-		// FIXME: Only one bucket now Deleted! is not displayed (often).
 		for _, bucket := range a.targetBuckets {
 			if err := sem.Acquire(c.Context, 1); err != nil {
 				return err
