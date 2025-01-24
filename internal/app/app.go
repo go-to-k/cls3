@@ -166,7 +166,8 @@ func (a *App) getAction() func(c *cli.Context) error {
 
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg, ctx := errgroup.WithContext(c.Context)
-		// FIXME: ERR [resource par-cls-009] operation error S3: DeleteBucket, context canceled
+		// FIXME: failed if 8 buckets
+		// ERR [resource par-cls-009] operation error S3: DeleteBucket, context canceled
 		// FIXME: handle messages
 		// FIXME: Only one bucket now Deleted! is not displayed (often).
 		for _, bucket := range a.targetBuckets {
