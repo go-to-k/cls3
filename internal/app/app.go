@@ -165,29 +165,18 @@ func (a *App) getAction() func(c *cli.Context) error {
 		concurrencyNumber := a.determineConcurrencyNumber()
 
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
-		eg, ctx := errgroup.WithContext(c.Context)
-		// FIXME: failed if 4 buckets
-		// INF par-cls-012 Checking...
-		// INF par-cls-010 Checking...
-		// INF par-cls-009 Checking...
-		// INF par-cls-011 Checking...
-		// INF par-cls-009 No objects.
-		// ERR [resource par-cls-009] operation error S3: DeleteBucket, context canceled
-		// Even if 1 bucket par-cls-009, it doesn't work.
-		// INF par-cls-009 Checking...
-		// INF par-cls-009 No objects.
-		// ERR [resource par-cls-009] operation error S3: DeleteBucket, context canceled
+		eg := errgroup.Group{}
 		// FIXME: handle messages
 		// FIXME: Only one bucket now Deleted! is not displayed (often).
 		for _, bucket := range a.targetBuckets {
-			if err := sem.Acquire(ctx, 1); err != nil {
+			if err := sem.Acquire(c.Context, 1); err != nil {
 				return err
 			}
 			bucket := bucket
 
 			eg.Go(func() error {
 				defer sem.Release(1)
-				return s3Wrapper.ClearBucket(ctx, wrapper.ClearBucketInput{
+				return s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
 					TargetBucket:    bucket,
 					ForceMode:       a.ForceMode,
 					OldVersionsOnly: a.OldVersionsOnly,
