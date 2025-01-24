@@ -167,11 +167,14 @@ func (a *App) getAction() func(c *cli.Context) error {
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
 		eg := errgroup.Group{}
 		// FIXME: handle messages
+		// FIXME: error occurs
+		// ERR [resource par-cls-019] operation error S3: DeleteObjects, https response error StatusCode: 0, RequestID: , HostID: , request send failed, Post "https://par-cls-019.s3.us-east-1.amazonaws.com/?delete=": EOF
+		// exit status 1
 		for _, bucket := range a.targetBuckets {
+			bucket := bucket
 			if err := sem.Acquire(c.Context, 1); err != nil {
 				return err
 			}
-			bucket := bucket
 
 			eg.Go(func() error {
 				defer sem.Release(1)
