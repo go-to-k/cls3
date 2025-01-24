@@ -173,6 +173,7 @@ func (a *App) getAction() func(c *cli.Context) error {
 		// INF par-cls-011 Checking...
 		// INF par-cls-009 No objects.
 		// ERR [resource par-cls-009] operation error S3: DeleteBucket, context canceled
+		// Even if 1 bucket par-cls-009, it doesn't work.
 		// FIXME: handle messages
 		// FIXME: Only one bucket now Deleted! is not displayed (often).
 		for _, bucket := range a.targetBuckets {
