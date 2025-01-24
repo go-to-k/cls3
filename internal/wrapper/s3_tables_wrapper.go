@@ -36,7 +36,7 @@ func (s *S3TablesWrapper) deleteNamespace(
 	namespace string,
 	progressCh chan<- struct{},
 ) error {
-	eg, ctx := errgroup.WithContext(ctx)
+	eg := errgroup.Group{}
 	sem := semaphore.NewWeighted(SemaphoreWeight)
 
 	var continuationToken *string
@@ -118,7 +118,7 @@ func (s *S3TablesWrapper) ClearBucket(
 		}
 	}()
 
-	eg, ctx := errgroup.WithContext(ctx)
+	eg := errgroup.Group{}
 	sem := semaphore.NewWeighted(SemaphoreWeight)
 	var continuationToken *string
 	for {
