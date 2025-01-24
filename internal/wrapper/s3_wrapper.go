@@ -39,7 +39,7 @@ func (s *S3Wrapper) ClearBucket(
 		return err
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
+	eg := errgroup.Group{}
 	errorStr := ""
 	errorsCount := 0
 	errorsMtx := sync.Mutex{}
