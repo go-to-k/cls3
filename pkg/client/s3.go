@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/go-to-k/cls3/internal/io"
 )
 
 var SleepTimeSecForS3 = 10
@@ -59,12 +60,18 @@ type S3 struct {
 
 func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 	retryable := func(err error) bool {
-		if directoryBucketsMode {
-			// See: https://github.com/go-to-k/cls3/issues/194
-			return strings.Contains(err.Error(), "api error SlowDown") || strings.Contains(err.Error(), "https response error StatusCode: 0")
-		}
+		isRetryable :=
+			strings.Contains(err.Error(), "api error SlowDown") ||
+				// See: https://github.com/go-to-k/cls3/issues/194
+				strings.Contains(err.Error(), "https response error StatusCode: 0") ||
+				// ex: ERR [resource par-cls-019] operation error S3: DeleteObjects, https response error StatusCode: 0, RequestID: , HostID: , request send failed, Post "https://par-cls-019.s3.us-east-1.amazonaws.com/?delete=": EOF
+				// but one condition above, it didn't catch on.
+				strings.Contains(err.Error(), "EOF")
 
-		return strings.Contains(err.Error(), "api error SlowDown")
+		if isRetryable {
+			io.Logger.Debug().Msgf("Retryable error: %v", err)
+		}
+		return isRetryable
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)
 
