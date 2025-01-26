@@ -65,6 +65,24 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -d, do not specify the -o option.\n",
 		},
 		{
+			name: "error when concurrency number specified without concurrent mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: 2,
+				ConcurrentMode:    false,
+			},
+			expectedErr: "InvalidOptionError: When specifying -n, you must specify the -c option.\n",
+		},
+		{
+			name: "error when negative concurrency number specified with concurrent mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: 0,
+				ConcurrentMode:    true,
+			},
+			expectedErr: "InvalidOptionError: You must specify a positive number for the -n option when specifying the -c option.\n",
+		},
+		{
 			name: "warn when directory buckets mode without region",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
@@ -242,6 +260,42 @@ func TestValidateOptions(t *testing.T) {
 				OldVersionsOnly: true,
 				QuietMode:       true,
 				BucketNames:     cli.NewStringSlice(),
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - bucket names with concurrent mode",
+			app: &App{
+				BucketNames:    cli.NewStringSlice("bucket1"),
+				ConcurrentMode: true,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with concurrent mode",
+			app: &App{
+				InteractiveMode: true,
+				ConcurrentMode:  true,
+				BucketNames:     cli.NewStringSlice(),
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - bucket names with concurrent mode and concurrency number",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrentMode:    true,
+				ConcurrencyNumber: 2,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with concurrent mode and concurrency number",
+			app: &App{
+				InteractiveMode:   true,
+				ConcurrentMode:    true,
+				ConcurrencyNumber: 2,
+				BucketNames:       cli.NewStringSlice(),
 			},
 			expectedErr: "",
 		},
