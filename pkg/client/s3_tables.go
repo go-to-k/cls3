@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
-	"github.com/go-to-k/cls3/internal/io"
 )
 
 var SleepTimeSecForS3Tables = 3
@@ -42,15 +41,9 @@ type S3Tables struct {
 
 func NewS3Tables(client *s3tables.Client) *S3Tables {
 	retryable := func(err error) bool {
-		isRetryable :=
-			strings.Contains(err.Error(), "api error SlowDown") ||
-				strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
-				strings.Contains(err.Error(), "StatusCode: 429")
-
-		if isRetryable {
-			io.Logger.Debug().Msgf("Retryable error: %v", err)
-		}
-		return isRetryable
+		return strings.Contains(err.Error(), "api error SlowDown") ||
+			strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
+			strings.Contains(err.Error(), "StatusCode: 429")
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3Tables)
 
