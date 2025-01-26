@@ -58,7 +58,7 @@ The `-t | --tableBucketsMode` option allows you to delete the Table Buckets for 
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
-### Concurrent Mode
+### Concurrent Deletion of Multiple Buckets
 
 The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
 
