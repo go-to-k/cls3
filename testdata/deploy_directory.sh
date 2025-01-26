@@ -38,8 +38,8 @@ if ! [[ "${num_buckets}" =~ ^[0-9]+$ ]]; then
 	exit 1
 fi
 
-if [ "${num_buckets}" -gt 10 ]; then
-	echo "number of buckets (-n) must be less than or equal to 10 for directory buckets"
+if [ "${num_buckets}" -gt 100 ]; then
+	echo "number of buckets (-n) must be less than or equal to 100 for directory buckets"
 	exit 1
 fi
 
