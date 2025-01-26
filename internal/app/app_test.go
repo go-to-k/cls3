@@ -109,6 +109,15 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -o option.\n",
 		},
 		{
+			name: "error when table buckets mode with concurrent mode",
+			app: &App{
+				BucketNames:      cli.NewStringSlice("bucket1"),
+				TableBucketsMode: true,
+				ConcurrentMode:   true,
+			},
+			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -c option because the throttling threshold for S3 Tables is very low.\n",
+		},
+		{
 			name: "warn when table buckets mode without region",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -323,6 +332,17 @@ func Test_validateOptions(t *testing.T) {
 				ConcurrentMode:    true,
 				ConcurrencyNumber: 2,
 				BucketNames:       cli.NewStringSlice(),
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - directory buckets mode with concurrent mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				DirectoryBucketsMode: true,
+				ConcurrentMode:       true,
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
+				Region:               "us-east-1",
 			},
 			expectedErr: "",
 		},
