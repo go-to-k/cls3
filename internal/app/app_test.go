@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func TestValidateOptions(t *testing.T) {
+func Test_validateOptions(t *testing.T) {
 	var buf bytes.Buffer
 	logger := zerolog.New(&buf)
 	io.Logger = &logger
@@ -348,7 +348,7 @@ func TestValidateOptions(t *testing.T) {
 	}
 }
 
-func TestDetermineConcurrencyNumber(t *testing.T) {
+func Test_determineConcurrencyNumber(t *testing.T) {
 	tests := []struct {
 		name              string
 		app               *App
