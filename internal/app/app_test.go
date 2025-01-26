@@ -185,6 +185,56 @@ func TestValidateOptions(t *testing.T) {
 			},
 			expectedErr: "",
 		},
+		{
+			name: "succeed with valid options - bucket names with old versions only",
+			app: &App{
+				BucketNames:     cli.NewStringSlice("bucket1"),
+				OldVersionsOnly: true,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with old versions only",
+			app: &App{
+				InteractiveMode: true,
+				OldVersionsOnly: true,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - bucket names with quiet mode",
+			app: &App{
+				BucketNames: cli.NewStringSlice("bucket1"),
+				QuietMode:   true,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with quiet mode",
+			app: &App{
+				InteractiveMode: true,
+				QuietMode:       true,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - bucket names with old versions only and quiet mode",
+			app: &App{
+				BucketNames:     cli.NewStringSlice("bucket1"),
+				OldVersionsOnly: true,
+				QuietMode:       true,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with old versions only and quiet mode",
+			app: &App{
+				InteractiveMode: true,
+				OldVersionsOnly: true,
+				QuietMode:       true,
+			},
+			expectedErr: "",
+		},
 	}
 
 	for _, tt := range tests {
