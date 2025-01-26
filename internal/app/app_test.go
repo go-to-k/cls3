@@ -24,25 +24,28 @@ func TestValidateOptions(t *testing.T) {
 		{
 			name: "error when no bucket names specified in non-interactive mode",
 			app: &App{
-				InteractiveMode: false,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   false,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).\n",
 		},
 		{
 			name: "error when bucket names specified in interactive mode",
 			app: &App{
-				InteractiveMode: true,
-				BucketNames:     cli.NewStringSlice("bucket1"),
+				InteractiveMode:   true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: When specifying -i, do not specify the -b option.\n",
 		},
 		{
 			name: "error when both force mode and old versions only specified",
 			app: &App{
-				BucketNames:     cli.NewStringSlice("bucket1"),
-				ForceMode:       true,
-				OldVersionsOnly: true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ForceMode:         true,
+				OldVersionsOnly:   true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: When specifying -o, do not specify the -f option.\n",
 		},
@@ -52,6 +55,7 @@ func TestValidateOptions(t *testing.T) {
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
 				TableBucketsMode:     true,
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: You cannot specify both -d and -t options.\n",
 		},
@@ -61,6 +65,7 @@ func TestValidateOptions(t *testing.T) {
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
 				OldVersionsOnly:      true,
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: When specifying -d, do not specify the -o option.\n",
 		},
@@ -88,6 +93,7 @@ func TestValidateOptions(t *testing.T) {
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
 				Region:               "",
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
 			},
 			expectedErr:     "",
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
@@ -95,18 +101,20 @@ func TestValidateOptions(t *testing.T) {
 		{
 			name: "error when both table buckets mode and old versions only specified",
 			app: &App{
-				BucketNames:      cli.NewStringSlice("bucket1"),
-				TableBucketsMode: true,
-				OldVersionsOnly:  true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				TableBucketsMode:  true,
+				OldVersionsOnly:   true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -o option.\n",
 		},
 		{
 			name: "warn when table buckets mode without region",
 			app: &App{
-				BucketNames:      cli.NewStringSlice("bucket1"),
-				TableBucketsMode: true,
-				Region:           "",
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				TableBucketsMode:  true,
+				Region:            "",
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr:     "",
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
@@ -114,69 +122,77 @@ func TestValidateOptions(t *testing.T) {
 		{
 			name: "succeed with valid options - basic case",
 			app: &App{
-				BucketNames: cli.NewStringSlice("bucket1"),
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode",
 			app: &App{
-				InteractiveMode: true,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   true,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - multiple bucket names",
 			app: &App{
-				BucketNames: cli.NewStringSlice("bucket1", "bucket2"),
+				BucketNames:       cli.NewStringSlice("bucket1", "bucket2"),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - bucket names with force mode",
 			app: &App{
-				BucketNames: cli.NewStringSlice("bucket1"),
-				ForceMode:   true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ForceMode:         true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode with force mode",
 			app: &App{
-				InteractiveMode: true,
-				ForceMode:       true,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   true,
+				ForceMode:         true,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - table buckets mode with region",
 			app: &App{
-				BucketNames:      cli.NewStringSlice("bucket1"),
-				TableBucketsMode: true,
-				Region:           "ap-northeast-1",
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				TableBucketsMode:  true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - bucket names with force mode and table buckets mode",
 			app: &App{
-				BucketNames:      cli.NewStringSlice("bucket1"),
-				ForceMode:        true,
-				TableBucketsMode: true,
-				Region:           "ap-northeast-1",
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ForceMode:         true,
+				TableBucketsMode:  true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode with force mode and table buckets mode",
 			app: &App{
-				InteractiveMode:  true,
-				ForceMode:        true,
-				TableBucketsMode: true,
-				BucketNames:      cli.NewStringSlice(),
-				Region:           "ap-northeast-1",
+				InteractiveMode:   true,
+				ForceMode:         true,
+				TableBucketsMode:  true,
+				BucketNames:       cli.NewStringSlice(),
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
@@ -186,6 +202,7 @@ func TestValidateOptions(t *testing.T) {
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
 				Region:               "ap-northeast-1",
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
@@ -196,6 +213,7 @@ func TestValidateOptions(t *testing.T) {
 				ForceMode:            true,
 				DirectoryBucketsMode: true,
 				Region:               "ap-northeast-1",
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
@@ -207,76 +225,85 @@ func TestValidateOptions(t *testing.T) {
 				DirectoryBucketsMode: true,
 				BucketNames:          cli.NewStringSlice(),
 				Region:               "ap-northeast-1",
+				ConcurrencyNumber:    ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - bucket names with old versions only",
 			app: &App{
-				BucketNames:     cli.NewStringSlice("bucket1"),
-				OldVersionsOnly: true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				OldVersionsOnly:   true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode with old versions only",
 			app: &App{
-				InteractiveMode: true,
-				OldVersionsOnly: true,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   true,
+				OldVersionsOnly:   true,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - bucket names with quiet mode",
 			app: &App{
-				BucketNames: cli.NewStringSlice("bucket1"),
-				QuietMode:   true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				QuietMode:         true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode with quiet mode",
 			app: &App{
-				InteractiveMode: true,
-				QuietMode:       true,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   true,
+				QuietMode:         true,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - bucket names with old versions only and quiet mode",
 			app: &App{
-				BucketNames:     cli.NewStringSlice("bucket1"),
-				OldVersionsOnly: true,
-				QuietMode:       true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				OldVersionsOnly:   true,
+				QuietMode:         true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode with old versions only and quiet mode",
 			app: &App{
-				InteractiveMode: true,
-				OldVersionsOnly: true,
-				QuietMode:       true,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   true,
+				OldVersionsOnly:   true,
+				QuietMode:         true,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - bucket names with concurrent mode",
 			app: &App{
-				BucketNames:    cli.NewStringSlice("bucket1"),
-				ConcurrentMode: true,
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrentMode:    true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
 		{
 			name: "succeed with valid options - interactive mode with concurrent mode",
 			app: &App{
-				InteractiveMode: true,
-				ConcurrentMode:  true,
-				BucketNames:     cli.NewStringSlice(),
+				InteractiveMode:   true,
+				ConcurrentMode:    true,
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
 			},
 			expectedErr: "",
 		},
@@ -317,6 +344,79 @@ func TestValidateOptions(t *testing.T) {
 			} else {
 				assert.Empty(t, buf.String())
 			}
+		})
+	}
+}
+
+func TestDetermineConcurrencyNumber(t *testing.T) {
+	tests := []struct {
+		name              string
+		app               *App
+		expectedNumber    int
+		expectedQuietMode bool
+	}{
+		{
+			name: "return 1 when concurrent mode is off",
+			app: &App{
+				ConcurrentMode:    false,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
+				targetBuckets:     []string{"bucket1", "bucket2"},
+				QuietMode:         false,
+			},
+			expectedNumber:    1,
+			expectedQuietMode: false,
+		},
+		{
+			name: "return number of target buckets when concurrency number is not specified",
+			app: &App{
+				ConcurrentMode:    true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
+				targetBuckets:     []string{"bucket1", "bucket2", "bucket3"},
+				QuietMode:         false,
+			},
+			expectedNumber:    3,
+			expectedQuietMode: true,
+		},
+		{
+			name: "return specified concurrency number when set",
+			app: &App{
+				ConcurrentMode:    true,
+				ConcurrencyNumber: 2,
+				targetBuckets:     []string{"bucket1", "bucket2", "bucket3"},
+				QuietMode:         false,
+			},
+			expectedNumber:    2,
+			expectedQuietMode: true,
+		},
+		{
+			name: "return 1 when concurrent mode is off regardless of concurrency number",
+			app: &App{
+				ConcurrentMode:    false,
+				ConcurrencyNumber: 2,
+				targetBuckets:     []string{"bucket1", "bucket2"},
+				QuietMode:         false,
+			},
+			expectedNumber:    1,
+			expectedQuietMode: false,
+		},
+		{
+			name: "keep quiet mode true when it was already true",
+			app: &App{
+				ConcurrentMode:    true,
+				ConcurrencyNumber: ForbiddenConcurrencyNumber,
+				targetBuckets:     []string{"bucket1", "bucket2"},
+				QuietMode:         true,
+			},
+			expectedNumber:    2,
+			expectedQuietMode: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.app.determineConcurrencyNumber()
+			assert.Equal(t, tt.expectedNumber, result)
+			assert.Equal(t, tt.expectedQuietMode, tt.app.QuietMode)
 		})
 	}
 }
