@@ -58,6 +58,14 @@ The `-t | --tableBucketsMode` option allows you to delete the Table Buckets for 
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
+### Concurrent Mode
+
+The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
+
+If you want to limit the number of parallel deletions, you can specify the `-n | --concurrencyNumber` option. For example, `-c -n 5` will delete buckets with a maximum of 5 parallel operations.
+
+This option is not available in the Table Buckets Mode (`-t`) because the throttling threshold for S3 Tables is very low.
+
 ### Number of objects that can be deleted
 
 The delete-objects API provided by the CLI and SDK has a limit of "the number of objects that can be deleted in one command is limited to 1000", but This tool has no limit on the number.
