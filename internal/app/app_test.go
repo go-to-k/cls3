@@ -22,7 +22,7 @@ func TestValidateOptions(t *testing.T) {
 		expectedWarning string
 	}{
 		{
-			name: "should return error when no bucket names specified in non-interactive mode",
+			name: "return error when no bucket names specified in non-interactive mode",
 			app: &App{
 				InteractiveMode: false,
 				BucketNames:     cli.NewStringSlice(),
@@ -30,7 +30,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: At least one bucket name must be specified in command options (-b) or a flow of the interactive mode (-i).\n",
 		},
 		{
-			name: "should return error when bucket names specified in interactive mode",
+			name: "return error when bucket names specified in interactive mode",
 			app: &App{
 				InteractiveMode: true,
 				BucketNames:     cli.NewStringSlice("bucket1"),
@@ -38,7 +38,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -i, do not specify the -b option.\n",
 		},
 		{
-			name: "should return error when both force mode and old versions only specified",
+			name: "return error when both force mode and old versions only specified",
 			app: &App{
 				BucketNames:     cli.NewStringSlice("bucket1"),
 				ForceMode:       true,
@@ -47,7 +47,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -o, do not specify the -f option.\n",
 		},
 		{
-			name: "should return error when both directory buckets mode and table buckets mode specified",
+			name: "return error when both directory buckets mode and table buckets mode specified",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
@@ -56,7 +56,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: You cannot specify both -d and -t options.\n",
 		},
 		{
-			name: "should return error when both directory buckets mode and old versions only specified",
+			name: "return error when both directory buckets mode and old versions only specified",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
@@ -65,16 +65,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -d, do not specify the -o option.\n",
 		},
 		{
-			name: "should return error when both table buckets mode and old versions only specified",
-			app: &App{
-				BucketNames:      cli.NewStringSlice("bucket1"),
-				TableBucketsMode: true,
-				OldVersionsOnly:  true,
-			},
-			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -o option.\n",
-		},
-		{
-			name: "should warn when directory buckets mode without region",
+			name: "warn when directory buckets mode without region",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
@@ -84,7 +75,16 @@ func TestValidateOptions(t *testing.T) {
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Directory Buckets Mode `-d` to clear the Directory Buckets. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
 		},
 		{
-			name: "should warn when table buckets mode without region",
+			name: "return error when both table buckets mode and old versions only specified",
+			app: &App{
+				BucketNames:      cli.NewStringSlice("bucket1"),
+				TableBucketsMode: true,
+				OldVersionsOnly:  true,
+			},
+			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -o option.\n",
+		},
+		{
+			name: "warn when table buckets mode without region",
 			app: &App{
 				BucketNames:      cli.NewStringSlice("bucket1"),
 				TableBucketsMode: true,
@@ -94,14 +94,14 @@ func TestValidateOptions(t *testing.T) {
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
 		},
 		{
-			name: "should succeed with valid options - basic case",
+			name: "succeed with valid options - basic case",
 			app: &App{
 				BucketNames: cli.NewStringSlice("bucket1"),
 			},
 			expectedErr: "",
 		},
 		{
-			name: "should succeed with valid options - interactive mode",
+			name: "succeed with valid options - interactive mode",
 			app: &App{
 				InteractiveMode: true,
 				BucketNames:     cli.NewStringSlice(),
@@ -109,7 +109,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "should succeed with valid options - directory buckets mode with region",
+			name: "succeed with valid options - directory buckets mode with region",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
@@ -118,7 +118,7 @@ func TestValidateOptions(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "should succeed with valid options - table buckets mode with region",
+			name: "succeed with valid options - table buckets mode with region",
 			app: &App{
 				BucketNames:      cli.NewStringSlice("bucket1"),
 				TableBucketsMode: true,
