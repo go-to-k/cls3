@@ -104,15 +104,6 @@ for bucket_num in $(seq 1 ${num_buckets}); do
 		rm -rf ${dir}
 	) &
 	pids[$!]=$!
-
-	# Wait for every 10 processes to complete before starting new ones
-	if [ ${#pids[@]} -eq 10 ]; then
-		wait "${pids[@]}"
-		pids=()
-	fi
 done
 
-# Wait for remaining processes
-if [ ${#pids[@]} -gt 0 ]; then
-	wait "${pids[@]}"
-fi
+wait "${pids[@]}"
