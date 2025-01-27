@@ -79,7 +79,7 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -n, you must specify the -c option.\n",
 		},
 		{
-			name: "error when negative concurrency number specified with concurrent mode",
+			name: "error when non positive concurrency number specified with concurrent mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
 				ConcurrencyNumber: 0,
