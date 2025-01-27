@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
+	"github.com/gosuri/uilive"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -162,30 +166,141 @@ func (a *App) getAction() func(c *cli.Context) error {
 			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
 		}
 
-		concurrencyNumber := a.determineConcurrencyNumber()
+		// TODO: Refactor to separate the display and the deletion process.
+		writer := uilive.New()
+		writer.Start()
+		defer writer.Stop()
 
+		clearingLines := make([]string, len(a.targetBuckets))
+		var clearingLinesMutex sync.Mutex
+		var clearingCountsMutex sync.Mutex
+
+		clearingCountChannels := make(map[string]chan int64, len(a.targetBuckets))
+		clearedCompletedChannels := make(map[string]chan bool, len(a.targetBuckets))
+		clearingCounts := make(map[string]*atomic.Int64, len(a.targetBuckets))
+
+		for _, bucket := range a.targetBuckets {
+			if err := s3Wrapper.OutputCheckingMessage(bucket); err != nil {
+				return err
+			}
+			clearingCountChannels[bucket] = make(chan int64)
+			clearedCompletedChannels[bucket] = make(chan bool)
+			clearingCounts[bucket] = &atomic.Int64{}
+		}
+
+		var displayEg errgroup.Group
+		if !a.QuietMode {
+			for i, bucket := range a.targetBuckets {
+				i, bucket := i, bucket
+
+				// Necessary to first display all bucket rows together
+				clearingLinesMutex.Lock()
+				message, err := s3Wrapper.GetLiveClearingMessage(bucket, 0)
+				if err != nil {
+					return err
+				}
+				clearingLines[i] = message
+				clearingLinesMutex.Unlock()
+
+				displayEg.Go(func() error {
+					clearingCountsMutex.Lock()
+					clearingCountCh := clearingCountChannels[bucket]
+					clearedCompletedCh := clearedCompletedChannels[bucket]
+					counter := clearingCounts[bucket]
+					clearingCountsMutex.Unlock()
+
+					for count := range clearingCountCh {
+						counter.Store(count)
+						clearingLinesMutex.Lock()
+						message, err := s3Wrapper.GetLiveClearingMessage(bucket, count)
+						if err != nil {
+							return err
+						}
+						clearingLines[i] = message
+						fmt.Fprintln(writer, strings.Join(clearingLines, "\n"))
+						clearingLinesMutex.Unlock()
+					}
+
+					count := counter.Load()
+					clearingLinesMutex.Lock()
+					isCompleted := <-clearedCompletedCh
+					message, err := s3Wrapper.GetLiveClearedMessage(bucket, count, isCompleted)
+					if err != nil {
+						return err
+					}
+					clearingLines[i] = message
+					fmt.Fprintln(writer, strings.Join(clearingLines, "\n"))
+					clearingLinesMutex.Unlock()
+					return nil
+				})
+			}
+		}
+
+		concurrencyNumber := a.determineConcurrencyNumber()
 		sem := semaphore.NewWeighted(int64(concurrencyNumber))
-		eg := errgroup.Group{}
-		// FIXME: handle messages
+		clearEg := errgroup.Group{}
+
 		for _, bucket := range a.targetBuckets {
 			bucket := bucket
 			if err := sem.Acquire(c.Context, 1); err != nil {
 				return err
 			}
 
-			eg.Go(func() error {
+			clearEg.Go(func() error {
 				defer sem.Release(1)
-				return s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
+				clearingCountsMutex.Lock()
+				clearingCountCh := clearingCountChannels[bucket]
+				clearedCompletedCh := clearedCompletedChannels[bucket]
+				clearingCountsMutex.Unlock()
+
+				err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
 					TargetBucket:    bucket,
 					ForceMode:       a.ForceMode,
 					OldVersionsOnly: a.OldVersionsOnly,
 					QuietMode:       a.QuietMode,
+					ClearingCountCh: clearingCountCh,
 				})
+				if err != nil {
+					close(clearingCountCh)
+					if !a.QuietMode {
+						clearedCompletedCh <- false
+					}
+					close(clearedCompletedCh)
+					return err
+				}
+
+				close(clearingCountCh)
+				if !a.QuietMode {
+					clearedCompletedCh <- true
+				}
+				close(clearedCompletedCh)
+
+				return nil
 			})
 		}
 
-		if err := eg.Wait(); err != nil {
+		if err := clearEg.Wait(); err != nil {
 			return err
+		}
+
+		if err := displayEg.Wait(); err != nil {
+			return err
+		}
+		if !a.QuietMode {
+			if err := writer.Flush(); err != nil {
+				return err
+			}
+
+			for _, bucket := range a.targetBuckets {
+				if err := s3Wrapper.OutputClearedMessage(bucket, clearingCounts[bucket].Load()); err != nil {
+					return err
+				}
+				if a.ForceMode {
+					if err := s3Wrapper.OutputDeletedMessage(bucket); err != nil {
+						return err
+					}
+				}
+			}
 		}
 
 		return nil
@@ -283,9 +398,6 @@ func (a *App) determineConcurrencyNumber() int {
 	if !a.ConcurrentMode {
 		return 1
 	}
-
-	// No real-time deletion counts
-	a.QuietMode = true
 
 	// Cases where ConcurrencyNumber is unspecified.
 	if a.ConcurrencyNumber == UnspecifiedConcurrencyNumber {

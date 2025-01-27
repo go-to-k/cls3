@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/go-to-k/cls3/internal/io"
 )
 
 var SleepTimeSecForS3 = 10
@@ -68,9 +67,6 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 				// but one condition above, it didn't catch on.
 				strings.Contains(err.Error(), "EOF")
 
-		if isRetryable {
-			io.Logger.Debug().Msgf("Retryable error: %v", err)
-		}
 		return isRetryable
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)

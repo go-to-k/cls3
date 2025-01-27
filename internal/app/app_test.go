@@ -380,10 +380,9 @@ func Test_validateOptions(t *testing.T) {
 
 func Test_determineConcurrencyNumber(t *testing.T) {
 	tests := []struct {
-		name              string
-		app               *App
-		expectedNumber    int
-		expectedQuietMode bool
+		name           string
+		app            *App
+		expectedNumber int
 	}{
 		{
 			name: "return 1 when concurrent mode is off",
@@ -391,10 +390,8 @@ func Test_determineConcurrencyNumber(t *testing.T) {
 				ConcurrentMode:    false,
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 				targetBuckets:     []string{"bucket1", "bucket2"},
-				QuietMode:         false,
 			},
-			expectedNumber:    1,
-			expectedQuietMode: false,
+			expectedNumber: 1,
 		},
 		{
 			name: "return number of target buckets when concurrency number is not specified",
@@ -402,10 +399,8 @@ func Test_determineConcurrencyNumber(t *testing.T) {
 				ConcurrentMode:    true,
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 				targetBuckets:     []string{"bucket1", "bucket2", "bucket3"},
-				QuietMode:         false,
 			},
-			expectedNumber:    3,
-			expectedQuietMode: true,
+			expectedNumber: 3,
 		},
 		{
 			name: "return specified concurrency number when set",
@@ -413,10 +408,8 @@ func Test_determineConcurrencyNumber(t *testing.T) {
 				ConcurrentMode:    true,
 				ConcurrencyNumber: 2,
 				targetBuckets:     []string{"bucket1", "bucket2", "bucket3"},
-				QuietMode:         false,
 			},
-			expectedNumber:    2,
-			expectedQuietMode: true,
+			expectedNumber: 2,
 		},
 		{
 			name: "return 1 when concurrent mode is off regardless of concurrency number",
@@ -424,21 +417,8 @@ func Test_determineConcurrencyNumber(t *testing.T) {
 				ConcurrentMode:    false,
 				ConcurrencyNumber: 2,
 				targetBuckets:     []string{"bucket1", "bucket2"},
-				QuietMode:         false,
 			},
-			expectedNumber:    1,
-			expectedQuietMode: false,
-		},
-		{
-			name: "keep quiet mode true when it was already true",
-			app: &App{
-				ConcurrentMode:    true,
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-				targetBuckets:     []string{"bucket1", "bucket2"},
-				QuietMode:         true,
-			},
-			expectedNumber:    2,
-			expectedQuietMode: true,
+			expectedNumber: 1,
 		},
 	}
 
@@ -446,7 +426,6 @@ func Test_determineConcurrencyNumber(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.app.determineConcurrencyNumber()
 			assert.Equal(t, tt.expectedNumber, result)
-			assert.Equal(t, tt.expectedQuietMode, tt.app.QuietMode)
 		})
 	}
 }

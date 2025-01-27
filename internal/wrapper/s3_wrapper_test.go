@@ -1,6 +1,7 @@
 package wrapper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
+	"github.com/rs/zerolog"
 	"go.uber.org/mock/gomock"
 )
 
@@ -518,11 +520,23 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 
 			s3 := NewS3Wrapper(s3Mock)
 
+			clearingCountCh := make(chan int64)
+			if !tt.args.quietMode {
+				go func() {
+					for range clearingCountCh {
+					}
+				}()
+			}
+
 			err := s3.ClearBucket(tt.args.ctx, ClearBucketInput{
-				TargetBucket: tt.args.bucketName,
-				ForceMode:    tt.args.forceMode,
-				QuietMode:    tt.args.quietMode,
+				TargetBucket:    tt.args.bucketName,
+				ForceMode:       tt.args.forceMode,
+				QuietMode:       tt.args.quietMode,
+				ClearingCountCh: clearingCountCh,
 			})
+
+			close(clearingCountCh)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -927,6 +941,202 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 			}
 			if !reflect.DeepEqual(bucketNames, tt.want.bucketNames) {
 				t.Errorf("bucketNames = %#v, want %#v", bucketNames, tt.want.bucketNames)
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_OutputClearedMessage(t *testing.T) {
+	io.NewLogger(false)
+
+	var buf bytes.Buffer
+	logger := zerolog.New(&buf)
+	io.Logger = &logger
+
+	tests := []struct {
+		name          string
+		bucket        string
+		count         int64
+		wantErr       bool
+		wantLogOutput string
+	}{
+		{
+			name:          "normal clear result",
+			bucket:        "test-bucket",
+			count:         100,
+			wantErr:       false,
+			wantLogOutput: `{"level":"info","message":"test-bucket Cleared!!: 100 objects."}`,
+		},
+		{
+			name:          "zero count clear result",
+			bucket:        "test-bucket",
+			count:         0,
+			wantErr:       false,
+			wantLogOutput: `{"level":"info","message":"test-bucket No objects."}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf.Reset()
+			s3 := NewS3Wrapper(nil)
+			err := s3.OutputClearedMessage(tt.bucket, tt.count)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OutputClearedMessage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			got := buf.String()[:len(buf.String())-1] // remove trailing newline
+			if got != tt.wantLogOutput {
+				t.Errorf("OutputClearedMessage() log = %v, want %v", got, tt.wantLogOutput)
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_OutputDeletedMessage(t *testing.T) {
+	io.NewLogger(false)
+
+	var buf bytes.Buffer
+	logger := zerolog.New(&buf)
+	io.Logger = &logger
+
+	tests := []struct {
+		name          string
+		bucket        string
+		wantErr       bool
+		wantLogOutput string
+	}{
+		{
+			name:          "normal delete result",
+			bucket:        "test-bucket",
+			wantErr:       false,
+			wantLogOutput: `{"level":"info","message":"test-bucket Deleted!!"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf.Reset()
+			s3 := NewS3Wrapper(nil)
+			err := s3.OutputDeletedMessage(tt.bucket)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OutputDeletedMessage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			got := buf.String()[:len(buf.String())-1] // remove trailing newline
+			if got != tt.wantLogOutput {
+				t.Errorf("OutputDeletedMessage() log = %v, want %v", got, tt.wantLogOutput)
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_OutputCheckingMessage(t *testing.T) {
+	io.NewLogger(false)
+
+	var buf bytes.Buffer
+	logger := zerolog.New(&buf)
+	io.Logger = &logger
+
+	tests := []struct {
+		name          string
+		bucket        string
+		wantErr       bool
+		wantLogOutput string
+	}{
+		{
+			name:          "normal checking message",
+			bucket:        "test-bucket",
+			wantErr:       false,
+			wantLogOutput: `{"level":"info","message":"test-bucket Checking..."}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf.Reset()
+			s3 := NewS3Wrapper(nil)
+			err := s3.OutputCheckingMessage(tt.bucket)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("OutputCheckingMessage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			got := buf.String()[:len(buf.String())-1] // remove trailing newline
+			if got != tt.wantLogOutput {
+				t.Errorf("OutputCheckingMessage() log = %v, want %v", got, tt.wantLogOutput)
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_GetLiveClearingMessage(t *testing.T) {
+	io.NewLogger(false)
+
+	tests := []struct {
+		name       string
+		bucket     string
+		count      int64
+		wantErr    bool
+		wantOutput string
+	}{
+		{
+			name:       "normal clearing message",
+			bucket:     "test-bucket",
+			count:      100,
+			wantErr:    false,
+			wantOutput: "test-bucket Clearing... 100 objects",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s3 := NewS3Wrapper(nil)
+			got, err := s3.GetLiveClearingMessage(tt.bucket, tt.count)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetLiveClearingMessage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.wantOutput {
+				t.Errorf("GetLiveClearingMessage() = %v, want %v", got, tt.wantOutput)
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_GetLiveClearedMessage(t *testing.T) {
+	io.NewLogger(false)
+
+	tests := []struct {
+		name        string
+		bucket      string
+		count       int64
+		isCompleted bool
+		wantErr     bool
+		wantOutput  string
+	}{
+		{
+			name:        "normal cleared message",
+			bucket:      "test-bucket",
+			count:       100,
+			isCompleted: true,
+			wantErr:     false,
+			wantOutput:  "\033[32mtest-bucket Cleared!!!  100 objects\033[0m",
+		},
+		{
+			name:        "error occurred",
+			bucket:      "test-bucket",
+			count:       100,
+			isCompleted: false,
+			wantErr:     false,
+			wantOutput:  "\033[31mtest-bucket Errors occurred!!! Cleared: 100 objects\033[0m",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s3 := NewS3Wrapper(nil)
+			got, err := s3.GetLiveClearedMessage(tt.bucket, tt.count, tt.isCompleted)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetLiveClearedMessage() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.wantOutput {
+				t.Errorf("GetLiveClearedMessage() = %v, want %v", got, tt.wantOutput)
 			}
 		})
 	}

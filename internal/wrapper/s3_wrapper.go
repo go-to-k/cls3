@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
-	"github.com/gosuri/uilive"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -44,15 +43,6 @@ func (s *S3Wrapper) ClearBucket(
 	errorsCount := 0
 	errorsMtx := sync.Mutex{}
 	var deletedObjectsCount atomic.Int64
-
-	var writer *uilive.Writer
-	if !input.QuietMode {
-		writer = uilive.New()
-		writer.Start()
-		defer writer.Stop()
-	}
-
-	io.Logger.Info().Msgf("%v Checking...", input.TargetBucket)
 
 	var keyMarker *string
 	var versionIdMarker *string
@@ -93,7 +83,7 @@ func (s *S3Wrapper) ClearBucket(
 		eg.Go(func() error {
 			count := deletedObjectsCount.Add(int64(len(objects)))
 			if !input.QuietMode {
-				fmt.Fprintf(writer, "Clearing... %d objects\n", count)
+				input.ClearingCountCh <- count
 			}
 
 			// One DeleteObjects is executed for each loop of the List, and it usually ends during
@@ -129,13 +119,14 @@ func (s *S3Wrapper) ClearBucket(
 		return err
 	}
 
-	if !input.QuietMode {
-		if err := writer.Flush(); err != nil {
-			return err
-		}
-	}
+	finalCount := deletedObjectsCount.Load()
 
 	if errorsCount > 0 {
+		if !input.QuietMode {
+			finalCount -= int64(errorsCount)
+			input.ClearingCountCh <- finalCount
+		}
+
 		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
@@ -144,21 +135,56 @@ func (s *S3Wrapper) ClearBucket(
 		}
 	}
 
-	finalCount := deletedObjectsCount.Load()
-	if finalCount == 0 {
-		io.Logger.Info().Msgf("%v No objects.", input.TargetBucket)
-	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", input.TargetBucket, finalCount)
+	if input.QuietMode {
+		// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+		if err := s.OutputClearedMessage(input.TargetBucket, finalCount); err != nil {
+			return err
+		}
 	}
 
 	if input.ForceMode {
 		if err := s.client.DeleteBucket(ctx, aws.String(input.TargetBucket), bucketRegion); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", input.TargetBucket)
+		if input.QuietMode {
+			// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+			if err := s.OutputDeletedMessage(input.TargetBucket); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
+}
+
+func (s *S3Wrapper) OutputClearedMessage(bucket string, count int64) error {
+	if count == 0 {
+		io.Logger.Info().Msgf("%v No objects.", bucket)
+	} else {
+		io.Logger.Info().Msgf("%v Cleared!!: %v objects.", bucket, count)
+	}
+	return nil
+}
+
+func (s *S3Wrapper) OutputDeletedMessage(bucket string) error {
+	io.Logger.Info().Msgf("%v Deleted!!", bucket)
+	return nil
+}
+
+func (s *S3Wrapper) OutputCheckingMessage(bucket string) error {
+	io.Logger.Info().Msgf("%v Checking...", bucket)
+	return nil
+}
+
+func (s *S3Wrapper) GetLiveClearingMessage(bucket string, count int64) (string, error) {
+	return fmt.Sprintf("%v Clearing... %v objects", bucket, count), nil
+}
+
+func (s *S3Wrapper) GetLiveClearedMessage(bucket string, count int64, isCompleted bool) (string, error) {
+	if isCompleted {
+		return fmt.Sprintf("\033[32m%v Cleared!!!  %d objects\033[0m", bucket, count), nil
+	}
+	return fmt.Sprintf("\033[31m%v Errors occurred!!! Cleared: %d objects\033[0m", bucket, count), nil
 }
 
 func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]ListBucketNamesFilteredByKeywordOutput, error) {

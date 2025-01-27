@@ -46,9 +46,6 @@ func NewS3Tables(client *s3tables.Client) *S3Tables {
 				strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
 				strings.Contains(err.Error(), "StatusCode: 429")
 
-		// if isRetryable {
-		// 	io.Logger.Debug().Msgf("Retryable error: %v", err)
-		// }
 		return isRetryable
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3Tables)
