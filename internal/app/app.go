@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DefaultConcurrencyNumber = 0
+	UnspecifiedConcurrencyNumber = 0
 )
 
 type App struct {
@@ -100,7 +100,7 @@ func NewApp(version string) *App {
 			&cli.IntFlag{
 				Name:        "concurrencyNumber",
 				Aliases:     []string{"n"},
-				Value:       DefaultConcurrencyNumber,
+				Value:       UnspecifiedConcurrencyNumber,
 				Usage:       "Specify the number of parallel deletions. To specify this option, the -c option must be specified. The default is to delete all buckets in parallel if only the -c option is specified.",
 				Destination: &app.ConcurrencyNumber,
 			},
@@ -236,11 +236,11 @@ func (a *App) validateOptions() error {
 	if a.TableBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
-	if !a.ConcurrentMode && a.ConcurrencyNumber != DefaultConcurrencyNumber {
+	if !a.ConcurrentMode && a.ConcurrencyNumber != UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.ConcurrentMode && a.ConcurrencyNumber < DefaultConcurrencyNumber {
+	if a.ConcurrentMode && a.ConcurrencyNumber < UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
@@ -288,7 +288,7 @@ func (a *App) determineConcurrencyNumber() int {
 	a.QuietMode = true
 
 	// Cases where ConcurrencyNumber is unspecified.
-	if a.ConcurrencyNumber == DefaultConcurrencyNumber {
+	if a.ConcurrencyNumber == UnspecifiedConcurrencyNumber {
 		return len(a.targetBuckets)
 	}
 
