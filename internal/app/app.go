@@ -240,7 +240,7 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.ConcurrentMode && a.ConcurrencyNumber != DefaultConcurrencyNumber && a.ConcurrencyNumber < 1 {
+	if a.ConcurrentMode && a.ConcurrencyNumber < DefaultConcurrencyNumber {
 		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
