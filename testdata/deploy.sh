@@ -48,7 +48,7 @@ if [ -n "${profile}" ]; then
 fi
 
 # Calculate iterations considering 4 versions (3 copies and 1 deletion) and 1000 files
-iterations=$((objects_per_bucket / (4 * 1000)))
+iterations=$((objects_per_bucket / (4 * 100)))
 if [ ${iterations} -lt 1 ]; then
 	iterations=1
 fi
@@ -80,7 +80,7 @@ for bucket_num in $(seq 1 ${num_buckets}); do
 		## NOTE: e.g.) For 1,000,000 versions per bucket, it'll cost you about $3.75 (0.005 USD / 1000 PUT)(DELETE operation is free)
 		## NOTE: 1,000,000 versions = 250,000 objects × 4 versions (3 PUT operations and 1 DELETE operation per object)
 		for i in $(seq 1 ${iterations}); do
-			touch ${dir}/${i}_{1..1000}_${RANDOM}.txt
+			touch ${dir}/${i}_{1..100}_${RANDOM}.txt
 
 			# version
 			version_pids=()
