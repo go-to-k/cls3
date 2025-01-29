@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
-var SleepTimeSecForS3 = 10
+var SleepTimeSecForS3 = 20
 
 type ListObjectsOrVersionsByPageOutput struct {
 	ObjectIdentifiers   []types.ObjectIdentifier

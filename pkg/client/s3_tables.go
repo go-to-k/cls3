@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
 
-var SleepTimeSecForS3Tables = 3
+var SleepTimeSecForS3Tables = 3 // NOTE: Because S3Tables is a serial operation, a low value is OK.
 
 type ListNamespacesByPageOutput struct {
 	Namespaces        []types.NamespaceSummary
