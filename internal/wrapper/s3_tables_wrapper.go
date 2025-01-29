@@ -119,6 +119,7 @@ func (s *S3TablesWrapper) ClearBucket(
 				fmt.Fprintf(writer, "Clearing... %d tables\n", count)
 			}
 		}
+		wg.Done()
 	}()
 
 	eg := errgroup.Group{}
