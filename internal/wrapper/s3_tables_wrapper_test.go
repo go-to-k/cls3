@@ -663,10 +663,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				for range progressCh {
 					deletedCount.Add(1)
 				}
-				wg.Done()
 			}()
 
 			err := s3Tables.deleteNamespace(tt.args.ctx, tt.args.bucketArn, tt.args.bucketName, tt.args.namespace, progressCh)

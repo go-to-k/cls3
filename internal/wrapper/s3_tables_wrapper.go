@@ -113,6 +113,7 @@ func (s *S3TablesWrapper) ClearBucket(
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for range progressCh {
 			count := deletedTablesCount.Add(1)
 			if !input.QuietMode {
