@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -673,7 +674,10 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 
 			progressCh := make(chan struct{})
 			var deletedCount atomic.Int64
+			wg := sync.WaitGroup{}
+			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				for range progressCh {
 					deletedCount.Add(1)
 				}
@@ -681,6 +685,7 @@ func TestS3TablesWrapper_deleteNamespace(t *testing.T) {
 
 			err := s3Tables.deleteNamespace(tt.args.ctx, tt.args.bucketArn, tt.args.bucketName, tt.args.namespace, progressCh)
 			close(progressCh)
+			wg.Wait()
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)

@@ -95,11 +95,10 @@ func (s *S3TablesWrapper) ClearBucket(
 		return err
 	}
 
-	progressCh := make(chan struct{})
 	var deletedTablesCount atomic.Int64
-	var wg sync.WaitGroup
+	progressCh := make(chan struct{})
+	wg := sync.WaitGroup{}
 	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
 		for range progressCh {
