@@ -8,7 +8,6 @@ import (
 	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
 	"golang.org/x/sync/errgroup"
@@ -30,7 +29,7 @@ func (s *S3Wrapper) ClearBucket(
 	ctx context.Context,
 	input ClearBucketInput,
 ) error {
-	// This `bucketRegion` allows buckets outside the specified region to be deleted.
+	// NOTE: This `bucketRegion` allows buckets outside the specified region to be deleted.
 	// If the `directoryBucketsMode` is true, bucketRegion is empty because only one region's
 	// buckets can be operated on.
 	bucketRegion, err := s.client.GetBucketLocation(ctx, aws.String(input.TargetBucket))
@@ -44,79 +43,94 @@ func (s *S3Wrapper) ClearBucket(
 	errorsMtx := sync.Mutex{}
 	var deletedObjectsCount atomic.Int64
 
-	var keyMarker *string
-	var versionIdMarker *string
-	for {
-		select {
-		case <-ctx.Done():
-			return &client.ClientError{
-				ResourceName: aws.String(input.TargetBucket),
-				Err:          ctx.Err(),
-			}
-		default:
+	// NOTE: Try clearing objects up to 2 times to handle eventual consistency
+	// There was a case where the object deletion was completed but the object was still there.
+	// So, even if all objects are deleted, it is not guaranteed that the object is deleted.
+	// Therefore, we try to delete the objects again.
+	isDone := false
+	maxAttempts := 2
+	for attempt := 0; attempt < maxAttempts && !isDone; attempt++ {
+		if attempt > 0 {
+			io.Logger.Debug().Msgf("%s: Attempt %d of %d", input.TargetBucket, attempt+1, maxAttempts)
 		}
 
-		var objects []types.ObjectIdentifier
+		var keyMarker *string
+		var versionIdMarker *string
 
-		// ListObjectVersions/ListObjectsV2 API can only retrieve up to 1000 items, so it is good to pass it
-		// directly to DeleteObjects, which can only delete up to 1000 items.
-		output, err := s.client.ListObjectsOrVersionsByPage(
-			ctx,
-			aws.String(input.TargetBucket),
-			bucketRegion,
-			input.OldVersionsOnly,
-			keyMarker,
-			versionIdMarker,
-		)
-		if err != nil {
-			return err
-		}
-
-		objects = output.ObjectIdentifiers
-		keyMarker = output.NextKeyMarker
-		versionIdMarker = output.NextVersionIdMarker
-
-		if len(objects) == 0 {
-			break
-		}
-
-		eg.Go(func() error {
-			count := deletedObjectsCount.Add(int64(len(objects)))
-			if !input.QuietMode {
-				input.ClearingCountCh <- count
+		for {
+			select {
+			case <-ctx.Done():
+				return &client.ClientError{
+					ResourceName: aws.String(input.TargetBucket),
+					Err:          ctx.Err(),
+				}
+			default:
 			}
 
-			// One DeleteObjects is executed for each loop of the List, and it usually ends during
-			// the next loop. Therefore, there seems to be no throttling concern, so the number of
-			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
-			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.TargetBucket), objects, bucketRegion)
+			// NOTE: ListObjectVersions/ListObjectsV2 API can only retrieve up to 1000 items, so it is good to pass it
+			// directly to DeleteObjects, which can only delete up to 1000 items.
+			output, err := s.client.ListObjectsOrVersionsByPage(
+				ctx,
+				aws.String(input.TargetBucket),
+				bucketRegion,
+				input.OldVersionsOnly,
+				keyMarker,
+				versionIdMarker,
+			)
 			if err != nil {
 				return err
 			}
 
-			if len(gotErrors) > 0 {
-				errorsMtx.Lock()
-				errorsCount += len(gotErrors)
-				for _, error := range gotErrors {
-					errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-					errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-					errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-					errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+			if len(output.ObjectIdentifiers) == 0 {
+				// If no objects found in the first page of a new attempt, we're done
+				if keyMarker == nil && versionIdMarker == nil {
+					isDone = true
+					break
 				}
-				errorsMtx.Unlock()
+				break
 			}
 
-			return nil
-		})
+			eg.Go(func() error {
+				count := deletedObjectsCount.Add(int64(len(output.ObjectIdentifiers)))
+				if !input.QuietMode {
+					input.ClearingCountCh <- count
+				}
 
-		if keyMarker == nil && versionIdMarker == nil {
-			break
+				// NOTE: One DeleteObjects is executed for each loop of the List, and it usually ends during
+				// the next loop. Therefore, there seems to be no throttling concern, so the number of
+				// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
+				// per second.)
+				gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.TargetBucket), output.ObjectIdentifiers, bucketRegion)
+				if err != nil {
+					return err
+				}
+
+				if len(gotErrors) > 0 {
+					errorsMtx.Lock()
+					errorsCount += len(gotErrors)
+					for _, error := range gotErrors {
+						errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
+						errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
+						errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
+						errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+					}
+					errorsMtx.Unlock()
+				}
+
+				return nil
+			})
+
+			keyMarker = output.NextKeyMarker
+			versionIdMarker = output.NextVersionIdMarker
+
+			if keyMarker == nil && versionIdMarker == nil {
+				break
+			}
 		}
-	}
 
-	if err := eg.Wait(); err != nil {
-		return err
+		if err := eg.Wait(); err != nil {
+			return err
+		}
 	}
 
 	finalCount := deletedObjectsCount.Load()
@@ -127,7 +141,7 @@ func (s *S3Wrapper) ClearBucket(
 			input.ClearingCountCh <- finalCount
 		}
 
-		// The error is from `DeleteObjectsOutput.Errors`, not `err`.
+		// NOTE: The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
 			ResourceName: aws.String(input.TargetBucket),
@@ -136,7 +150,7 @@ func (s *S3Wrapper) ClearBucket(
 	}
 
 	if input.QuietMode {
-		// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+		// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
 		if err := s.OutputClearedMessage(input.TargetBucket, finalCount); err != nil {
 			return err
 		}
@@ -147,7 +161,7 @@ func (s *S3Wrapper) ClearBucket(
 			return err
 		}
 		if input.QuietMode {
-			// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+			// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
 			if err := s.OutputDeletedMessage(input.TargetBucket); err != nil {
 				return err
 			}
@@ -194,7 +208,7 @@ func (s *S3Wrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keywor
 		return filteredBuckets, err
 	}
 
-	// Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
+	// NOTE: Bucket names are lowercase so that we need to convert keyword to lowercase for case-insensitive search.
 	lowerKeyword := strings.ToLower(*keyword)
 
 	for _, bucket := range buckets {
