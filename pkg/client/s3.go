@@ -65,7 +65,9 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 				strings.Contains(err.Error(), "https response error StatusCode: 0") ||
 				// ex: ERR [resource par-cls-019] operation error S3: DeleteObjects, https response error StatusCode: 0, RequestID: , HostID: , request send failed, Post "https://par-cls-019.s3.us-east-1.amazonaws.com/?delete=": EOF
 				// but one condition above, it didn't catch on.
-				strings.Contains(err.Error(), "EOF")
+				strings.Contains(err.Error(), "EOF") ||
+				// Because in rare cases, an error may occur even though the objects have been deleted.
+				strings.Contains(err.Error(), "api error BucketNotEmpty")
 
 		return isRetryable
 	}
