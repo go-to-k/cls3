@@ -64,7 +64,7 @@ The `-c | --concurrentMode` option allows you to delete **multiple buckets in pa
 
 If you want to limit the number of parallel deletions, you can specify the `-n | --concurrencyNumber` option. For example, `-c -n 5` will delete buckets with a maximum of 5 parallel operations.
 
-**Too many parallel deletions may cause S3 API errors.**
+**Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
 
 This option is not available in the Table Buckets Mode (`-t`) because the throttling threshold for S3 Tables is very low.
 
@@ -170,7 +170,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 - -c, --concurrentMode: optional
   - Delete multiple buckets in parallel.
   - If you want to limit the number of parallel deletions, specify the -n option.
-  - **Too many parallel deletions may cause S3 API errors.**
+  - **Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
   - This option is not available in the Table Buckets Mode (-t) because the throttling threshold for S3 Tables is very low.
 - -n, --concurrencyNumber: optional
   - Specify the number of parallel deletions.
