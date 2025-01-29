@@ -116,7 +116,7 @@ func TestS3Tables_DeleteTableBucket(t *testing.T) {
 			},
 			want: &ClientError{
 				ResourceName: aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test"),
-				Err:          fmt.Errorf("operation error S3Tables: DeleteTableBucket, exceeded maximum number of attempts, 10, api error SlowDown"),
+				Err:          fmt.Errorf("operation error S3Tables: DeleteTableBucket, exceeded maximum number of attempts, 20, api error SlowDown"),
 			},
 			wantErr: true,
 		},

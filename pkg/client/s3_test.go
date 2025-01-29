@@ -151,7 +151,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			},
 			want: &ClientError{
 				ResourceName: aws.String("test"),
-				Err:          fmt.Errorf("operation error S3: DeleteBucket, exceeded maximum number of attempts, 10, api error SlowDown"),
+				Err:          fmt.Errorf("operation error S3: DeleteBucket, exceeded maximum number of attempts, 20, api error SlowDown"),
 			},
 			wantErr: true,
 		},
@@ -338,7 +338,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 				output: []types.Error{},
 				err: &ClientError{
 					ResourceName: aws.String("test"),
-					Err:          fmt.Errorf("operation error S3: DeleteObjects, exceeded maximum number of attempts, 10, api error SlowDown"),
+					Err:          fmt.Errorf("operation error S3: DeleteObjects, exceeded maximum number of attempts, 20, api error SlowDown"),
 				},
 			},
 			wantErr: true,
@@ -1087,7 +1087,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
-					Err:          fmt.Errorf("operation error S3: ListObjectVersions, exceeded maximum number of attempts, 10, api error SlowDown"),
+					Err:          fmt.Errorf("operation error S3: ListObjectVersions, exceeded maximum number of attempts, 20, api error SlowDown"),
 				},
 			},
 			wantErr: true,
@@ -1559,7 +1559,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				output: nil,
 				err: &ClientError{
 					ResourceName: aws.String("test"),
-					Err:          fmt.Errorf("operation error S3: ListObjectsV2, exceeded maximum number of attempts, 10, api error SlowDown"),
+					Err:          fmt.Errorf("operation error S3: ListObjectsV2, exceeded maximum number of attempts, 20, api error SlowDown"),
 				},
 			},
 			wantErr: true,
@@ -2020,7 +2020,7 @@ func TestS3_listBuckets(t *testing.T) {
 			want: want{
 				buckets: []types.Bucket{},
 				err: &ClientError{
-					Err: fmt.Errorf("operation error S3: ListBuckets, exceeded maximum number of attempts, 10, api error SlowDown"),
+					Err: fmt.Errorf("operation error S3: ListBuckets, exceeded maximum number of attempts, 20, api error SlowDown"),
 				},
 			},
 			wantErr: true,
@@ -2368,7 +2368,7 @@ func TestS3_listDirectoryBuckets(t *testing.T) {
 			want: want{
 				buckets: []types.Bucket{},
 				err: &ClientError{
-					Err: fmt.Errorf("operation error S3: ListDirectoryBuckets, exceeded maximum number of attempts, 10, api error SlowDown"),
+					Err: fmt.Errorf("operation error S3: ListDirectoryBuckets, exceeded maximum number of attempts, 20, api error SlowDown"),
 				},
 			},
 			wantErr: true,
@@ -2679,7 +2679,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 				region: "",
 				err: &ClientError{
 					ResourceName: aws.String("test"),
-					Err:          fmt.Errorf("operation error S3: GetBucketLocation, exceeded maximum number of attempts, 10, api error SlowDown"),
+					Err:          fmt.Errorf("operation error S3: GetBucketLocation, exceeded maximum number of attempts, 20, api error SlowDown"),
 				},
 			},
 			wantErr: true,
