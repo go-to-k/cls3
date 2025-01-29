@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -107,8 +108,10 @@ func (s *S3TablesWrapper) ClearBucket(
 
 	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
-	progressCh := make(chan struct{})
 	var deletedTablesCount atomic.Int64
+	progressCh := make(chan struct{})
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
 		for range progressCh {
 			count := deletedTablesCount.Add(1)
@@ -125,6 +128,7 @@ func (s *S3TablesWrapper) ClearBucket(
 		select {
 		case <-ctx.Done():
 			close(progressCh)
+			wg.Wait()
 			return &client.ClientError{
 				ResourceName: aws.String(bucketName),
 				Err:          ctx.Err(),
@@ -139,6 +143,7 @@ func (s *S3TablesWrapper) ClearBucket(
 		)
 		if err != nil {
 			close(progressCh)
+			wg.Wait()
 			return err
 		}
 		if len(output.Namespaces) == 0 {
@@ -149,6 +154,7 @@ func (s *S3TablesWrapper) ClearBucket(
 			for _, namespace := range summary.Namespace {
 				if err := sem.Acquire(ctx, 1); err != nil {
 					close(progressCh)
+					wg.Wait()
 					return err
 				}
 				eg.Go(func() error {
@@ -166,9 +172,11 @@ func (s *S3TablesWrapper) ClearBucket(
 
 	if err := eg.Wait(); err != nil {
 		close(progressCh)
+		wg.Wait()
 		return err
 	}
 	close(progressCh)
+	wg.Wait()
 
 	if !input.QuietMode {
 		if err := writer.Flush(); err != nil {
