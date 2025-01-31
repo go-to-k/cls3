@@ -84,6 +84,7 @@ for bucket_num in $(seq 1 ${num_buckets}); do
 				--table-bucket-arn ${table_bucket_arn} \
 				--namespace "my_namespace_${i}" \
 				--name "my_table_${table}" \
+				--metadata '{"iceberg": {"schema": {"fields": [{"name": "column", "type": "int", "required": false}]}}}' \
 				--format "ICEBERG" ${option} >/dev/null &
 		done
 		wait
