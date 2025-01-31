@@ -50,9 +50,7 @@ func (s *S3Wrapper) ClearBucket(
 	isDone := false
 	maxAttempts := 2
 	for attempt := 0; attempt < maxAttempts && !isDone; attempt++ {
-		if attempt > 0 {
-			io.Logger.Debug().Msgf("%s: Attempt %d of %d", input.TargetBucket, attempt+1, maxAttempts)
-		}
+		// FIXME: Should we clear errorStr and errorsCount if retry?
 
 		var keyMarker *string
 		var versionIdMarker *string
@@ -81,13 +79,15 @@ func (s *S3Wrapper) ClearBucket(
 				return err
 			}
 
+			isFirstPage := keyMarker == nil && versionIdMarker == nil
 			if len(output.ObjectIdentifiers) == 0 {
 				// If no objects found in the first page of a new attempt, we're done
-				if keyMarker == nil && versionIdMarker == nil {
+				if isFirstPage {
 					isDone = true
-					break
 				}
 				break
+			} else if isFirstPage && attempt > 0 {
+				io.Logger.Debug().Msgf("%s: Attempt %d of %d", input.TargetBucket, attempt+1, maxAttempts)
 			}
 
 			eg.Go(func() error {
@@ -136,6 +136,7 @@ func (s *S3Wrapper) ClearBucket(
 	finalCount := deletedObjectsCount.Load()
 
 	if errorsCount > 0 {
+		// FIXME: do in the for loop?
 		if !input.QuietMode {
 			finalCount -= int64(errorsCount)
 			input.ClearingCountCh <- finalCount
