@@ -576,6 +576,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					nil,
 				)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				// retry loop
 				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
@@ -589,6 +590,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					},
 					nil,
 				)
+				// retry deletion
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
 			},
 			want:    nil,
