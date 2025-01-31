@@ -6,7 +6,7 @@ cd $(dirname $0)
 profile=""
 bucket_prefix="cls3-test"
 profile_option=""
-num_buckets=10
+num_buckets=1
 tables_per_namespace=100
 namespaces_per_table=100
 region="us-east-1"
