@@ -62,6 +62,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextVersionIdMarker: nil,
 					}, nil)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 			},
 			want:    nil,
 			wantErr: false,
@@ -92,6 +98,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextVersionIdMarker: nil,
 					}, nil)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 			},
 			want:    nil,
 			wantErr: false,
@@ -122,6 +134,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextVersionIdMarker: nil,
 					}, nil)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(nil)
 			},
 			want:    nil,
@@ -221,6 +239,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						},
 					}, nil,
 				)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 			},
 			want:    fmt.Errorf("[resource test] DeleteObjectsError: 1 objects with errors were found. \nCode: Code\nKey: Key\nVersionId: VersionId\nMessage: Message\n"),
 			wantErr: true,
@@ -251,6 +275,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextVersionIdMarker: nil,
 					}, nil)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(fmt.Errorf("DeleteBucketError"))
 			},
 			want:    fmt.Errorf("DeleteBucketError"),
@@ -361,6 +391,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
 				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 			},
 			want:    nil,
 			wantErr: false,
@@ -438,6 +474,12 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						},
 					}, nil,
 				)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers:   []types.ObjectIdentifier{},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					}, nil)
 			},
 			want:    fmt.Errorf("[resource test] DeleteObjectsError: 1 objects with errors were found. \nCode: Code\nKey: Key\nVersionId: VersionId\nMessage: Message\n"),
 			wantErr: true,
