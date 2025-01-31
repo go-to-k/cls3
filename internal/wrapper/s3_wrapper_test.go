@@ -552,6 +552,48 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 			want:    fmt.Errorf("DeleteObjectsError"),
 			wantErr: true,
 		},
+		{
+			name: "clear objects successfully when retry loop is executed",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "test",
+				forceMode:  false,
+				quietMode:  false,
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers: []types.ObjectIdentifier{
+							{
+								Key:       aws.String("KeyForVersions1"),
+								VersionId: aws.String("VersionIdForVersions1"),
+							},
+						},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					},
+					nil,
+				)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{
+						ObjectIdentifiers: []types.ObjectIdentifier{
+							{
+								Key:       aws.String("KeyForVersions1"),
+								VersionId: aws.String("VersionIdForVersions1"),
+							},
+						},
+						NextKeyMarker:       nil,
+						NextVersionIdMarker: nil,
+					},
+					nil,
+				)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+			},
+			want:    nil,
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {
