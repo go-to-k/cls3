@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.24.2](https://github.com/go-to-k/cls3/compare/v0.24.1...v0.24.2) - 2025-01-29
+- chore(wrapper): change handling errgroup with context by @go-to-k in https://github.com/go-to-k/cls3/pull/289
+- revert: "chore(wrapper): change handling errgroup with context (#289)" by @go-to-k in https://github.com/go-to-k/cls3/pull/292
+- chore(client): add debug log for retryable errors by @go-to-k in https://github.com/go-to-k/cls3/pull/293
+- test: improve test deploy shells by @go-to-k in https://github.com/go-to-k/cls3/pull/294
+- test: increase the number of buckets created in deploy_directory.sh by @go-to-k in https://github.com/go-to-k/cls3/pull/295
+- test(app): add tests for app module by @go-to-k in https://github.com/go-to-k/cls3/pull/296
+- test: wait for asynchronous loops in the test deployment shells for each constant process by @go-to-k in https://github.com/go-to-k/cls3/pull/300
+- test: fix loop handling in deploy.sh by @go-to-k in https://github.com/go-to-k/cls3/pull/301
+- fix(wrapper): S3 Tables Wrapper is loading without waiting for the addition process of deletedTablesCount by @go-to-k in https://github.com/go-to-k/cls3/pull/302
+
 ## [v0.24.1](https://github.com/go-to-k/cls3/compare/v0.24.0...v0.24.1) - 2025-01-22
 - refactor(wrapper): use atomic instead of mutex for deletion counts in S3 wrapper by @go-to-k in https://github.com/go-to-k/cls3/pull/285
 - chore(deps): bump golang.org/x/sync from 0.8.0 to 0.10.0 by @dependabot in https://github.com/go-to-k/cls3/pull/268
