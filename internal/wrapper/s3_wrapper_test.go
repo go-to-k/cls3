@@ -553,7 +553,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "clear objects successfully when retry loop is executed",
+			name: "clear objects successfully when retry deletion loop is executed",
 			args: args{
 				ctx:        context.Background(),
 				bucketName: "test",
