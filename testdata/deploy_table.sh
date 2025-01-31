@@ -7,11 +7,13 @@ profile=""
 bucket_prefix="cls3-test"
 profile_option=""
 num_buckets=10
+tables_per_namespace=100
+namespaces_per_table=100
 region="us-east-1"
 region_option="--region ${region}"
 option=""
 
-while getopts p:b:n:r: OPT; do
+while getopts p:b:n:t:s:r: OPT; do
 	case $OPT in
 	p)
 		profile="$OPTARG"
@@ -21,6 +23,12 @@ while getopts p:b:n:r: OPT; do
 		;;
 	n)
 		num_buckets="$OPTARG"
+		;;
+	t)
+		tables_per_namespace="$OPTARG"
+		;;
+	s)
+		namespaces_per_table="$OPTARG"
 		;;
 	r)
 		region="$OPTARG"
@@ -41,6 +49,21 @@ fi
 
 if [ "${num_buckets}" -gt 10 ]; then
 	echo "number of buckets (-n) must be less than or equal to 10 for table buckets"
+	exit 1
+fi
+
+if ! [[ "${tables_per_namespace}" =~ ^[0-9]+$ ]]; then
+	echo "number of tables (-t) must be a positive integer"
+	exit 1
+fi
+
+if ! [[ "${namespaces_per_table}" =~ ^[0-9]+$ ]]; then
+	echo "number of namespaces (-s) must be a positive integer"
+	exit 1
+fi
+
+if [ $((tables_per_namespace * namespaces_per_table)) -gt 10000 ]; then
+	echo "number of tables (-t) must be less than or equal to 10000"
 	exit 1
 fi
 
@@ -73,20 +96,29 @@ for bucket_num in $(seq 1 ${num_buckets}); do
 
 	table_bucket_arn="arn:aws:s3tables:${region}:${account_id}:bucket/${lower_bucket_name}"
 
-	# 10 * 10 = 100 (max size of tables per table bucket)
-	for i in {1..10}; do
+	for i in $(seq 1 ${namespaces_per_table}); do
+		namespace_name="my_namespace_${i}"
 		aws s3tables create-namespace \
 			--table-bucket-arn ${table_bucket_arn} \
-			--namespace "my_namespace_${i}" ${option} >/dev/null
+			--namespace ${namespace_name} ${option} >/dev/null
 
-		for table in {1..10}; do
+		pids=()
+		for table in $(seq 1 ${tables_per_namespace}); do
 			aws s3tables create-table \
 				--table-bucket-arn ${table_bucket_arn} \
-				--namespace "my_namespace_${i}" \
+				--namespace ${namespace_name} \
 				--name "my_table_${table}" \
 				--metadata '{"iceberg": {"schema": {"fields": [{"name": "column", "type": "int", "required": false}]}}}' \
 				--format "ICEBERG" ${option} >/dev/null &
+
+			pids[$!]=$!
+			if [ ${#pids[@]} -eq 10 ]; then
+				wait "${pids[@]}"
+				pids=()
+			fi
 		done
-		wait
+		if [ ${#pids[@]} -gt 0 ]; then
+			wait "${pids[@]}"
+		fi
 	done
 done
