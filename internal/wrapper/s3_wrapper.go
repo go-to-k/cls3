@@ -92,12 +92,17 @@ func (s *S3Wrapper) ClearBucket(
 			}
 
 			eg.Go(func() error {
-				objectsCountMtx.Lock()
-				objectsCount += int64(len(output.ObjectIdentifiers))
-				if !input.QuietMode {
-					input.ClearingCountCh <- objectsCount
+				// NOTE: This loop with the `attempt` variable is a retry process for the bug where DeleteObjects
+				// was executed but objects were not deleted.
+				// Therefore, it is not counted in the number of deletions if it is not the first attempt.
+				if attempt == 0 {
+					objectsCountMtx.Lock()
+					objectsCount += int64(len(output.ObjectIdentifiers))
+					if !input.QuietMode {
+						input.ClearingCountCh <- objectsCount
+					}
+					objectsCountMtx.Unlock()
 				}
-				objectsCountMtx.Unlock()
 
 				// NOTE: One DeleteObjects is executed for each loop of the List, and it usually ends during
 				// the next loop. Therefore, there seems to be no throttling concern, so the number of
@@ -118,13 +123,6 @@ func (s *S3Wrapper) ClearBucket(
 						errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
 					}
 					errorsMtx.Unlock()
-
-					objectsCountMtx.Lock()
-					objectsCount -= int64(len(gotErrors))
-					if !input.QuietMode {
-						input.ClearingCountCh <- objectsCount
-					}
-					objectsCountMtx.Unlock()
 				}
 
 				return nil
@@ -144,6 +142,11 @@ func (s *S3Wrapper) ClearBucket(
 	}
 
 	if errorsCount > 0 {
+		objectsCount -= int64(errorsCount)
+		if !input.QuietMode {
+			input.ClearingCountCh <- objectsCount
+		}
+
 		// NOTE: The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
