@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
@@ -37,11 +36,11 @@ func (s *S3Wrapper) ClearBucket(
 		return err
 	}
 
-	eg := errgroup.Group{}
 	errorStr := ""
 	errorsCount := 0
 	errorsMtx := sync.Mutex{}
-	var deletedObjectsCount atomic.Int64
+	objectsCount := int64(0)
+	objectsCountMtx := sync.Mutex{}
 
 	// NOTE: Try clearing objects up to 2 times to handle eventual consistency
 	// There was a case where the object deletion was completed but the object was still there.
@@ -50,7 +49,7 @@ func (s *S3Wrapper) ClearBucket(
 	isDone := false
 	maxAttempts := 2
 	for attempt := 0; attempt < maxAttempts && !isDone; attempt++ {
-		// FIXME: Should we clear errorStr and errorsCount if retry?
+		eg := errgroup.Group{}
 
 		var keyMarker *string
 		var versionIdMarker *string
@@ -87,14 +86,18 @@ func (s *S3Wrapper) ClearBucket(
 				}
 				break
 			} else if isFirstPage && attempt > 0 {
-				io.Logger.Debug().Msgf("%s: Attempt %d of %d", input.TargetBucket, attempt+1, maxAttempts)
+				errorStr = ""
+				errorsCount = 0
+				io.Logger.Debug().Msgf("%s: Retry attempt %d of %d", input.TargetBucket, attempt+1, maxAttempts)
 			}
 
 			eg.Go(func() error {
-				count := deletedObjectsCount.Add(int64(len(output.ObjectIdentifiers)))
+				objectsCountMtx.Lock()
+				objectsCount += int64(len(output.ObjectIdentifiers))
 				if !input.QuietMode {
-					input.ClearingCountCh <- count
+					input.ClearingCountCh <- objectsCount
 				}
+				objectsCountMtx.Unlock()
 
 				// NOTE: One DeleteObjects is executed for each loop of the List, and it usually ends during
 				// the next loop. Therefore, there seems to be no throttling concern, so the number of
@@ -115,6 +118,13 @@ func (s *S3Wrapper) ClearBucket(
 						errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
 					}
 					errorsMtx.Unlock()
+
+					objectsCountMtx.Lock()
+					objectsCount -= int64(len(gotErrors))
+					if !input.QuietMode {
+						input.ClearingCountCh <- objectsCount
+					}
+					objectsCountMtx.Unlock()
 				}
 
 				return nil
@@ -133,15 +143,7 @@ func (s *S3Wrapper) ClearBucket(
 		}
 	}
 
-	finalCount := deletedObjectsCount.Load()
-
 	if errorsCount > 0 {
-		// FIXME: do in the for loop?
-		if !input.QuietMode {
-			finalCount -= int64(errorsCount)
-			input.ClearingCountCh <- finalCount
-		}
-
 		// NOTE: The error is from `DeleteObjectsOutput.Errors`, not `err`.
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
@@ -152,7 +154,7 @@ func (s *S3Wrapper) ClearBucket(
 
 	if input.QuietMode {
 		// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
-		if err := s.OutputClearedMessage(input.TargetBucket, finalCount); err != nil {
+		if err := s.OutputClearedMessage(input.TargetBucket, objectsCount); err != nil {
 			return err
 		}
 	}
