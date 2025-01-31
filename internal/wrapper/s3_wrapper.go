@@ -88,7 +88,7 @@ func (s *S3Wrapper) ClearBucket(
 			} else if isFirstPage && attempt > 0 {
 				errorStr = ""
 				errorsCount = 0
-				io.Logger.Debug().Msgf("%s: Retry attempt %d of %d", input.TargetBucket, attempt+1, maxAttempts)
+				io.Logger.Debug().Msgf("%s: Retry attempt %d", input.TargetBucket, attempt)
 			}
 
 			eg.Go(func() error {
