@@ -1,3 +1,4 @@
+//go:generate mockgen -source=$GOFILE -package=io -destination=mock_$GOFILE
 package io
 
 import (
@@ -10,7 +11,22 @@ import (
 	"github.com/fatih/color"
 )
 
-func GetCheckboxes(headers []string, opts []string) ([]string, bool, error) {
+// IInputManager defines the interface for handling user input operations
+type IInputManager interface {
+	InputKeywordForFilter(label string) string
+	GetCheckboxes(headers []string, opts []string) ([]string, bool, error)
+	GetYesNo(label string) bool
+}
+
+type InputManager struct{}
+
+var _ IInputManager = (*InputManager)(nil)
+
+func NewInputManager() IInputManager {
+	return &InputManager{}
+}
+
+func (im *InputManager) GetCheckboxes(headers []string, opts []string) ([]string, bool, error) {
 	for {
 		ui := NewUI(opts, headers)
 		p := tea.NewProgram(ui)
@@ -32,7 +48,7 @@ func GetCheckboxes(headers []string, opts []string) ([]string, bool, error) {
 			Logger.Warn().Msg("Not selected!")
 		}
 		if len(checkboxes) == 0 || ui.IsCanceled {
-			ok := GetYesNo("Do you want to finish?")
+			ok := im.GetYesNo("Do you want to finish?")
 			if ok {
 				Logger.Info().Msg("Finished...")
 				return checkboxes, false, nil
@@ -42,14 +58,14 @@ func GetCheckboxes(headers []string, opts []string) ([]string, bool, error) {
 
 		fmt.Fprintf(os.Stderr, " %s\n", color.CyanString(strings.Join(checkboxes, ", ")))
 
-		ok := GetYesNo("OK?")
+		ok := im.GetYesNo("OK?")
 		if ok {
 			return checkboxes, true, nil
 		}
 	}
 }
 
-func InputKeywordForFilter(label string) string {
+func (im *InputManager) InputKeywordForFilter(label string) string {
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Fprintf(os.Stderr, "%s", label)
@@ -61,7 +77,7 @@ func InputKeywordForFilter(label string) string {
 	return s
 }
 
-func GetYesNo(label string) bool {
+func (im *InputManager) GetYesNo(label string) bool {
 	choices := "Y/n"
 	r := bufio.NewReader(os.Stdin)
 	var s string

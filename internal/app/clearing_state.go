@@ -1,3 +1,4 @@
+//go:generate mockgen -source=$GOFILE -destination=mock_$GOFILE -package=$GOPACKAGE -write_package_comment=false
 package app
 
 import (
@@ -8,25 +9,38 @@ import (
 
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/gosuri/uilive"
+	"golang.org/x/sync/errgroup"
 )
 
-// clearingState manages the state of bucket clearing operations for display live deletion progress
-type clearingState struct {
+type IClearingState interface {
+	StartDisplayRoutines(targetBuckets []string, writer *uilive.Writer) (*errgroup.Group, error)
+	OutputFinalMessages(targetBuckets []string) error
+	GetChannelsForBucket(bucket string) (chan int64, chan bool)
+}
+
+var _ IClearingState = (*ClearingState)(nil)
+
+// ClearingState manages the state of bucket clearing operations
+type ClearingState struct {
 	lines             []string
 	linesMutex        sync.Mutex
 	countChannels     map[string]chan int64
 	completedChannels map[string]chan bool
 	counts            map[string]*atomic.Int64
 	countsMutex       sync.Mutex
+	s3Wrapper         wrapper.IWrapper
+	forceMode         bool
 }
 
-// newClearingState initializes a new clearingState
-func newClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper) (*clearingState, error) {
-	state := &clearingState{
+// NewClearingState initializes a new ClearingState instance
+func NewClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper, forceMode bool) (*ClearingState, error) {
+	state := &ClearingState{
 		lines:             make([]string, len(targetBuckets)),
 		countChannels:     make(map[string]chan int64, len(targetBuckets)),
 		completedChannels: make(map[string]chan bool, len(targetBuckets)),
 		counts:            make(map[string]*atomic.Int64, len(targetBuckets)),
+		s3Wrapper:         s3Wrapper,
+		forceMode:         forceMode,
 	}
 
 	for _, bucket := range targetBuckets {
@@ -41,12 +55,29 @@ func newClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper) (*clea
 	return state, nil
 }
 
-// prepareInitialDisplay prepares the initial display lines for each bucket
-func (s *clearingState) prepareInitialDisplay(targetBuckets []string, s3Wrapper wrapper.IWrapper) error {
+// StartDisplayRoutines initializes and starts the display monitoring routines
+func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *uilive.Writer) (*errgroup.Group, error) {
+	displayEg := &errgroup.Group{}
+
+	if err := s.prepareInitialDisplay(targetBuckets); err != nil {
+		return nil, err
+	}
+
 	for i, bucket := range targetBuckets {
 		i, bucket := i, bucket
+		displayEg.Go(func() error {
+			return s.monitorBucketProgress(writer, i, bucket)
+		})
+	}
+
+	return displayEg, nil
+}
+
+// prepareInitialDisplay prepares the initial display lines for each bucket
+func (s *ClearingState) prepareInitialDisplay(targetBuckets []string) error {
+	for i, bucket := range targetBuckets {
 		// Necessary to first display all bucket rows together
-		message, err := s3Wrapper.GetLiveClearingMessage(bucket, 0)
+		message, err := s.s3Wrapper.GetLiveClearingMessage(bucket, 0)
 		if err != nil {
 			return err
 		}
@@ -58,12 +89,7 @@ func (s *clearingState) prepareInitialDisplay(targetBuckets []string, s3Wrapper 
 }
 
 // monitorBucketProgress monitors the progress of a single bucket clearing operation
-func (s *clearingState) monitorBucketProgress(
-	s3Wrapper wrapper.IWrapper,
-	writer *uilive.Writer,
-	index int,
-	bucket string,
-) error {
+func (s *ClearingState) monitorBucketProgress(writer *uilive.Writer, index int, bucket string) error {
 	// Lock to access to slices safely
 	s.countsMutex.Lock()
 	clearingCountCh := s.countChannels[bucket]
@@ -73,7 +99,7 @@ func (s *clearingState) monitorBucketProgress(
 
 	for count := range clearingCountCh {
 		counter.Store(count)
-		message, err := s3Wrapper.GetLiveClearingMessage(bucket, count)
+		message, err := s.s3Wrapper.GetLiveClearingMessage(bucket, count)
 		if err != nil {
 			return err
 		}
@@ -85,7 +111,7 @@ func (s *clearingState) monitorBucketProgress(
 
 	isCompleted := <-clearingCompletedCh
 	count := counter.Load()
-	message, err := s3Wrapper.GetLiveClearedMessage(bucket, count, isCompleted)
+	message, err := s.s3Wrapper.GetLiveClearedMessage(bucket, count, isCompleted)
 	if err != nil {
 		return err
 	}
@@ -96,16 +122,32 @@ func (s *clearingState) monitorBucketProgress(
 	return nil
 }
 
-// getChannelsForBucket returns the channels associated with a specific bucket
-func (s *clearingState) getChannelsForBucket(bucket string) (chan int64, chan bool) {
+// GetChannelsForBucket returns the channels associated with a specific bucket
+func (s *ClearingState) GetChannelsForBucket(bucket string) (chan int64, chan bool) {
 	// Lock to access to slices safely
 	s.countsMutex.Lock()
 	defer s.countsMutex.Unlock()
 	return s.countChannels[bucket], s.completedChannels[bucket]
 }
 
+// OutputFinalMessages displays the final status messages for all buckets
+func (s *ClearingState) OutputFinalMessages(targetBuckets []string) error {
+	for _, bucket := range targetBuckets {
+		count := s.getCount(bucket)
+		if err := s.s3Wrapper.OutputClearedMessage(bucket, count); err != nil {
+			return err
+		}
+		if s.forceMode {
+			if err := s.s3Wrapper.OutputDeletedMessage(bucket); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // getCount returns the current count for a specific bucket
-func (s *clearingState) getCount(bucket string) int64 {
+func (s *ClearingState) getCount(bucket string) int64 {
 	// Lock to access to slices safely
 	s.countsMutex.Lock()
 	defer s.countsMutex.Unlock()

@@ -2,12 +2,16 @@ package app
 
 import (
 	"bytes"
+	"flag"
+	"fmt"
 	"testing"
 
 	"github.com/go-to-k/cls3/internal/io"
+	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_validateOptions(t *testing.T) {
@@ -374,6 +378,105 @@ func Test_validateOptions(t *testing.T) {
 			} else {
 				assert.Empty(t, buf.String())
 			}
+		})
+	}
+}
+
+func TestApp_getAction(t *testing.T) {
+	tests := []struct {
+		name                  string
+		prepareMockFn         func(m *wrapper.MockIWrapper, ms *MockIBucketSelector, mp *MockIBucketProcessor)
+		app                   *App
+		wantErr               bool
+		expectedErr           string
+		expectedTargetBuckets []string
+	}{
+		{
+			name: "successfully process buckets",
+			prepareMockFn: func(m *wrapper.MockIWrapper, ms *MockIBucketSelector, mp *MockIBucketProcessor) {
+				ms.EXPECT().SelectBuckets(gomock.Any()).Return([]string{"bucket1", "bucket2"}, true, nil)
+				mp.EXPECT().Process(gomock.Any()).Return(nil)
+			},
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1", "bucket2"),
+				targetBuckets:     []string{},
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			wantErr:               false,
+			expectedTargetBuckets: []string{"bucket1", "bucket2"},
+		},
+		{
+			name: "error when select buckets fails",
+			prepareMockFn: func(m *wrapper.MockIWrapper, ms *MockIBucketSelector, mp *MockIBucketProcessor) {
+				ms.EXPECT().SelectBuckets(gomock.Any()).Return(nil, false, fmt.Errorf("SelectBucketsError"))
+			},
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				targetBuckets:     []string{},
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			wantErr:               true,
+			expectedErr:           "SelectBucketsError",
+			expectedTargetBuckets: []string{},
+		},
+		{
+			name: "no error when select buckets returns no continuation",
+			prepareMockFn: func(m *wrapper.MockIWrapper, ms *MockIBucketSelector, mp *MockIBucketProcessor) {
+				ms.EXPECT().SelectBuckets(gomock.Any()).Return(nil, false, nil)
+			},
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				targetBuckets:     []string{},
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			wantErr:               false,
+			expectedTargetBuckets: []string{},
+		},
+		{
+			name: "error when process buckets fails",
+			prepareMockFn: func(m *wrapper.MockIWrapper, ms *MockIBucketSelector, mp *MockIBucketProcessor) {
+				ms.EXPECT().SelectBuckets(gomock.Any()).Return([]string{"bucket1"}, true, nil)
+				mp.EXPECT().Process(gomock.Any()).Return(fmt.Errorf("ProcessError"))
+			},
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				targetBuckets:     []string{},
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			wantErr:               true,
+			expectedErr:           "ProcessError",
+			expectedTargetBuckets: []string{"bucket1"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			mockWrapper := wrapper.NewMockIWrapper(ctrl)
+			mockSelector := NewMockIBucketSelector(ctrl)
+			mockProcessor := NewMockIBucketProcessor(ctrl)
+
+			// Set up the mocks before calling prepareMockFn
+			tt.app.s3Wrapper = mockWrapper
+			tt.app.bucketSelector = mockSelector
+			tt.app.bucketProcessor = mockProcessor
+
+			// Set up the mock expectations
+			tt.prepareMockFn(mockWrapper, mockSelector, mockProcessor)
+
+			action := tt.app.getAction()
+			err := action(cli.NewContext(tt.app.Cli, &flag.FlagSet{}, nil))
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				assert.EqualError(t, err, tt.expectedErr)
+			}
+
+			// Verify targetBuckets
+			assert.Equal(t, tt.expectedTargetBuckets, tt.app.targetBuckets, "targetBuckets mismatch")
 		})
 	}
 }

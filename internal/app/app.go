@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
@@ -30,6 +29,9 @@ type App struct {
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
 	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
+	bucketSelector       IBucketSelector
+	bucketProcessor      IBucketProcessor
+	s3Wrapper            wrapper.IWrapper
 }
 
 func NewApp(version string) *App {
@@ -138,21 +140,64 @@ func (a *App) getAction() func(c *cli.Context) error {
 			return err
 		}
 
-		s3Wrapper, err := a.createS3Wrapper(c.Context)
-		if err != nil {
+		if err := a.initS3Wrapper(c.Context); err != nil {
+			return err
+		}
+		if err := a.initBucketSelector(); err != nil {
 			return err
 		}
 
-		continuation, err := a.setTargetBuckets(c.Context, s3Wrapper)
+		selectedBuckets, continuation, err := a.bucketSelector.SelectBuckets(c.Context)
 		if err != nil {
 			return err
 		}
 		if !continuation {
 			return nil
 		}
+		a.targetBuckets = append(a.targetBuckets, selectedBuckets...)
 
-		return a.processBuckets(c.Context, s3Wrapper)
+		if err := a.initBucketProcessor(); err != nil {
+			return err
+		}
+		return a.bucketProcessor.Process(c.Context)
 	}
+}
+
+func (a *App) initS3Wrapper(ctx context.Context) error {
+	if a.s3Wrapper == nil {
+		awsConfig, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
+		if err != nil {
+			return err
+		}
+		a.s3Wrapper = wrapper.CreateS3Wrapper(awsConfig, a.TableBucketsMode, a.DirectoryBucketsMode)
+	}
+	return nil
+}
+
+func (a *App) initBucketSelector() error {
+	if a.bucketSelector == nil {
+		a.bucketSelector = NewBucketSelector(a.InteractiveMode, a.BucketNames, a.s3Wrapper)
+	}
+	return nil
+}
+
+func (a *App) initBucketProcessor() error {
+	if a.bucketProcessor == nil {
+		processorConfig := BucketProcessorConfig{
+			TargetBuckets:     a.targetBuckets,
+			QuietMode:         a.QuietMode,
+			ConcurrentMode:    a.ConcurrentMode,
+			ConcurrencyNumber: a.ConcurrencyNumber,
+			ForceMode:         a.ForceMode,
+			OldVersionsOnly:   a.OldVersionsOnly,
+		}
+		processor, err := NewBucketProcessor(processorConfig, a.s3Wrapper)
+		if err != nil {
+			return err
+		}
+		a.bucketProcessor = processor
+	}
+	return nil
 }
 
 func (a *App) validateOptions() error {
@@ -199,73 +244,4 @@ func (a *App) validateOptions() error {
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	return nil
-}
-
-func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
-	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
-	if err != nil {
-		return nil, err
-	}
-
-	return wrapper.CreateS3Wrapper(config, a.TableBucketsMode, a.DirectoryBucketsMode), nil
-}
-
-func (a *App) setTargetBuckets(ctx context.Context, s3Wrapper wrapper.IWrapper) (bool, error) {
-	if a.InteractiveMode {
-		continuation, err := a.doInteractiveMode(ctx, s3Wrapper)
-		if err != nil {
-			return false, err
-		}
-		return continuation, nil
-	}
-
-	outputBuckets, err := s3Wrapper.CheckAllBucketsExist(ctx, a.BucketNames.Value())
-	if err != nil {
-		return false, err
-	}
-	a.targetBuckets = append(a.targetBuckets, outputBuckets...)
-	return true, nil
-}
-
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper) (bool, error) {
-	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
-	outputs, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
-	if err != nil {
-		return false, err
-	}
-
-	bucketNames := []string{}
-	for _, output := range outputs {
-		bucketNames = append(bucketNames, output.BucketName)
-	}
-
-	label := []string{"Select buckets."}
-	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
-	if err != nil {
-		return false, err
-	}
-	if !continuation {
-		return false, nil
-	}
-
-	for _, bucket := range checkboxes {
-		for _, output := range outputs {
-			if output.BucketName == bucket {
-				a.targetBuckets = append(a.targetBuckets, output.TargetBucket)
-			}
-		}
-	}
-	return true, nil
-}
-
-func (a *App) processBuckets(ctx context.Context, s3Wrapper wrapper.IWrapper) error {
-	processor := newBucketProcessor(
-		a.targetBuckets,
-		a.QuietMode,
-		a.ConcurrentMode,
-		a.ForceMode,
-		a.OldVersionsOnly,
-		a.ConcurrencyNumber,
-	)
-	return processor.Process(ctx, s3Wrapper)
 }
