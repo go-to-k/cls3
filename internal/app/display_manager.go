@@ -2,7 +2,7 @@
 package app
 
 import (
-	"github.com/gosuri/uilive"
+	"github.com/go-to-k/cls3/internal/io"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -15,7 +15,7 @@ var _ IDisplayManager = (*DisplayManager)(nil)
 
 // DisplayManager handles the lifecycle of display operations
 type DisplayManager struct {
-	writer    *uilive.Writer
+	writer    *io.Writer
 	displayEg *errgroup.Group
 	state     IClearingState
 	quietMode bool
@@ -34,7 +34,7 @@ func (d *DisplayManager) Start(targetBuckets []string) error {
 	if d.quietMode {
 		return nil
 	}
-	d.writer = uilive.New()
+	d.writer = io.New()
 	d.writer.Start()
 
 	var err error

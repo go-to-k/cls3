@@ -7,13 +7,13 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
-	"github.com/gosuri/uilive"
 	"golang.org/x/sync/errgroup"
 )
 
 type IClearingState interface {
-	StartDisplayRoutines(targetBuckets []string, writer *uilive.Writer) (*errgroup.Group, error)
+	StartDisplayRoutines(targetBuckets []string, writer *io.Writer) (*errgroup.Group, error)
 	OutputFinalMessages(targetBuckets []string) error
 	GetChannelsForBucket(bucket string) (chan int64, chan bool)
 }
@@ -56,7 +56,7 @@ func NewClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper, forceM
 }
 
 // StartDisplayRoutines initializes and starts the display monitoring routines
-func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *uilive.Writer) (*errgroup.Group, error) {
+func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *io.Writer) (*errgroup.Group, error) {
 	displayEg := &errgroup.Group{}
 
 	if err := s.prepareInitialDisplay(targetBuckets); err != nil {
@@ -89,7 +89,7 @@ func (s *ClearingState) prepareInitialDisplay(targetBuckets []string) error {
 }
 
 // monitorBucketProgress monitors the progress of a single bucket clearing operation
-func (s *ClearingState) monitorBucketProgress(writer *uilive.Writer, index int, bucket string) error {
+func (s *ClearingState) monitorBucketProgress(writer *io.Writer, index int, bucket string) error {
 	// Lock to access to slices safely
 	s.countsMutex.Lock()
 	clearingCountCh := s.countChannels[bucket]
