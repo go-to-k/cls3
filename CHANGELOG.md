@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.25.1](https://github.com/go-to-k/cls3/compare/v0.25.0...v0.25.1) - 2025-02-03
+- docs: update gif in README by @go-to-k in https://github.com/go-to-k/cls3/pull/312
+
 ## [v0.25.0](https://github.com/go-to-k/cls3/compare/v0.24.2...v0.25.0) - 2025-02-03
 - test: create tables with schema in deploy_table.sh by @go-to-k in https://github.com/go-to-k/cls3/pull/307
 - feat(app): concurrent mode for parallel deletion of multiple buckets by @go-to-k in https://github.com/go-to-k/cls3/pull/288
