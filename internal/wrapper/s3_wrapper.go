@@ -274,12 +274,21 @@ func (s *S3Wrapper) CheckAllBucketsExist(ctx context.Context, bucketNames []stri
 	targetBucketNames := []string{}
 	nonExistingBucketNames := []string{}
 
+	uniqueBucketNames := make([]string, 0, len(bucketNames))
+	seen := make(map[string]bool)
+	for _, name := range bucketNames {
+		if !seen[name] {
+			seen[name] = true
+			uniqueBucketNames = append(uniqueBucketNames, name)
+		}
+	}
+
 	outputBuckets, err := s.client.ListBucketsOrDirectoryBuckets(ctx)
 	if err != nil {
 		return targetBucketNames, err
 	}
 
-	for _, name := range bucketNames {
+	for _, name := range uniqueBucketNames {
 		found := false
 		for _, bucket := range outputBuckets {
 			if *bucket.Name == name {

@@ -282,12 +282,21 @@ func (s *S3TablesWrapper) CheckAllBucketsExist(ctx context.Context, bucketNames 
 	targetBucketArns := []string{}
 	nonExistingBucketNames := []string{}
 
+	uniqueBucketNames := make([]string, 0, len(bucketNames))
+	seen := make(map[string]bool)
+	for _, name := range bucketNames {
+		if !seen[name] {
+			seen[name] = true
+			uniqueBucketNames = append(uniqueBucketNames, name)
+		}
+	}
+
 	outputBuckets, err := s.client.ListTableBuckets(ctx)
 	if err != nil {
 		return targetBucketArns, err
 	}
 
-	for _, name := range bucketNames {
+	for _, name := range uniqueBucketNames {
 		found := false
 		for _, bucket := range outputBuckets {
 			if *bucket.Name == name {

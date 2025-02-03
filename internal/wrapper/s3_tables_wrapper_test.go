@@ -1077,6 +1077,29 @@ func TestS3TablesWrapper_CheckAllBucketsExist(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "bucket names are duplicated",
+			args: args{
+				ctx:         context.Background(),
+				bucketNames: []string{"test1", "test1"},
+			},
+			prepareMockFn: func(m *client.MockIS3Tables) {
+				m.EXPECT().ListTableBuckets(gomock.Any()).Return(
+					[]types.TableBucketSummary{
+						{
+							Name: aws.String("test1"),
+							Arn:  aws.String("arn:aws:s3:us-east-1:123456789012:table-bucket/test1"),
+						},
+					},
+					nil,
+				)
+			},
+			want: want{
+				bucketArns: []string{"arn:aws:s3:us-east-1:123456789012:table-bucket/test1"},
+				err:        nil,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {

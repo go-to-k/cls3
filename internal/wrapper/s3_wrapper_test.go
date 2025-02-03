@@ -1006,6 +1006,28 @@ func TestS3Wrapper_CheckAllBucketsExist(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "bucket names are duplicated",
+			args: args{
+				ctx:         context.Background(),
+				bucketNames: []string{"test1", "test1"},
+			},
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListBucketsOrDirectoryBuckets(gomock.Any()).Return(
+					[]types.Bucket{
+						{
+							Name: aws.String("test1"),
+						},
+					},
+					nil,
+				)
+			},
+			want: want{
+				bucketNames: []string{"test1"},
+				err:         nil,
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range cases {
