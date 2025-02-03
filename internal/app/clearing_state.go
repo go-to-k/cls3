@@ -68,6 +68,16 @@ func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *io.
 
 // monitorBucketProgress monitors the progress of a single bucket clearing operation
 func (s *ClearingState) monitorBucketProgress(writer *io.Writer, index int, bucket string) error {
+	getNonEmptyLines := func(lines []string) []string {
+		nonEmptyLines := []string{}
+		for _, line := range lines {
+			if line != "" {
+				nonEmptyLines = append(nonEmptyLines, line)
+			}
+		}
+		return nonEmptyLines
+	}
+
 	// Lock to access to slices safely
 	s.countsMutex.Lock()
 	clearingCountCh := s.countChannels[bucket]
@@ -83,7 +93,8 @@ func (s *ClearingState) monitorBucketProgress(writer *io.Writer, index int, buck
 		}
 		s.linesMutex.Lock()
 		s.lines[index] = message
-		fmt.Fprintln(writer, strings.Join(s.lines, "\n"))
+		nonEmptyLines := getNonEmptyLines(s.lines)
+		fmt.Fprintln(writer, strings.Join(nonEmptyLines, "\n"))
 		s.linesMutex.Unlock()
 	}
 
@@ -95,7 +106,8 @@ func (s *ClearingState) monitorBucketProgress(writer *io.Writer, index int, buck
 	}
 	s.linesMutex.Lock()
 	s.lines[index] = message
-	fmt.Fprintln(writer, strings.Join(s.lines, "\n"))
+	nonEmptyLines := getNonEmptyLines(s.lines)
+	fmt.Fprintln(writer, strings.Join(nonEmptyLines, "\n"))
 	s.linesMutex.Unlock()
 	return nil
 }
