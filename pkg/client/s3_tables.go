@@ -1,4 +1,4 @@
-//go:generate mockgen -source=$GOFILE -destination=s3_tables_mock.go -package=$GOPACKAGE -write_package_comment=false
+//go:generate mockgen -source=$GOFILE -destination=mock_$GOFILE -package=$GOPACKAGE -write_package_comment=false
 package client
 
 import (
@@ -9,10 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
-	"github.com/go-to-k/cls3/internal/io"
 )
 
-var SleepTimeSecForS3Tables = 3
+var SleepTimeSecForS3Tables = 3 // NOTE: Because S3Tables is a serial operation, a low value is OK.
 
 type ListNamespacesByPageOutput struct {
 	Namespaces        []types.NamespaceSummary
@@ -47,9 +46,6 @@ func NewS3Tables(client *s3tables.Client) *S3Tables {
 				strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
 				strings.Contains(err.Error(), "StatusCode: 429")
 
-		if isRetryable {
-			io.Logger.Debug().Msgf("Retryable error: %v", err)
-		}
 		return isRetryable
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3Tables)

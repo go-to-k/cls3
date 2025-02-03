@@ -1,3 +1,4 @@
+//go:generate mockgen -source=$GOFILE -destination=mock_$GOFILE -package=$GOPACKAGE -write_package_comment=false
 package wrapper
 
 import (
@@ -11,22 +12,28 @@ import (
 
 const SDKRetryMaxAttempts = 3
 
+type IWrapper interface {
+	ClearBucket(ctx context.Context, input ClearBucketInput) error
+	OutputClearedMessage(bucket string, count int64) error
+	OutputDeletedMessage(bucket string) error
+	OutputCheckingMessage(bucket string) error
+	GetLiveClearingMessage(bucket string, count int64) (string, error)
+	GetLiveClearedMessage(bucket string, count int64, isCompleted bool) (string, error)
+	ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]ListBucketNamesFilteredByKeywordOutput, error)
+	CheckAllBucketsExist(ctx context.Context, bucketNames []string) ([]string, error)
+}
+
 type ClearBucketInput struct {
 	TargetBucket    string // bucket name for S3, bucket arn for S3Tables
 	ForceMode       bool
 	OldVersionsOnly bool
 	QuietMode       bool
+	ClearingCountCh chan int64
 }
 
 type ListBucketNamesFilteredByKeywordOutput struct {
 	BucketName   string
 	TargetBucket string // bucket name for S3, bucket arn for S3Tables
-}
-
-type IWrapper interface {
-	ClearBucket(ctx context.Context, input ClearBucketInput) error
-	ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]ListBucketNamesFilteredByKeywordOutput, error)
-	CheckAllBucketsExist(ctx context.Context, bucketNames []string) ([]string, error)
 }
 
 func CreateS3Wrapper(config aws.Config, tableBucketsMode bool, directoryBucketsMode bool) IWrapper {

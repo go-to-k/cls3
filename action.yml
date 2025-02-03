@@ -32,6 +32,14 @@ inputs:
     description: "AWS Region"
     default: "us-east-1"
     required: false
+  concurrent-mode:
+    description: "Delete multiple buckets in parallel"
+    default: false
+    required: false
+  concurrency-number:
+    description: "Specify the number of parallel deletions (requires concurrent-mode to be true)"
+    default: ""
+    required: false
 runs:
   using: "composite"
   steps:
@@ -73,9 +81,17 @@ runs:
           if [ "${{ inputs.table-buckets-mode }}" = "true" ]; then
             table_buckets_mode="-t"
           fi
+          concurrent_mode=""
+          if [ "${{ inputs.concurrent-mode }}" = "true" ]; then
+            concurrent_mode="-c"
+          fi
+          concurrency_number=""
+          if [ -n "${{ inputs.concurrency-number }}" ]; then
+            concurrency_number="-n ${{ inputs.concurrency-number }}"
+          fi
           region=""
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"
           fi
-          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $region
+          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $concurrent_mode $concurrency_number $region
         fi

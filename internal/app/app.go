@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
+)
+
+const (
+	UnspecifiedConcurrencyNumber = 0
 )
 
 type App struct {
@@ -21,9 +24,14 @@ type App struct {
 	InteractiveMode      bool
 	OldVersionsOnly      bool
 	QuietMode            bool
+	ConcurrentMode       bool
+	ConcurrencyNumber    int
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
 	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
+	bucketSelector       IBucketSelector
+	bucketProcessor      IBucketProcessor
+	s3Wrapper            wrapper.IWrapper
 }
 
 func NewApp(version string) *App {
@@ -83,6 +91,20 @@ func NewApp(version string) *App {
 				Destination: &app.QuietMode,
 			},
 			&cli.BoolFlag{
+				Name:        "concurrentMode",
+				Aliases:     []string{"c"},
+				Value:       false,
+				Usage:       "Delete multiple buckets in parallel. If you want to limit the number of parallel deletions, specify the -n option. This option is not available in the Table Buckets Mode -t because the throttling threshold for S3 Tables is very low.",
+				Destination: &app.ConcurrentMode,
+			},
+			&cli.IntFlag{
+				Name:        "concurrencyNumber",
+				Aliases:     []string{"n"},
+				Value:       UnspecifiedConcurrencyNumber,
+				Usage:       "Specify the number of parallel deletions. To specify this option, the -c option must be specified. The default is to delete all buckets in parallel if only the -c option is specified.",
+				Destination: &app.ConcurrencyNumber,
+			},
+			&cli.BoolFlag{
 				Name:        "directoryBucketsMode",
 				Aliases:     []string{"d"},
 				Value:       false,
@@ -114,54 +136,64 @@ func (a *App) getAction() func(c *cli.Context) error {
 	return func(c *cli.Context) error {
 		io.Logger.Debug().Msg("Debug mode...")
 
-		err := a.validateOptions()
-		if err != nil {
+		if err := a.validateOptions(); err != nil {
 			return err
 		}
 
-		s3Wrapper, err := a.createS3Wrapper(c.Context)
-		if err != nil {
+		if err := a.initS3Wrapper(c.Context); err != nil {
+			return err
+		}
+		if err := a.initBucketSelector(); err != nil {
 			return err
 		}
 
-		if a.InteractiveMode {
-			continuation, err := a.doInteractiveMode(c.Context, s3Wrapper)
-			if err != nil {
-				return err
-			}
-			if !continuation {
-				return nil
-			}
-		} else {
-			outputBuckets, err := s3Wrapper.CheckAllBucketsExist(c.Context, a.BucketNames.Value())
-			if err != nil {
-				return err
-			}
-			a.targetBuckets = append(a.targetBuckets, outputBuckets...)
+		selectedBuckets, continuation, err := a.bucketSelector.SelectBuckets(c.Context)
+		if err != nil {
+			return err
 		}
-
-		for _, bucket := range a.targetBuckets {
-			if err := s3Wrapper.ClearBucket(c.Context, wrapper.ClearBucketInput{
-				TargetBucket:    bucket,
-				ForceMode:       a.ForceMode,
-				OldVersionsOnly: a.OldVersionsOnly,
-				QuietMode:       a.QuietMode,
-			}); err != nil {
-				return err
-			}
+		if !continuation {
+			return nil
 		}
+		a.targetBuckets = append(a.targetBuckets, selectedBuckets...)
 
-		return nil
+		if err := a.initBucketProcessor(); err != nil {
+			return err
+		}
+		return a.bucketProcessor.Process(c.Context)
 	}
 }
 
-func (a *App) createS3Wrapper(ctx context.Context) (wrapper.IWrapper, error) {
-	config, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
-	if err != nil {
-		return nil, err
+func (a *App) initS3Wrapper(ctx context.Context) error {
+	if a.s3Wrapper == nil {
+		awsConfig, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
+		if err != nil {
+			return err
+		}
+		a.s3Wrapper = wrapper.CreateS3Wrapper(awsConfig, a.TableBucketsMode, a.DirectoryBucketsMode)
 	}
+	return nil
+}
 
-	return wrapper.CreateS3Wrapper(config, a.TableBucketsMode, a.DirectoryBucketsMode), nil
+func (a *App) initBucketSelector() error {
+	if a.bucketSelector == nil {
+		a.bucketSelector = NewBucketSelector(a.InteractiveMode, a.BucketNames, a.s3Wrapper)
+	}
+	return nil
+}
+
+func (a *App) initBucketProcessor() error {
+	if a.bucketProcessor == nil {
+		processorConfig := BucketProcessorConfig{
+			TargetBuckets:     a.targetBuckets,
+			QuietMode:         a.QuietMode,
+			ConcurrentMode:    a.ConcurrentMode,
+			ConcurrencyNumber: a.ConcurrencyNumber,
+			ForceMode:         a.ForceMode,
+			OldVersionsOnly:   a.OldVersionsOnly,
+		}
+		a.bucketProcessor = NewBucketProcessor(processorConfig, a.s3Wrapper)
+	}
+	return nil
 }
 
 func (a *App) validateOptions() error {
@@ -192,39 +224,20 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("When specifying -t, do not specify the -o option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
+	if a.TableBucketsMode && a.ConcurrentMode {
+		errMsg := fmt.Sprintln("When specifying -t, do not specify the -c option because the throttling threshold for S3 Tables is very low.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
 	if a.TableBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
+	if !a.ConcurrentMode && a.ConcurrencyNumber != UnspecifiedConcurrencyNumber {
+		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.ConcurrentMode && a.ConcurrencyNumber < UnspecifiedConcurrencyNumber {
+		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
 	return nil
-}
-
-func (a *App) doInteractiveMode(ctx context.Context, s3Wrapper wrapper.IWrapper) (bool, error) {
-	keyword := io.InputKeywordForFilter("Filter a keyword of bucket names: ")
-	outputs, err := s3Wrapper.ListBucketNamesFilteredByKeyword(ctx, aws.String(keyword))
-	if err != nil {
-		return false, err
-	}
-
-	bucketNames := []string{}
-	for _, output := range outputs {
-		bucketNames = append(bucketNames, output.BucketName)
-	}
-
-	label := []string{"Select buckets."}
-	checkboxes, continuation, err := io.GetCheckboxes(label, bucketNames)
-	if err != nil {
-		return false, err
-	}
-	if !continuation {
-		return false, nil
-	}
-
-	for _, bucket := range checkboxes {
-		for _, output := range outputs {
-			if output.BucketName == bucket {
-				a.targetBuckets = append(a.targetBuckets, output.TargetBucket)
-			}
-		}
-	}
-	return true, nil
 }

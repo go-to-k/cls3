@@ -12,7 +12,6 @@ require (
 	github.com/aws/smithy-go v1.22.1
 	github.com/charmbracelet/bubbletea v1.1.1
 	github.com/fatih/color v1.18.0
-	github.com/gosuri/uilive v0.0.4
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.8.0
 	github.com/urfave/cli/v2 v2.27.4

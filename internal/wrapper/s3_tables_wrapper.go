@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
-	"github.com/gosuri/uilive"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 )
@@ -90,23 +89,11 @@ func (s *S3TablesWrapper) ClearBucket(
 	ctx context.Context,
 	input ClearBucketInput,
 ) error {
-	var writer *uilive.Writer
-	if !input.QuietMode {
-		writer = uilive.New()
-		writer.Start()
-		defer writer.Stop()
-	}
-
 	bucketArn := input.TargetBucket
-	parts := strings.Split(bucketArn, "/")
-	if len(parts) < 2 {
-		return &client.ClientError{
-			Err: fmt.Errorf("InvalidBucketArnError: %v, got %v", "invalid bucket ARN format without a slash", bucketArn),
-		}
+	bucketName, err := s.outputBucketName(bucketArn)
+	if err != nil {
+		return err
 	}
-	bucketName := parts[1]
-
-	io.Logger.Info().Msgf("%v Checking...", bucketName)
 
 	var deletedTablesCount atomic.Int64
 	progressCh := make(chan struct{})
@@ -117,7 +104,7 @@ func (s *S3TablesWrapper) ClearBucket(
 		for range progressCh {
 			count := deletedTablesCount.Add(1)
 			if !input.QuietMode {
-				fmt.Fprintf(writer, "Clearing... %d tables\n", count)
+				input.ClearingCountCh <- count
 			}
 		}
 	}()
@@ -179,27 +166,87 @@ func (s *S3TablesWrapper) ClearBucket(
 	close(progressCh)
 	wg.Wait()
 
-	if !input.QuietMode {
-		if err := writer.Flush(); err != nil {
+	finalCount := deletedTablesCount.Load()
+	if input.QuietMode {
+		// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+		if err := s.OutputClearedMessage(bucketArn, finalCount); err != nil {
 			return err
 		}
-	}
-
-	finalCount := deletedTablesCount.Load()
-	if finalCount == 0 {
-		io.Logger.Info().Msgf("%v No tables.", bucketName)
-	} else {
-		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", bucketName, finalCount)
 	}
 
 	if input.ForceMode {
 		if err := s.client.DeleteTableBucket(ctx, aws.String(bucketArn)); err != nil {
 			return err
 		}
-		io.Logger.Info().Msgf("%v Deleted!!", bucketName)
+		if input.QuietMode {
+			// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+			if err := s.OutputDeletedMessage(bucketArn); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
+}
+
+func (s *S3TablesWrapper) outputBucketName(bucketArn string) (string, error) {
+	parts := strings.Split(bucketArn, "/")
+	if len(parts) < 2 {
+		return "", &client.ClientError{
+			Err: fmt.Errorf("InvalidBucketArnError: %v, got %v", "invalid bucket ARN format without a slash", bucketArn),
+		}
+	}
+	return parts[1], nil
+}
+
+func (s *S3TablesWrapper) OutputClearedMessage(bucket string, count int64) error {
+	bucketName, err := s.outputBucketName(bucket)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		io.Logger.Info().Msgf("%v No tables.", bucketName)
+	} else {
+		io.Logger.Info().Msgf("%v Cleared!!: %v tables.", bucketName, count)
+	}
+	return nil
+}
+
+func (s *S3TablesWrapper) OutputDeletedMessage(bucket string) error {
+	bucketName, err := s.outputBucketName(bucket)
+	if err != nil {
+		return err
+	}
+	io.Logger.Info().Msgf("%v Deleted!!", bucketName)
+	return nil
+}
+
+func (s *S3TablesWrapper) OutputCheckingMessage(bucket string) error {
+	bucketName, err := s.outputBucketName(bucket)
+	if err != nil {
+		return err
+	}
+	io.Logger.Info().Msgf("%v Checking...", bucketName)
+	return nil
+}
+
+func (s *S3TablesWrapper) GetLiveClearingMessage(bucket string, count int64) (string, error) {
+	bucketName, err := s.outputBucketName(bucket)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%v Clearing... %v tables", bucketName, count), nil
+}
+
+func (s *S3TablesWrapper) GetLiveClearedMessage(bucket string, count int64, isCompleted bool) (string, error) {
+	bucketName, err := s.outputBucketName(bucket)
+	if err != nil {
+		return "", err
+	}
+	if isCompleted {
+		return fmt.Sprintf("\033[32m%v Cleared!!!  %d tables\033[0m", bucketName, count), nil
+	}
+	return fmt.Sprintf("\033[31m%v Errors occurred!!! Cleared: %d tables\033[0m", bucketName, count), nil
 }
 
 func (s *S3TablesWrapper) ListBucketNamesFilteredByKeyword(ctx context.Context, keyword *string) ([]ListBucketNamesFilteredByKeywordOutput, error) {
@@ -235,12 +282,21 @@ func (s *S3TablesWrapper) CheckAllBucketsExist(ctx context.Context, bucketNames 
 	targetBucketArns := []string{}
 	nonExistingBucketNames := []string{}
 
+	uniqueBucketNames := make([]string, 0, len(bucketNames))
+	seen := make(map[string]bool)
+	for _, name := range bucketNames {
+		if !seen[name] {
+			seen[name] = true
+			uniqueBucketNames = append(uniqueBucketNames, name)
+		}
+	}
+
 	outputBuckets, err := s.client.ListTableBuckets(ctx)
 	if err != nil {
 		return targetBucketArns, err
 	}
 
-	for _, name := range bucketNames {
+	for _, name := range uniqueBucketNames {
 		found := false
 		for _, bucket := range outputBuckets {
 			if *bucket.Name == name {

@@ -58,6 +58,16 @@ The `-t | --tableBucketsMode` option allows you to delete the Table Buckets for 
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
+### Concurrent Deletion of Multiple Buckets
+
+The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
+
+If you want to limit the number of parallel deletions, you can specify the `-n | --concurrencyNumber` option. For example, `-c -n 5` will delete buckets with a maximum of 5 parallel operations.
+
+**Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
+
+This option is not available in the Table Buckets Mode (`-t`) because the throttling threshold for S3 Tables is very low.
+
 ### Number of objects that can be deleted
 
 The delete-objects API provided by the CLI and SDK has a limit of "the number of objects that can be deleted in one command is limited to 1000", but This tool has no limit on the number.
@@ -123,7 +133,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>]
   ```
 
 - -b, --bucketName: optional
@@ -157,6 +167,15 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 - -t, --tableBucketsMode: optional
   - Table Buckets Mode for **S3 Tables**
   - If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.
+- -c, --concurrentMode: optional
+  - Delete multiple buckets in parallel.
+  - If you want to limit the number of parallel deletions, specify the -n option.
+  - **Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
+  - This option is not available in the Table Buckets Mode (-t) because the throttling threshold for S3 Tables is very low.
+- -n, --concurrencyNumber: optional
+  - Specify the number of parallel deletions.
+  - To specify this option, the -c option must be specified.
+  - The default is to delete all buckets in parallel if only the -c option is specified.
 
 ## Interactive Mode
 
@@ -221,6 +240,8 @@ jobs:
           directory-buckets-mode: false # Directory Buckets Mode for S3 Express One Zone (default: false)
           table-buckets-mode: false # Table Buckets Mode for S3 Tables (default: false)
           region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone and Table Buckets Mode for S3 Tables
+          concurrent-mode: true # Delete multiple buckets in parallel (default: false)
+          concurrency-number: 8 # Specify the number of parallel deletions (requires concurrent-mode to be true)
 ```
 
 You can also run raw commands after installing the cls3 binary.

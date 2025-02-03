@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-const MaxRetryCount = 10
+const MaxRetryCount = 20
 
 var _ aws.RetryerV2 = (*Retryer)(nil)
 
