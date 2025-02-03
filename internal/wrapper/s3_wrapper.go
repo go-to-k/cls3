@@ -60,6 +60,11 @@ func (s *S3Wrapper) ClearBucket(
 func (s *S3Wrapper) clearObjects(ctx context.Context, input ClearBucketInput, bucketRegion string) error {
 	state := &objectDeletionState{}
 
+	if !input.QuietMode {
+		// NOTE: Send 0 to the channel to indicate that the clearing has started.
+		input.ClearingCountCh <- 0
+	}
+
 	// NOTE: Try clearing objects up to 2 times to handle eventual consistency
 	// There was a case where the object deletion was completed but the object was still there.
 	// So, even if all objects are deleted, it is not guaranteed that the object is deleted.

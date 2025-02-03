@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gosuri/uilive"
+	"github.com/go-to-k/cls3/internal/io"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/errgroup"
@@ -16,8 +16,6 @@ func TestDisplayManager_Start(t *testing.T) {
 		prepareMockFn func(m *MockIClearingState)
 		quietMode     bool
 		targetBuckets []string
-		wantErr       bool
-		expectedErr   string
 	}{
 		{
 			name: "successfully start display manager",
@@ -26,11 +24,10 @@ func TestDisplayManager_Start(t *testing.T) {
 				m.EXPECT().StartDisplayRoutines(
 					[]string{"bucket1"},
 					gomock.Any(),
-				).Return(eg, nil)
+				).Return(eg)
 			},
 			quietMode:     false,
 			targetBuckets: []string{"bucket1"},
-			wantErr:       false,
 		},
 		{
 			name: "skip display in quiet mode",
@@ -39,20 +36,6 @@ func TestDisplayManager_Start(t *testing.T) {
 			},
 			quietMode:     true,
 			targetBuckets: []string{"bucket1"},
-			wantErr:       false,
-		},
-		{
-			name: "error when start display routines fails",
-			prepareMockFn: func(m *MockIClearingState) {
-				m.EXPECT().StartDisplayRoutines(
-					[]string{"bucket1"},
-					gomock.Any(),
-				).Return(nil, fmt.Errorf("StartDisplayRoutinesError"))
-			},
-			quietMode:     false,
-			targetBuckets: []string{"bucket1"},
-			wantErr:       true,
-			expectedErr:   "StartDisplayRoutinesError",
 		},
 	}
 
@@ -65,20 +48,11 @@ func TestDisplayManager_Start(t *testing.T) {
 
 			manager := NewDisplayManager(mockClearingState, tt.quietMode)
 
-			err := manager.Start(tt.targetBuckets)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr {
-				assert.EqualError(t, err, tt.expectedErr)
-				return
-			}
+			manager.Start(tt.targetBuckets)
 
 			if !tt.quietMode {
 				assert.NotNil(t, manager.writer)
 				assert.NotNil(t, manager.displayEg)
-				manager.writer.Stop()
 			} else {
 				assert.Nil(t, manager.writer)
 				assert.Nil(t, manager.displayEg)
@@ -103,7 +77,7 @@ func TestDisplayManager_Finish(t *testing.T) {
 				m.EXPECT().StartDisplayRoutines(
 					[]string{"bucket1"},
 					gomock.Any(),
-				).Return(eg, nil)
+				).Return(eg)
 				m.EXPECT().OutputFinalMessages([]string{"bucket1"}).Return(nil)
 			},
 			quietMode:     false,
@@ -126,7 +100,7 @@ func TestDisplayManager_Finish(t *testing.T) {
 				m.EXPECT().StartDisplayRoutines(
 					[]string{"bucket1"},
 					gomock.Any(),
-				).Return(eg, nil)
+				).Return(eg)
 				eg.Go(func() error {
 					return fmt.Errorf("errgroup wait error")
 				})
@@ -143,7 +117,7 @@ func TestDisplayManager_Finish(t *testing.T) {
 				m.EXPECT().StartDisplayRoutines(
 					[]string{"bucket1"},
 					gomock.Any(),
-				).Return(eg, nil)
+				).Return(eg)
 				m.EXPECT().OutputFinalMessages([]string{"bucket1"}).Return(fmt.Errorf("OutputFinalMessagesError"))
 			},
 			quietMode:     false,
@@ -163,13 +137,8 @@ func TestDisplayManager_Finish(t *testing.T) {
 			manager := NewDisplayManager(mockClearingState, tt.quietMode)
 
 			if !tt.quietMode {
-				manager.writer = uilive.New()
-				manager.writer.Start()
-				var err error
-				manager.displayEg, err = mockClearingState.StartDisplayRoutines(tt.targetBuckets, manager.writer)
-				if err != nil {
-					t.Fatal(err)
-				}
+				manager.writer = io.NewWriter()
+				manager.displayEg = mockClearingState.StartDisplayRoutines(tt.targetBuckets, manager.writer)
 			}
 
 			err := manager.Finish(tt.targetBuckets)

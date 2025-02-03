@@ -7,7 +7,7 @@ import (
 )
 
 type IDisplayManager interface {
-	Start(targetBuckets []string) error
+	Start(targetBuckets []string)
 	Finish(targetBuckets []string) error
 }
 
@@ -30,21 +30,13 @@ func NewDisplayManager(state IClearingState, quietMode bool) *DisplayManager {
 }
 
 // Start initializes and starts the display operations
-func (d *DisplayManager) Start(targetBuckets []string) error {
+func (d *DisplayManager) Start(targetBuckets []string) {
 	if d.quietMode {
-		return nil
+		return
 	}
-	d.writer = io.New()
-	d.writer.Start()
+	d.writer = io.NewWriter()
 
-	var err error
-	d.displayEg, err = d.state.StartDisplayRoutines(targetBuckets, d.writer)
-	if err != nil {
-		d.writer.Stop()
-		return err
-	}
-
-	return nil
+	d.displayEg = d.state.StartDisplayRoutines(targetBuckets, d.writer)
 }
 
 // Finish waits for display operations to complete and performs cleanup
@@ -52,13 +44,10 @@ func (d *DisplayManager) Finish(targetBuckets []string) error {
 	if d.quietMode {
 		return nil
 	}
-	defer d.writer.Stop()
 
 	if err := d.displayEg.Wait(); err != nil {
 		return err
 	}
-	if err := d.writer.Flush(); err != nil {
-		return err
-	}
+
 	return d.state.OutputFinalMessages(targetBuckets)
 }

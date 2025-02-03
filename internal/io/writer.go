@@ -14,7 +14,9 @@ type Writer struct {
 	lineCount int
 }
 
-func New() *Writer {
+var _ io.Writer = (*Writer)(nil)
+
+func NewWriter() *Writer {
 	return &Writer{
 		out: os.Stdout,
 	}
@@ -41,14 +43,3 @@ func (w *Writer) clearLines() {
 		fmt.Fprint(w.out, "\033[1A\033[2K")
 	}
 }
-
-func (w *Writer) Flush() error {
-	w.mtx.Lock()
-	defer w.mtx.Unlock()
-	_, err := fmt.Fprintln(w.out)
-	return err
-}
-
-func (w *Writer) Start() {}
-
-func (w *Writer) Stop() {}

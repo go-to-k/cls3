@@ -9,7 +9,7 @@ package app
 import (
 	reflect "reflect"
 
-	uilive "github.com/gosuri/uilive"
+	io "github.com/go-to-k/cls3/internal/io"
 	gomock "go.uber.org/mock/gomock"
 	errgroup "golang.org/x/sync/errgroup"
 )
@@ -67,12 +67,11 @@ func (mr *MockIClearingStateMockRecorder) OutputFinalMessages(targetBuckets any)
 }
 
 // StartDisplayRoutines mocks base method.
-func (m *MockIClearingState) StartDisplayRoutines(targetBuckets []string, writer *uilive.Writer) (*errgroup.Group, error) {
+func (m *MockIClearingState) StartDisplayRoutines(targetBuckets []string, writer *io.Writer) *errgroup.Group {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartDisplayRoutines", targetBuckets, writer)
 	ret0, _ := ret[0].(*errgroup.Group)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // StartDisplayRoutines indicates an expected call of StartDisplayRoutines.

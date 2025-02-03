@@ -13,7 +13,7 @@ import (
 )
 
 type IClearingState interface {
-	StartDisplayRoutines(targetBuckets []string, writer *io.Writer) (*errgroup.Group, error)
+	StartDisplayRoutines(targetBuckets []string, writer *io.Writer) *errgroup.Group
 	OutputFinalMessages(targetBuckets []string) error
 	GetChannelsForBucket(bucket string) (chan int64, chan bool)
 }
@@ -33,7 +33,7 @@ type ClearingState struct {
 }
 
 // NewClearingState initializes a new ClearingState instance
-func NewClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper, forceMode bool) (*ClearingState, error) {
+func NewClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper, forceMode bool) *ClearingState {
 	state := &ClearingState{
 		lines:             make([]string, len(targetBuckets)),
 		countChannels:     make(map[string]chan int64, len(targetBuckets)),
@@ -44,24 +44,17 @@ func NewClearingState(targetBuckets []string, s3Wrapper wrapper.IWrapper, forceM
 	}
 
 	for _, bucket := range targetBuckets {
-		if err := s3Wrapper.OutputCheckingMessage(bucket); err != nil {
-			return nil, err
-		}
 		state.countChannels[bucket] = make(chan int64)
 		state.completedChannels[bucket] = make(chan bool)
 		state.counts[bucket] = &atomic.Int64{}
 	}
 
-	return state, nil
+	return state
 }
 
 // StartDisplayRoutines initializes and starts the display monitoring routines
-func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *io.Writer) (*errgroup.Group, error) {
+func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *io.Writer) *errgroup.Group {
 	displayEg := &errgroup.Group{}
-
-	if err := s.prepareInitialDisplay(targetBuckets); err != nil {
-		return nil, err
-	}
 
 	for i, bucket := range targetBuckets {
 		i, bucket := i, bucket
@@ -70,22 +63,7 @@ func (s *ClearingState) StartDisplayRoutines(targetBuckets []string, writer *io.
 		})
 	}
 
-	return displayEg, nil
-}
-
-// prepareInitialDisplay prepares the initial display lines for each bucket
-func (s *ClearingState) prepareInitialDisplay(targetBuckets []string) error {
-	for i, bucket := range targetBuckets {
-		// Necessary to first display all bucket rows together
-		message, err := s.s3Wrapper.GetLiveClearingMessage(bucket, 0)
-		if err != nil {
-			return err
-		}
-		s.linesMutex.Lock()
-		s.lines[i] = message
-		s.linesMutex.Unlock()
-	}
-	return nil
+	return displayEg
 }
 
 // monitorBucketProgress monitors the progress of a single bucket clearing operation

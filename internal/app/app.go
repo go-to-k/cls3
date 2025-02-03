@@ -191,11 +191,7 @@ func (a *App) initBucketProcessor() error {
 			ForceMode:         a.ForceMode,
 			OldVersionsOnly:   a.OldVersionsOnly,
 		}
-		processor, err := NewBucketProcessor(processorConfig, a.s3Wrapper)
-		if err != nil {
-			return err
-		}
-		a.bucketProcessor = processor
+		a.bucketProcessor = NewBucketProcessor(processorConfig, a.s3Wrapper)
 	}
 	return nil
 }

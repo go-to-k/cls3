@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
-	"github.com/gosuri/uilive"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -14,31 +14,13 @@ import (
 func TestClearingState_NewClearingState(t *testing.T) {
 	tests := []struct {
 		name          string
-		prepareMockFn func(m *wrapper.MockIWrapper)
 		targetBuckets []string
 		forceMode     bool
-		wantErr       bool
-		expectedErr   string
 	}{
 		{
-			name: "successfully create clearing state",
-			prepareMockFn: func(m *wrapper.MockIWrapper) {
-				m.EXPECT().OutputCheckingMessage("bucket1").Return(nil)
-				m.EXPECT().OutputCheckingMessage("bucket2").Return(nil)
-			},
+			name:          "create clearing state",
 			targetBuckets: []string{"bucket1", "bucket2"},
 			forceMode:     false,
-			wantErr:       false,
-		},
-		{
-			name: "error when output checking message fails",
-			prepareMockFn: func(m *wrapper.MockIWrapper) {
-				m.EXPECT().OutputCheckingMessage("bucket1").Return(fmt.Errorf("OutputCheckingMessageError"))
-			},
-			targetBuckets: []string{"bucket1"},
-			forceMode:     false,
-			wantErr:       true,
-			expectedErr:   "OutputCheckingMessageError",
 		},
 	}
 
@@ -46,19 +28,10 @@ func TestClearingState_NewClearingState(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			mockWrapper := wrapper.NewMockIWrapper(ctrl)
-			tt.prepareMockFn(mockWrapper)
 
-			state, err := NewClearingState(tt.targetBuckets, mockWrapper, tt.forceMode)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr {
-				assert.EqualError(t, err, tt.expectedErr)
-				return
-			}
-
+			state := NewClearingState(tt.targetBuckets, mockWrapper, tt.forceMode)
 			assert.NotNil(t, state)
+
 			assert.Equal(t, len(tt.targetBuckets), len(state.lines))
 			assert.Equal(t, len(tt.targetBuckets), len(state.countChannels))
 			assert.Equal(t, len(tt.targetBuckets), len(state.completedChannels))
@@ -73,28 +46,26 @@ func TestClearingState_StartDisplayRoutines(t *testing.T) {
 		name          string
 		prepareMockFn func(m *wrapper.MockIWrapper)
 		targetBuckets []string
-		wantErr       bool
+		wantEgErr     bool
 		expectedErr   string
 	}{
 		{
 			name: "successfully start display routines",
 			prepareMockFn: func(m *wrapper.MockIWrapper) {
-				m.EXPECT().GetLiveClearingMessage("bucket1", int64(0)).Return("Clearing bucket1", nil)
-				m.EXPECT().GetLiveClearingMessage("bucket2", int64(0)).Return("Clearing bucket2", nil)
 				m.EXPECT().GetLiveClearedMessage("bucket1", int64(0), true).Return("Cleared bucket1", nil)
 				m.EXPECT().GetLiveClearedMessage("bucket2", int64(0), true).Return("Cleared bucket2", nil)
 			},
 			targetBuckets: []string{"bucket1", "bucket2"},
-			wantErr:       false,
+			wantEgErr:     false,
 		},
 		{
-			name: "error when get live clearing message fails",
+			name: "error when get live cleared message fails",
 			prepareMockFn: func(m *wrapper.MockIWrapper) {
-				m.EXPECT().GetLiveClearingMessage("bucket1", int64(0)).Return("", fmt.Errorf("GetLiveClearingMessageError"))
+				m.EXPECT().GetLiveClearedMessage("bucket1", int64(0), true).Return("", fmt.Errorf("GetLiveClearedMessageError"))
 			},
 			targetBuckets: []string{"bucket1"},
-			wantErr:       true,
-			expectedErr:   "GetLiveClearingMessageError",
+			wantEgErr:     true,
+			expectedErr:   "GetLiveClearedMessageError",
 		},
 	}
 
@@ -119,16 +90,8 @@ func TestClearingState_StartDisplayRoutines(t *testing.T) {
 				state.counts[bucket] = &atomic.Int64{}
 			}
 
-			writer := uilive.New()
-			eg, err := state.StartDisplayRoutines(tt.targetBuckets, writer)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr {
-				assert.EqualError(t, err, tt.expectedErr)
-				return
-			}
+			writer := io.NewWriter()
+			eg := state.StartDisplayRoutines(tt.targetBuckets, writer)
 
 			assert.NotNil(t, eg)
 
@@ -137,8 +100,11 @@ func TestClearingState_StartDisplayRoutines(t *testing.T) {
 				state.completedChannels[bucket] <- true
 				close(state.completedChannels[bucket])
 			}
-			if err := eg.Wait(); err != nil {
-				t.Errorf("error waiting for display routines: %v", err)
+
+			err := eg.Wait()
+			assert.Equal(t, tt.wantEgErr, err != nil)
+			if tt.wantEgErr {
+				assert.EqualError(t, err, tt.expectedErr)
 			}
 		})
 	}

@@ -50,11 +50,9 @@ func (mr *MockIDisplayManagerMockRecorder) Finish(targetBuckets any) *gomock.Cal
 }
 
 // Start mocks base method.
-func (m *MockIDisplayManager) Start(targetBuckets []string) error {
+func (m *MockIDisplayManager) Start(targetBuckets []string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", targetBuckets)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Start", targetBuckets)
 }
 
 // Start indicates an expected call of Start.
