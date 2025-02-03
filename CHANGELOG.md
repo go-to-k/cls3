@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.25.0](https://github.com/go-to-k/cls3/compare/v0.24.2...v0.25.0) - 2025-02-03
+- test: create tables with schema in deploy_table.sh by @go-to-k in https://github.com/go-to-k/cls3/pull/307
+- feat(app): concurrent mode for parallel deletion of multiple buckets by @go-to-k in https://github.com/go-to-k/cls3/pull/288
+
 ## [v0.24.2](https://github.com/go-to-k/cls3/compare/v0.24.1...v0.24.2) - 2025-01-29
 - chore(wrapper): change handling errgroup with context by @go-to-k in https://github.com/go-to-k/cls3/pull/289
 - revert: "chore(wrapper): change handling errgroup with context (#289)" by @go-to-k in https://github.com/go-to-k/cls3/pull/292
