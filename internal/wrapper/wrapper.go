@@ -36,15 +36,27 @@ type ListBucketNamesFilteredByKeywordOutput struct {
 	TargetBucket string // bucket name for S3, bucket arn for S3Tables
 }
 
-func CreateS3Wrapper(config aws.Config, tableBucketsMode bool, directoryBucketsMode bool) IWrapper {
-	if tableBucketsMode {
+type CreateS3WrapperInput struct {
+	Region               string
+	Profile              string
+	TableBucketsMode     bool
+	DirectoryBucketsMode bool
+}
+
+func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
+	config, err := client.LoadAWSConfig(ctx, input.Region, input.Profile)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.TableBucketsMode {
 		client := client.NewS3Tables(
 			s3tables.NewFromConfig(config, func(o *s3tables.Options) {
 				o.RetryMaxAttempts = SDKRetryMaxAttempts
 				o.RetryMode = aws.RetryModeStandard
 			}),
 		)
-		return NewS3TablesWrapper(client)
+		return NewS3TablesWrapper(client), nil
 	}
 
 	client := client.NewS3(
@@ -52,7 +64,7 @@ func CreateS3Wrapper(config aws.Config, tableBucketsMode bool, directoryBucketsM
 			o.RetryMaxAttempts = SDKRetryMaxAttempts
 			o.RetryMode = aws.RetryModeStandard
 		}),
-		directoryBucketsMode,
+		input.DirectoryBucketsMode,
 	)
-	return NewS3Wrapper(client)
+	return NewS3Wrapper(client), nil
 }
