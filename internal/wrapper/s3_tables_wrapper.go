@@ -23,10 +23,22 @@ type S3TablesWrapper struct {
 	client client.IS3Tables
 }
 
-func NewS3TablesWrapper(client client.IS3Tables) *S3TablesWrapper {
+type S3TablesWrapperInput struct {
+	Region  string
+	Profile string
+}
+
+func NewS3TablesWrapper(ctx context.Context, input S3TablesWrapperInput) (*S3TablesWrapper, error) {
+	client, err := client.NewS3Tables(ctx, client.NewS3TablesInput{
+		Region:  input.Region,
+		Profile: input.Profile,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &S3TablesWrapper{
 		client: client,
-	}
+	}, nil
 }
 
 func (s *S3TablesWrapper) deleteNamespace(

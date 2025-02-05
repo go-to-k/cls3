@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
-	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
 )
 
@@ -165,11 +164,16 @@ func (a *App) getAction() func(c *cli.Context) error {
 
 func (a *App) initS3Wrapper(ctx context.Context) error {
 	if a.s3Wrapper == nil {
-		awsConfig, err := client.LoadAWSConfig(ctx, a.Region, a.Profile)
+		s3Wrapper, err := wrapper.CreateS3Wrapper(ctx, wrapper.CreateS3WrapperInput{
+			Region:               a.Region,
+			Profile:              a.Profile,
+			TableBucketsMode:     a.TableBucketsMode,
+			DirectoryBucketsMode: a.DirectoryBucketsMode,
+		})
 		if err != nil {
 			return err
 		}
-		a.s3Wrapper = wrapper.CreateS3Wrapper(awsConfig, a.TableBucketsMode, a.DirectoryBucketsMode)
+		a.s3Wrapper = s3Wrapper
 	}
 	return nil
 }

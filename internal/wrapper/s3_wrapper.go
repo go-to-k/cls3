@@ -18,10 +18,24 @@ type S3Wrapper struct {
 	client client.IS3
 }
 
-func NewS3Wrapper(client client.IS3) *S3Wrapper {
+type S3WrapperInput struct {
+	Region               string
+	Profile              string
+	DirectoryBucketsMode bool
+}
+
+func NewS3Wrapper(ctx context.Context, input S3WrapperInput) (*S3Wrapper, error) {
+	client, err := client.NewS3(ctx, client.NewS3Input{
+		Region:               input.Region,
+		Profile:              input.Profile,
+		DirectoryBucketsMode: input.DirectoryBucketsMode,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &S3Wrapper{
 		client: client,
-	}
+	}, nil
 }
 
 type objectDeletionState struct {

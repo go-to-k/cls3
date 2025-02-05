@@ -52,12 +52,23 @@ type IS3 interface {
 var _ IS3 = (*S3)(nil)
 
 type S3 struct {
-	client               *s3.Client
+	*s3.Client
 	directoryBucketsMode bool
 	retryer              *Retryer
 }
 
-func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
+type NewS3Input struct {
+	Region               string
+	Profile              string
+	DirectoryBucketsMode bool
+}
+
+func NewS3(ctx context.Context, input NewS3Input) (*S3, error) {
+	config, err := loadAWSConfig(ctx, input.Region, input.Profile)
+	if err != nil {
+		return nil, err
+	}
+
 	retryable := func(err error) bool {
 		isRetryable :=
 			strings.Contains(err.Error(), "api error SlowDown") ||
@@ -71,11 +82,16 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)
 
+	client := s3.NewFromConfig(config, func(o *s3.Options) {
+		o.RetryMaxAttempts = SDKRetryMaxAttempts
+		o.RetryMode = aws.RetryModeStandard
+	})
+
 	return &S3{
 		client,
-		directoryBucketsMode,
+		input.DirectoryBucketsMode,
 		retryer,
-	}
+	}, nil
 }
 
 func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string) error {
@@ -90,7 +106,7 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 		}
 	}
 
-	_, err := s.client.DeleteBucket(ctx, input, optFn)
+	_, err := s.Client.DeleteBucket(ctx, input, optFn)
 	if err != nil {
 		return &ClientError{
 			ResourceName: bucketName,
@@ -141,7 +157,7 @@ func (s *S3) DeleteObjects(
 			}
 		}
 
-		output, err := s.client.DeleteObjects(ctx, input, optFn)
+		output, err := s.Client.DeleteObjects(ctx, input, optFn)
 		if err != nil {
 			return errors, &ClientError{
 				ResourceName: bucketName,
@@ -244,7 +260,7 @@ func (s *S3) listObjectVersionsByPage(
 		}
 	}
 
-	output, err := s.client.ListObjectVersions(ctx, input, optFn)
+	output, err := s.Client.ListObjectVersions(ctx, input, optFn)
 	if err != nil {
 		return nil, &ClientError{
 			ResourceName: bucketName,
@@ -297,7 +313,7 @@ func (s *S3) listObjectsByPage(
 		}
 	}
 
-	output, err := s.client.ListObjectsV2(ctx, input, optFn)
+	output, err := s.Client.ListObjectsV2(ctx, input, optFn)
 	if err != nil {
 		return nil, &ClientError{
 			ResourceName: bucketName,
@@ -355,7 +371,7 @@ func (s *S3) listBuckets(ctx context.Context) ([]types.Bucket, error) {
 			o.Retryer = s.retryer
 		}
 
-		output, err := s.client.ListBuckets(ctx, input, optFn)
+		output, err := s.Client.ListBuckets(ctx, input, optFn)
 		if err != nil {
 			return buckets, &ClientError{
 				Err: err,
@@ -394,7 +410,7 @@ func (s *S3) listDirectoryBuckets(ctx context.Context) ([]types.Bucket, error) {
 			o.Retryer = s.retryer
 		}
 
-		output, err := s.client.ListDirectoryBuckets(ctx, input, optFn)
+		output, err := s.Client.ListDirectoryBuckets(ctx, input, optFn)
 		if err != nil {
 			return buckets, &ClientError{
 				Err: err,
@@ -433,7 +449,7 @@ func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string,
 		o.Retryer = s.retryer
 	}
 
-	output, err := s.client.GetBucketLocation(ctx, input, optFn)
+	output, err := s.Client.GetBucketLocation(ctx, input, optFn)
 	if err != nil {
 		return "", &ClientError{
 			ResourceName: bucketName,

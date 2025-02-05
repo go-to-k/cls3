@@ -7,10 +7,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
+const SDKRetryMaxAttempts = 3
+
 // TODO: change to us-east-1 (and README and blogs)
 const DefaultAwsRegion = "ap-northeast-1"
 
-func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Config, error) {
+func loadAWSConfig(ctx context.Context, region string, profile string) (aws.Config, error) {
 	var (
 		cfg aws.Config
 		err error
