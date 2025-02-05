@@ -35,7 +35,7 @@ type IS3Tables interface {
 var _ IS3Tables = (*S3Tables)(nil)
 
 type S3Tables struct {
-	*s3tables.Client
+	client  *s3tables.Client
 	retryer *Retryer
 }
 
@@ -66,8 +66,8 @@ func NewS3Tables(ctx context.Context, input NewS3TablesInput) (*S3Tables, error)
 	})
 
 	return &S3Tables{
-		client,
-		retryer,
+		client:  client,
+		retryer: retryer,
 	}, nil
 }
 
@@ -80,7 +80,7 @@ func (s *S3Tables) DeleteTableBucket(ctx context.Context, tableBucketARN *string
 		o.Retryer = s.retryer
 	}
 
-	_, err := s.Client.DeleteTableBucket(ctx, input, optFn)
+	_, err := s.client.DeleteTableBucket(ctx, input, optFn)
 	if err != nil {
 		return &ClientError{
 			ResourceName: tableBucketARN,
@@ -100,7 +100,7 @@ func (s *S3Tables) DeleteNamespace(ctx context.Context, namespace *string, table
 		o.Retryer = s.retryer
 	}
 
-	_, err := s.Client.DeleteNamespace(ctx, input, optFn)
+	_, err := s.client.DeleteNamespace(ctx, input, optFn)
 	if err != nil {
 		return &ClientError{
 			ResourceName: aws.String(*tableBucketARN + "/" + *namespace),
@@ -121,7 +121,7 @@ func (s *S3Tables) DeleteTable(ctx context.Context, tableName *string, namespace
 		o.Retryer = s.retryer
 	}
 
-	_, err := s.Client.DeleteTable(ctx, input, optFn)
+	_, err := s.client.DeleteTable(ctx, input, optFn)
 	if err != nil {
 		return &ClientError{
 			ResourceName: aws.String(*tableBucketARN + "/" + *namespace + "/" + *tableName),
@@ -152,7 +152,7 @@ func (s *S3Tables) ListTableBuckets(ctx context.Context) ([]types.TableBucketSum
 			o.Retryer = s.retryer
 		}
 
-		output, err := s.Client.ListTableBuckets(ctx, input, optFn)
+		output, err := s.client.ListTableBuckets(ctx, input, optFn)
 		if err != nil {
 			return buckets, &ClientError{
 				Err: err,
@@ -187,7 +187,7 @@ func (s *S3Tables) ListNamespacesByPage(ctx context.Context, tableBucketARN *str
 		o.Retryer = s.retryer
 	}
 
-	output, err := s.Client.ListNamespaces(ctx, input, optFn)
+	output, err := s.client.ListNamespaces(ctx, input, optFn)
 	if err != nil {
 		return nil, &ClientError{
 			ResourceName: tableBucketARN,
@@ -216,7 +216,7 @@ func (s *S3Tables) ListTablesByPage(ctx context.Context, tableBucketARN *string,
 		o.Retryer = s.retryer
 	}
 
-	output, err := s.Client.ListTables(ctx, input, optFn)
+	output, err := s.client.ListTables(ctx, input, optFn)
 	if err != nil {
 		return nil, &ClientError{
 			ResourceName: aws.String(*tableBucketARN + "/" + *namespace),
