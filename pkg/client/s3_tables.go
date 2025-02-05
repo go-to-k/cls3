@@ -39,17 +39,7 @@ type S3Tables struct {
 	retryer *Retryer
 }
 
-type NewS3TablesInput struct {
-	Region  string
-	Profile string
-}
-
-func NewS3Tables(ctx context.Context, input NewS3TablesInput) (*S3Tables, error) {
-	config, err := loadAWSConfig(ctx, input.Region, input.Profile)
-	if err != nil {
-		return nil, err
-	}
-
+func NewS3Tables(client *s3tables.Client) *S3Tables {
 	retryable := func(err error) bool {
 		isRetryable :=
 			strings.Contains(err.Error(), "api error SlowDown") ||
@@ -60,15 +50,10 @@ func NewS3Tables(ctx context.Context, input NewS3TablesInput) (*S3Tables, error)
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3Tables)
 
-	client := s3tables.NewFromConfig(config, func(o *s3tables.Options) {
-		o.RetryMaxAttempts = SDKRetryMaxAttempts
-		o.RetryMode = aws.RetryModeStandard
-	})
-
 	return &S3Tables{
-		client:  client,
-		retryer: retryer,
-	}, nil
+		client,
+		retryer,
+	}
 }
 
 func (s *S3Tables) DeleteTableBucket(ctx context.Context, tableBucketARN *string) error {

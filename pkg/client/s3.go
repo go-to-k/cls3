@@ -57,18 +57,7 @@ type S3 struct {
 	retryer              *Retryer
 }
 
-type NewS3Input struct {
-	Region               string
-	Profile              string
-	DirectoryBucketsMode bool
-}
-
-func NewS3(ctx context.Context, input NewS3Input) (*S3, error) {
-	config, err := loadAWSConfig(ctx, input.Region, input.Profile)
-	if err != nil {
-		return nil, err
-	}
-
+func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 	retryable := func(err error) bool {
 		isRetryable :=
 			strings.Contains(err.Error(), "api error SlowDown") ||
@@ -82,16 +71,11 @@ func NewS3(ctx context.Context, input NewS3Input) (*S3, error) {
 	}
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)
 
-	client := s3.NewFromConfig(config, func(o *s3.Options) {
-		o.RetryMaxAttempts = SDKRetryMaxAttempts
-		o.RetryMode = aws.RetryModeStandard
-	})
-
 	return &S3{
-		client:               client,
-		directoryBucketsMode: input.DirectoryBucketsMode,
-		retryer:              retryer,
-	}, nil
+		client,
+		directoryBucketsMode,
+		retryer,
+	}
 }
 
 func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string) error {

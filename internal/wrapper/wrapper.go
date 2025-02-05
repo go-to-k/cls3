@@ -4,6 +4,9 @@ package wrapper
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/go-to-k/cls3/pkg/client"
 )
 
@@ -41,24 +44,24 @@ type CreateS3WrapperInput struct {
 }
 
 func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
-	if input.TableBucketsMode {
-		client, err := client.NewS3Tables(ctx, client.NewS3TablesInput{
-			Region:  input.Region,
-			Profile: input.Profile,
-		})
-		if err != nil {
-			return nil, err
-		}
-		return NewS3TablesWrapper(client), nil
-	}
-
-	client, err := client.NewS3(ctx, client.NewS3Input{
-		Region:               input.Region,
-		Profile:              input.Profile,
-		DirectoryBucketsMode: input.DirectoryBucketsMode,
-	})
+	config, err := client.LoadAWSConfig(ctx, input.Region, input.Profile)
 	if err != nil {
 		return nil, err
 	}
+
+	if input.TableBucketsMode {
+		sdkClient := s3tables.NewFromConfig(config, func(o *s3tables.Options) {
+			o.RetryMaxAttempts = SDKRetryMaxAttempts
+			o.RetryMode = aws.RetryModeStandard
+		})
+		client := client.NewS3Tables(sdkClient)
+		return NewS3TablesWrapper(client), nil
+	}
+
+	sdkClient := s3.NewFromConfig(config, func(o *s3.Options) {
+		o.RetryMaxAttempts = SDKRetryMaxAttempts
+		o.RetryMode = aws.RetryModeStandard
+	})
+	client := client.NewS3(sdkClient, input.DirectoryBucketsMode)
 	return NewS3Wrapper(client), nil
 }
