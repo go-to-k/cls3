@@ -50,18 +50,21 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 	}
 
 	if input.TableBucketsMode {
-		sdkClient := s3tables.NewFromConfig(config, func(o *s3tables.Options) {
-			o.RetryMaxAttempts = SDKRetryMaxAttempts
-			o.RetryMode = aws.RetryModeStandard
-		})
-		client := client.NewS3Tables(sdkClient)
+		client := client.NewS3Tables(
+			s3tables.NewFromConfig(config, func(o *s3tables.Options) {
+				o.RetryMaxAttempts = SDKRetryMaxAttempts
+				o.RetryMode = aws.RetryModeStandard
+			}),
+		)
 		return NewS3TablesWrapper(client), nil
 	}
 
-	sdkClient := s3.NewFromConfig(config, func(o *s3.Options) {
-		o.RetryMaxAttempts = SDKRetryMaxAttempts
-		o.RetryMode = aws.RetryModeStandard
-	})
-	client := client.NewS3(sdkClient, input.DirectoryBucketsMode)
+	client := client.NewS3(
+		s3.NewFromConfig(config, func(o *s3.Options) {
+			o.RetryMaxAttempts = SDKRetryMaxAttempts
+			o.RetryMode = aws.RetryModeStandard
+		}),
+		input.DirectoryBucketsMode,
+	)
 	return NewS3Wrapper(client), nil
 }
