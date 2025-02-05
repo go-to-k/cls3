@@ -3,6 +3,8 @@ package wrapper
 
 import (
 	"context"
+
+	"github.com/go-to-k/cls3/pkg/client"
 )
 
 const SDKRetryMaxAttempts = 3
@@ -40,17 +42,17 @@ type CreateS3WrapperInput struct {
 
 func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
 	if input.TableBucketsMode {
-		wrapper, err := NewS3TablesWrapper(ctx, S3TablesWrapperInput{
+		client, err := client.NewS3Tables(ctx, client.NewS3TablesInput{
 			Region:  input.Region,
 			Profile: input.Profile,
 		})
 		if err != nil {
 			return nil, err
 		}
-		return wrapper, nil
+		return NewS3TablesWrapper(client), nil
 	}
 
-	wrapper, err := NewS3Wrapper(ctx, S3WrapperInput{
+	client, err := client.NewS3(ctx, client.NewS3Input{
 		Region:               input.Region,
 		Profile:              input.Profile,
 		DirectoryBucketsMode: input.DirectoryBucketsMode,
@@ -58,5 +60,5 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 	if err != nil {
 		return nil, err
 	}
-	return wrapper, nil
+	return NewS3Wrapper(client), nil
 }
