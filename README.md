@@ -16,7 +16,7 @@ It <ins>empties</ins> (so deletes all objects and versions/delete-markers in) S3
 
 This tool allows you to **search for bucket names** and empty or delete **multiple buckets**.
 
-![cls3](https://github.com/user-attachments/assets/4f15e2a9-d1b5-4276-86f7-6b3c6f085047)
+![cls3](https://github.com/user-attachments/assets/b8c17ce6-527b-4056-a2f5-635a2c16d967)
 
 ## Features
 
