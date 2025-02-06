@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.25.1](https://github.com/go-to-k/cls3/compare/v0.25.0...v0.25.1) - 2025-02-06
+- docs: update gif in README by @go-to-k in https://github.com/go-to-k/cls3/pull/312
+- docs: change gif image in README by @go-to-k in https://github.com/go-to-k/cls3/pull/314
+- refactor: avoid making app module dependent on client module by @go-to-k in https://github.com/go-to-k/cls3/pull/317
+- chore(deps): bump github.com/aws/aws-sdk-go-v2/service/s3tables from 1.0.4 to 1.1.1 by @dependabot in https://github.com/go-to-k/cls3/pull/310
+- chore(deps): bump golang.org/x/sync from 0.10.0 to 0.11.0 by @dependabot in https://github.com/go-to-k/cls3/pull/315
+- chore(deps): bump github.com/stretchr/testify from 1.8.0 to 1.10.0 by @dependabot in https://github.com/go-to-k/cls3/pull/298
+
 ## [v0.25.0](https://github.com/go-to-k/cls3/compare/v0.24.2...v0.25.0) - 2025-02-03
 - test: create tables with schema in deploy_table.sh by @go-to-k in https://github.com/go-to-k/cls3/pull/307
 - feat(app): concurrent mode for parallel deletion of multiple buckets by @go-to-k in https://github.com/go-to-k/cls3/pull/288
