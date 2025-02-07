@@ -44,7 +44,9 @@ func NewS3Tables(client *s3tables.Client) *S3Tables {
 		isRetryable :=
 			strings.Contains(err.Error(), "api error SlowDown") ||
 				strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
-				strings.Contains(err.Error(), "StatusCode: 429")
+				strings.Contains(err.Error(), "StatusCode: 429") ||
+				// I haven't encountered this error yet, but I got this error on S3, so I'll add it here too, just in case.
+				strings.Contains(err.Error(), "Please try again")
 
 		return isRetryable
 	}
