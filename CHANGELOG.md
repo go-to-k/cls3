@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.25.2](https://github.com/go-to-k/cls3/compare/v0.25.1...v0.25.2) - 2025-02-07
+- fix: failed in ListObjectVersions with an error "Please try again" when so many buckets are specified by @go-to-k in https://github.com/go-to-k/cls3/pull/322
+
 ## [v0.25.1](https://github.com/go-to-k/cls3/compare/v0.25.0...v0.25.1) - 2025-02-06
 - docs: update gif in README by @go-to-k in https://github.com/go-to-k/cls3/pull/312
 - docs: change gif image in README by @go-to-k in https://github.com/go-to-k/cls3/pull/314
