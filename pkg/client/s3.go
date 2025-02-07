@@ -65,7 +65,9 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 				strings.Contains(err.Error(), "https response error StatusCode: 0") ||
 				// ex: ERR [resource par-cls-019] operation error S3: DeleteObjects, https response error StatusCode: 0, RequestID: , HostID: , request send failed, Post "https://par-cls-019.s3.us-east-1.amazonaws.com/?delete=": EOF
 				// but one condition above, it didn't catch on.
-				strings.Contains(err.Error(), "EOF")
+				strings.Contains(err.Error(), "EOF") ||
+				// ex: ERR [resource cls3-test-xxx] operation error S3: ListObjectVersions, https response error StatusCode: 500, RequestID: xxxxxx, HostID: xxxxxx=, api error InternalError: We encountered an internal error. Please try again.
+				strings.Contains(err.Error(), "Please try again")
 
 		return isRetryable
 	}
