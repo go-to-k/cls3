@@ -1,0 +1,26 @@
+linters-settings:
+  govet:
+    enable:
+      - shadow
+
+linters:
+  disable-all: true
+  enable:
+    - staticcheck
+    - gofmt
+    - govet
+    - gocritic
+    - unused
+    - errcheck
+    - gosimple
+    - typecheck
+    - misspell
+    - goimports
+    - gosec
+    - ineffassign
+    - unconvert
+    - unparam
+    - errname
+    - errorlint
+    - nilerr
+    - nilnil

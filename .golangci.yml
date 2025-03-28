@@ -1,26 +1,43 @@
-linters-settings:
-  govet:
-    enable:
-      - shadow
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    - staticcheck
-    - gofmt
-    - govet
-    - gocritic
-    - unused
     - errcheck
-    - gosimple
-    - typecheck
-    - misspell
-    - goimports
-    - gosec
-    - ineffassign
-    - unconvert
-    - unparam
     - errname
     - errorlint
+    - gocritic
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
     - nilerr
     - nilnil
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  settings:
+    govet:
+      enable:
+        - shadow
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
