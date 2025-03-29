@@ -21,6 +21,7 @@ func getTokenForListTableBucketsInitialize(
 ) (
 	out middleware.InitializeOutput, metadata middleware.Metadata, err error,
 ) {
+	//nolint:gocritic
 	switch v := in.Parameters.(type) {
 	case *s3tables.ListTableBucketsInput:
 		ctx = middleware.WithStackValue(ctx, tokenForListTableBuckets{}, v.ContinuationToken)
