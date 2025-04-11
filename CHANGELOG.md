@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.25.3](https://github.com/go-to-k/cls3/compare/v0.25.2...v0.25.3) - 2025-04-11
+- chore: migrate golangci to v2 by @go-to-k in https://github.com/go-to-k/cls3/pull/336
+- refactor(wrapper): improve object deletion speed  by @go-to-k in https://github.com/go-to-k/cls3/pull/342
+
 ## [v0.25.2](https://github.com/go-to-k/cls3/compare/v0.25.1...v0.25.2) - 2025-02-07
 - fix: failed in ListObjectVersions with an error "Please try again" when so many buckets are specified by @go-to-k in https://github.com/go-to-k/cls3/pull/322
 
