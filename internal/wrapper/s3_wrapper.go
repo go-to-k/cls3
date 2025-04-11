@@ -2,14 +2,28 @@ package wrapper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/pkg/client"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
+)
+
+const (
+	// S3 API can achieve at least 3,500 PUT/COPY/POST/DELETE or 5,500 GET/HEAD requests per second per partitioned prefix.
+	// Values above that threshold cause many 503 errors.
+	// So limit DeleteObjects to 3 parallels of 1000 objects at a time.
+	// https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
+	MaxS3DeleteObjectsParallelsCount = 3
+
+	// Maximum number of object batches that can be buffered in the deletion queue
+	MaxObjectsChannelBufferSize = MaxS3DeleteObjectsParallelsCount * 3
 )
 
 var _ IWrapper = (*S3Wrapper)(nil)
@@ -105,17 +119,39 @@ func (s *S3Wrapper) clearObjects(ctx context.Context, input ClearBucketInput, bu
 }
 
 func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input ClearBucketInput, bucketRegion string, state *objectDeletionState, attempt int) (bool, error) {
-	eg := errgroup.Group{}
 	var keyMarker *string
 	var versionIdMarker *string
+
+	objectsCh := make(chan []types.ObjectIdentifier, MaxObjectsChannelBufferSize)
+	sem := semaphore.NewWeighted(MaxS3DeleteObjectsParallelsCount)
+	eg := errgroup.Group{}
+	emptyOnFirstPage := false
+
+	eg.Go(func() error {
+		for objects := range objectsCh {
+			if len(objects) == 0 {
+				continue
+			}
+
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
+			eg.Go(func() error {
+				defer sem.Release(1)
+				return s.processObjectDeletion(ctx, input, bucketRegion, state, attempt, objects)
+			})
+		}
+		return nil
+	})
 
 	for {
 		select {
 		case <-ctx.Done():
-			return false, &client.ClientError{
-				ResourceName: aws.String(input.TargetBucket),
-				Err:          ctx.Err(),
+			close(objectsCh)
+			if egErr := eg.Wait(); egErr != nil {
+				return false, errors.Join(ctx.Err(), egErr)
 			}
+			return false, ctx.Err()
 		default:
 		}
 
@@ -130,14 +166,18 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 			versionIdMarker,
 		)
 		if err != nil {
+			close(objectsCh)
+			if egErr := eg.Wait(); egErr != nil {
+				return false, errors.Join(err, egErr)
+			}
 			return false, err
 		}
 
 		isFirstPage := keyMarker == nil && versionIdMarker == nil
 		if len(output.ObjectIdentifiers) == 0 {
-			// If no objects found in the first page of a new attempt, we're done
+			// If no objects on the first page, we're done
 			if isFirstPage {
-				return true, nil
+				emptyOnFirstPage = true
 			}
 			break
 		} else if isFirstPage && attempt > 0 {
@@ -146,42 +186,15 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 			io.Logger.Debug().Msgf("%s: Retry attempt %d", input.TargetBucket, attempt)
 		}
 
-		eg.Go(func() error {
-			// NOTE: This loop with the `attempt` variable is a retry process for the bug where DeleteObjects
-			// was executed but objects were not deleted.
-			// Therefore, it is not counted in the number of deletions if it is not the first attempt.
-			if attempt == 0 {
-				state.objectsCountMtx.Lock()
-				state.objectsCount += int64(len(output.ObjectIdentifiers))
-				if !input.QuietMode {
-					input.ClearingCountCh <- state.objectsCount
-				}
-				state.objectsCountMtx.Unlock()
+		select {
+		case <-ctx.Done():
+			close(objectsCh)
+			if egErr := eg.Wait(); egErr != nil {
+				return false, errors.Join(ctx.Err(), egErr)
 			}
-
-			// NOTE: One DeleteObjects is executed for each loop of the List, and it usually ends during
-			// the next loop. Therefore, there seems to be no throttling concern, so the number of
-			// parallels is not limited by semaphore. (Throttling occurs at about 3500 deletions
-			// per second.)
-			gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.TargetBucket), output.ObjectIdentifiers, bucketRegion)
-			if err != nil {
-				return err
-			}
-
-			if len(gotErrors) > 0 {
-				state.errorsMtx.Lock()
-				state.errorsCount += len(gotErrors)
-				for _, error := range gotErrors {
-					state.errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-					state.errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-					state.errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-					state.errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
-				}
-				state.errorsMtx.Unlock()
-			}
-
-			return nil
-		})
+			return false, ctx.Err()
+		case objectsCh <- output.ObjectIdentifiers:
+		}
 
 		keyMarker = output.NextKeyMarker
 		versionIdMarker = output.NextVersionIdMarker
@@ -191,11 +204,61 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 		}
 	}
 
+	close(objectsCh)
+
 	if err := eg.Wait(); err != nil {
 		return false, err
 	}
 
+	if emptyOnFirstPage {
+		return true, nil
+	}
+
 	return false, nil
+}
+
+func (s *S3Wrapper) processObjectDeletion(
+	ctx context.Context,
+	input ClearBucketInput,
+	bucketRegion string,
+	state *objectDeletionState,
+	attempt int,
+	objects []types.ObjectIdentifier,
+) error {
+	if len(objects) == 0 {
+		return nil
+	}
+
+	// NOTE: This loop with the `attempt` variable is a retry process for the bug where DeleteObjects
+	// was executed but objects were not deleted.
+	// Therefore, it is not counted in the number of deletions if it is not the first attempt.
+	if attempt == 0 {
+		state.objectsCountMtx.Lock()
+		state.objectsCount += int64(len(objects))
+		if !input.QuietMode {
+			input.ClearingCountCh <- state.objectsCount
+		}
+		state.objectsCountMtx.Unlock()
+	}
+
+	gotErrors, err := s.client.DeleteObjects(ctx, aws.String(input.TargetBucket), objects, bucketRegion)
+	if err != nil {
+		return err
+	}
+
+	if len(gotErrors) > 0 {
+		state.errorsMtx.Lock()
+		state.errorsCount += len(gotErrors)
+		for _, error := range gotErrors {
+			state.errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
+			state.errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
+			state.errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
+			state.errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+		}
+		state.errorsMtx.Unlock()
+	}
+
+	return nil
 }
 
 func (s *S3Wrapper) deleteBucket(ctx context.Context, bucket string, bucketRegion string, quietMode bool) error {
