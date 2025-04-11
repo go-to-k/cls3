@@ -15,11 +15,16 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-// S3 API can achieve at least 3,500 PUT/COPY/POST/DELETE or 5,500 GET/HEAD requests per second per partitioned prefix.
-// Values above that threshold cause many 503 errors.
-// So limit DeleteObjects to 3 parallels of 1000 objects at a time.
-// https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
-const MaxS3DeleteObjectsParallelsCount = 3
+const (
+	// S3 API can achieve at least 3,500 PUT/COPY/POST/DELETE or 5,500 GET/HEAD requests per second per partitioned prefix.
+	// Values above that threshold cause many 503 errors.
+	// So limit DeleteObjects to 3 parallels of 1000 objects at a time.
+	// https://docs.aws.amazon.com/AmazonS3/latest/userguide/optimizing-performance.html
+	MaxS3DeleteObjectsParallelsCount = 3
+
+	// Maximum number of object batches that can be buffered in the deletion queue
+	MaxObjectsChannelBufferSize = MaxS3DeleteObjectsParallelsCount * 3
+)
 
 var _ IWrapper = (*S3Wrapper)(nil)
 
@@ -117,7 +122,7 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 	var keyMarker *string
 	var versionIdMarker *string
 
-	objectsCh := make(chan []types.ObjectIdentifier, MaxS3DeleteObjectsParallelsCount)
+	objectsCh := make(chan []types.ObjectIdentifier, MaxObjectsChannelBufferSize)
 	sem := semaphore.NewWeighted(MaxS3DeleteObjectsParallelsCount)
 	eg := errgroup.Group{}
 	emptyOnFirstPage := false
