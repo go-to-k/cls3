@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -60,7 +60,7 @@ func main() {
 		iterations = 1
 	}
 
-	randomSuffix := rand.Intn(65536) // $RANDOM is 0-32767, but we can use a bigger range
+	randomSuffix := rand.Intn(65536)
 	paddedStart := fmt.Sprintf("%04d", 1)
 	paddedEnd := fmt.Sprintf("%04d", numBuckets)
 	fmt.Printf("=== buckets: %s-%d-[%s-%s] ===\n", bucketPrefix, randomSuffix, paddedStart, paddedEnd)
@@ -131,58 +131,38 @@ func main() {
 				return
 			}
 
-			dir := filepath.Join("./testfiles", bucketName)
-			err = os.MkdirAll(dir, 0755)
-			if err != nil {
-				log.Error().Err(err).Str("dir", dir).Msg("Failed to create directory")
-				return
-			}
-
 			// Generate approximately objectsPerBucket versions
 			// NOTE: For 1,000,000 versions per bucket, it'll cost you about $3.75 (0.005 USD / 1000 PUT)(DELETE operation is free)
 			// NOTE: 1,000,000 versions = 250,000 objects × 4 versions (3 PUT operations and 1 DELETE operation per object)
 			for i := 1; i <= iterations; i++ {
-				// Create test files
-				for j := 1; j <= 100; j++ {
-					fileName := fmt.Sprintf("%d_%d_%d.txt", i, j, rand.Intn(65536))
-					filePath := filepath.Join(dir, fileName)
-					file, createErr := os.Create(filePath)
-					if createErr != nil {
-						log.Error().Err(createErr).Str("file", filePath).Msg("Failed to create file")
-						continue
-					}
-					file.Close()
+				// Calculate how many objects to create in this iteration
+				numObjects := 100
+				if i == iterations && objectsPerBucket%(4*100) != 0 {
+					numObjects = (objectsPerBucket % (4 * 100)) / 4
 				}
 
-				// Upload files 3 times to create versions
+				// Upload and delete files in batches directly
 				var versionWg sync.WaitGroup
+
+				// Generate stable object keys for this iteration
+				objectKeys := make([]string, numObjects)
+				for j := 0; j < numObjects; j++ {
+					// Create stable object keys that will be used for all versions
+					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
+				}
+
+				// Create 3 versions per object
 				for v := 0; v < 3; v++ {
 					versionWg.Add(1)
-					go func() {
+					go func(versionNum int) {
 						defer versionWg.Done()
-
-						// Collect all files in directory first
-						files := []string{}
-						walkErr := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-							if err != nil {
-								return err
-							}
-							if !info.IsDir() {
-								files = append(files, path)
-							}
-							return nil
-						})
-						if walkErr != nil {
-							log.Error().Err(walkErr).Msg("Failed to collect files for upload")
-							return
-						}
 
 						// Create a worker pool for uploads (max 20 concurrent uploads)
 						var uploadWg sync.WaitGroup
 						uploadSem := semaphore.NewWeighted(20)
 
-						// Process each file in parallel
-						for _, filePath := range files {
+						// Process each upload in parallel
+						for j := 0; j < numObjects; j++ {
 							uploadWg.Add(1)
 
 							// Acquire upload semaphore with weight 1
@@ -192,22 +172,12 @@ func main() {
 								continue
 							}
 
-							go func(path string) {
+							go func(objectIndex int) {
 								defer uploadWg.Done()
 								defer uploadSem.Release(1) // Release semaphore when done
 
-								relPath, relErr := filepath.Rel(dir, path)
-								if relErr != nil {
-									log.Error().Err(relErr).Str("file", path).Msg("Failed to get relative path")
-									return
-								}
-
-								file, relErr := os.Open(path)
-								if relErr != nil {
-									log.Error().Err(relErr).Str("file", path).Msg("Failed to open file")
-									return
-								}
-								defer file.Close()
+								// Use the stable object key
+								objectKey := objectKeys[objectIndex]
 
 								// Execute PutObject with retry configuration
 								optFn := func(o *s3.Options) {
@@ -216,92 +186,61 @@ func main() {
 
 								_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
 									Bucket: aws.String(lowerBucketName),
-									Key:    aws.String(relPath),
-									Body:   file,
+									Key:    aws.String(objectKey),
+									Body:   strings.NewReader(""),
 								}, optFn)
 								if err != nil {
-									log.Error().Err(err).Str("file", path).Msg("Failed to upload file")
+									log.Error().Err(err).Str("object", objectKey).Msg("Failed to upload object")
 								}
-							}(filePath)
+							}(j)
 						}
 
 						// Wait for all uploads to complete
 						uploadWg.Wait()
-					}()
+					}(v)
 				}
 				versionWg.Wait()
 
-				// Delete all objects (create delete markers)
-				files := []string{}
-				err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-					if err != nil {
-						return err
-					}
-					if !info.IsDir() {
-						files = append(files, path)
-					}
-					return nil
-				})
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to collect files for deletion")
-				} else {
-					// Create a worker pool for deletions (max 20 concurrent deletions)
-					var deleteWg sync.WaitGroup
-					deleteSem := semaphore.NewWeighted(20)
+				// Delete objects to create delete markers
+				var deleteWg sync.WaitGroup
+				deleteSem := semaphore.NewWeighted(20)
 
-					// Process each deletion in parallel
-					for _, filePath := range files {
-						deleteWg.Add(1)
+				// Process each deletion in parallel
+				for j := 0; j < numObjects; j++ {
+					deleteWg.Add(1)
 
-						// Acquire delete semaphore with weight 1
-						if err := deleteSem.Acquire(ctx, 1); err != nil {
-							log.Error().Err(err).Msg("Failed to acquire delete semaphore")
-							deleteWg.Done()
-							continue
+					// Acquire delete semaphore with weight 1
+					if semErr := deleteSem.Acquire(ctx, 1); semErr != nil {
+						log.Error().Err(semErr).Msg("Failed to acquire delete semaphore")
+						deleteWg.Done()
+						continue
+					}
+
+					go func(objectIndex int) {
+						defer deleteWg.Done()
+						defer deleteSem.Release(1) // Release semaphore when done
+
+						// Use the same stable object key
+						objectKey := objectKeys[objectIndex]
+
+						// Execute DeleteObject with retry configuration
+						optFn := func(o *s3.Options) {
+							o.Retryer = retryer
 						}
 
-						go func(path string) {
-							defer deleteWg.Done()
-							defer deleteSem.Release(1) // Release semaphore when done
-
-							relPath, err := filepath.Rel(dir, path)
-							if err != nil {
-								log.Error().Err(err).Str("file", path).Msg("Failed to get relative path for deletion")
-								return
-							}
-
-							// Execute DeleteObject with retry configuration
-							optFn := func(o *s3.Options) {
-								o.Retryer = retryer
-							}
-
-							_, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
-								Bucket: aws.String(lowerBucketName),
-								Key:    aws.String(relPath),
-							}, optFn)
-							if err != nil {
-								log.Error().Err(err).Str("file", relPath).Msg("Failed to delete object")
-							}
-						}(filePath)
-					}
-
-					// Wait for all deletions to complete
-					deleteWg.Wait()
+						_, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+							Bucket: aws.String(lowerBucketName),
+							Key:    aws.String(objectKey),
+						}, optFn)
+						if err != nil {
+							log.Error().Err(err).Str("object", objectKey).Msg("Failed to delete object")
+						}
+					}(j)
 				}
 
-				// Clean up local files
-				files, err := filepath.Glob(filepath.Join(dir, "*.txt"))
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to glob files")
-				} else {
-					for _, file := range files {
-						os.Remove(file)
-					}
-				}
+				// Wait for all deletions to complete
+				deleteWg.Wait()
 			}
-
-			// Clean up the directory when done
-			os.RemoveAll(dir)
 		}(bucketNum)
 	}
 
