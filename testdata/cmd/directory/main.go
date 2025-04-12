@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/go-to-k/cls3/testdata/pkg/retryer"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 )
@@ -67,7 +68,7 @@ func main() {
 		iterations = 1
 	}
 
-	randomSuffix := rand.Intn(65536) // $RANDOM is 0-32767, but we can use a bigger range
+	randomSuffix := rand.Intn(65536)
 	paddedStart := fmt.Sprintf("%02d", 1)
 	paddedEnd := fmt.Sprintf("%02d", numBuckets)
 	fmt.Printf("=== buckets: %s-%d-[%s-%s]--%s--x-s3 ===\n", bucketPrefix, randomSuffix, paddedStart, paddedEnd, azID)
@@ -90,7 +91,9 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load AWS config")
 	}
 
+	// Create S3 client and apply retry configuration
 	s3Client := s3.NewFromConfig(cfg)
+	retryer := retryer.CreateS3Retryer()
 
 	var wg sync.WaitGroup
 	// Limit to 10 concurrent bucket processes
@@ -147,98 +150,67 @@ func main() {
 				}
 			}
 
-			dir := filepath.Join("./testfiles", lowerBucketName)
-			err = os.MkdirAll(dir, 0755)
-			if err != nil {
-				log.Error().Err(err).Str("dir", dir).Msg("Failed to create directory")
-				return
-			}
-
 			// Generate approximately objectsPerBucket objects on S3 Express One Zone
 			// NOTE: It'll cost you $2.5 (S3 Express One Zone: 0.0025 USD / 1000 PUT)
 			// NOTE: You can create up to 10 directory buckets in each of your AWS accounts
-			// FIXME: Errors often occur when uploading files to S3 Express One Zone
-			// Retrying fixes it, but it may happen again with another file
 			for i := 1; i <= iterations; i++ {
-				// Create test files
-				for j := 1; j <= 1000; j++ {
-					fileName := fmt.Sprintf("%d_%d_%d.txt", i, j, rand.Intn(65536))
-					filePath := filepath.Join(dir, fileName)
-					file, createErr := os.Create(filePath)
-					if createErr != nil {
-						log.Error().Err(createErr).Str("file", filePath).Msg("Failed to create file")
-						continue
-					}
-					file.Close()
+				numObjectsThisIteration := 1000
+				if i == iterations && objectsPerBucket%1000 != 0 {
+					numObjectsThisIteration = objectsPerBucket % 1000
 				}
-
-				// Upload files - the original script notes that uploads may fail randomly
-				// so we ignore errors here similar to the shell script using 'set +e'
-				files := []string{}
-				err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-					if err != nil {
-						return nil // Continue despite error, mimicking set +e
-					}
-					if !info.IsDir() {
-						files = append(files, path)
-					}
-					return nil
-				})
 
 				// Create a worker pool for uploads (max 20 concurrent uploads)
 				uploadSem := semaphore.NewWeighted(20)
 				var uploadWg sync.WaitGroup
 
-				for _, path := range files {
+				// Generate object keys for this iteration
+				objectKeys := make([]string, numObjectsThisIteration)
+				for j := 0; j < numObjectsThisIteration; j++ {
+					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
+				}
+
+				// Process each upload in parallel
+				for j := 0; j < numObjectsThisIteration; j++ {
 					uploadWg.Add(1)
 
 					// Acquire upload semaphore with weight 1
-					if err := uploadSem.Acquire(ctx, 1); err != nil {
-						log.Error().Err(err).Msg("Failed to acquire upload semaphore")
+					if semErr := uploadSem.Acquire(ctx, 1); semErr != nil {
+						log.Error().Err(semErr).Msg("Failed to acquire upload semaphore")
 						uploadWg.Done()
 						continue
 					}
 
-					go func(filePath string) {
+					go func(objectIndex int) {
 						defer uploadWg.Done()
 						defer uploadSem.Release(1) // Release semaphore when done
 
-						relPath, err := filepath.Rel(dir, filePath)
-						if err != nil {
-							return // Continue despite error
+						objectKey := objectKeys[objectIndex]
+
+						// Create a small in-memory file content
+						content := fmt.Sprintf("Test object %d-%d", i, objectIndex)
+
+						// Execute PutObject with retry configuration
+						optFn := func(o *s3.Options) {
+							o.Retryer = retryer
 						}
 
-						file, err := os.Open(filePath)
-						if err != nil {
-							return // Continue despite error
-						}
-						defer file.Close()
-
-						_, _ = s3Client.PutObject(ctx, &s3.PutObjectInput{
+						_, err := s3Client.PutObject(ctx, &s3.PutObjectInput{
 							Bucket: aws.String(lowerBucketName),
-							Key:    aws.String(relPath),
-							Body:   file,
-						})
-						// Ignore errors here as per the shell script (set +e)
-					}(path)
+							Key:    aws.String(objectKey),
+							Body:   strings.NewReader(content),
+						}, optFn)
+
+						// FIXME: Errors often occur when uploading files to S3 Express One Zone
+						// The error can be ignored as mentioned in the original script
+						if err != nil {
+							log.Error().Err(err).Str("object", objectKey).Msg("Failed to upload object")
+						}
+					}(j)
 				}
 
 				// Wait for all uploads to complete
 				uploadWg.Wait()
-
-				// Clean up local files
-				files, err := filepath.Glob(filepath.Join(dir, "*.txt"))
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to glob files")
-				} else {
-					for _, file := range files {
-						os.Remove(file)
-					}
-				}
 			}
-
-			// Clean up the directory when done
-			os.RemoveAll(dir)
 		}(bucketNum)
 	}
 
@@ -260,11 +232,11 @@ func showHelp() {
 	fmt.Println("")
 	fmt.Println("Examples:")
 	fmt.Println("  Create 2 directory buckets with 500 objects each:")
-	fmt.Println("    go run testdata/cmd/directory/main.go -n 2 -o 500")
+	fmt.Println("    go run testdata/cmd/directory/main.go -b my-bucket -n 2 -o 500")
 	fmt.Println("")
 	fmt.Println("  Using a specific AWS profile:")
-	fmt.Println("    go run testdata/cmd/directory/main.go -p my-profile")
+	fmt.Println("    go run testdata/cmd/directory/main.go -p my-profile -b my-bucket")
 	fmt.Println("")
 	fmt.Println("  Or using Make:")
-	fmt.Println("    make testgen_directory OPT=\"-n 2 -o 500\"")
+	fmt.Println("    make testgen_directory OPT=\"-b my-bucket -n 2 -o 500\"")
 }
