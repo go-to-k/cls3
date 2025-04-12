@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -104,14 +105,12 @@ func main() {
 	paddedEnd := fmt.Sprintf("%02d", numBuckets)
 	fmt.Printf("=== buckets: %s-%d-[%s-%s] ===\n", bucketPrefix, randomSuffix, paddedStart, paddedEnd)
 
-	// NOTE: S3 Tables API has throttling limits
+	// NOTE: S3 Tables API has low throttling limits
 	// Processing buckets sequentially, but tables are processed in batches of 10 concurrent processes
-	// This matches the original shell script implementation
-
 	for bucketNum := 1; bucketNum <= numBuckets; bucketNum++ {
 		paddedNum := fmt.Sprintf("%02d", bucketNum)
 		bucketName := fmt.Sprintf("%s-%d-%s", bucketPrefix, randomSuffix, paddedNum)
-		lowerBucketName := bucketName // In Go, we're not applying .toLowerCase() - assuming bucket names are case-sensitive in AWS
+		lowerBucketName := strings.ToLower(bucketName)
 
 		// Check if bucket exists
 		listBucketsOutput, err := s3TablesClient.ListTableBuckets(ctx, &s3tables.ListTableBucketsInput{})

@@ -102,7 +102,7 @@ func main() {
 
 			paddedNum := fmt.Sprintf("%04d", bucketNum)
 			bucketName := fmt.Sprintf("%s-%d-%s", bucketPrefix, randomSuffix, paddedNum)
-			lowerBucketName := bucketName // Buckets are always lowercase in S3
+			lowerBucketName := strings.ToLower(bucketName)
 
 			// Check if bucket exists
 			_, err := s3Client.HeadBucket(ctx, &s3.HeadBucketInput{

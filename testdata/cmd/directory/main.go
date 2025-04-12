@@ -115,7 +115,7 @@ func main() {
 			paddedNum := fmt.Sprintf("%02d", bucketNum)
 			bucketName := fmt.Sprintf("%s-%d-%s", bucketPrefix, randomSuffix, paddedNum)
 			// naming for S3 Express One Zone (using az 4 in us-east-1)
-			lowerBucketName := fmt.Sprintf("%s--%s--x-s3", bucketName, azID)
+			lowerBucketName := strings.ToLower(fmt.Sprintf("%s--%s--x-s3", bucketName, azID))
 
 			// Check if bucket exists and create if it doesn't
 			listInput := &s3.ListDirectoryBucketsInput{}
