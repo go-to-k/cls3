@@ -40,18 +40,21 @@ make testgen_help
 ### Command Options
 
 #### Standard S3 Bucket
+
 - `-p` - AWS profile name (optional)
 - `-b` - Bucket name prefix (required)
 - `-n` - Number of buckets to create (default: 10)
 - `-o` - Number of objects per bucket (default: 10000)
 
 #### S3 Express One Zone (Directory Bucket)
+
 - `-p` - AWS profile name (optional)
 - `-b` - Bucket name prefix (required)
 - `-n` - Number of buckets to create (default: 10, max: 100)
 - `-o` - Number of objects per bucket (default: 10000)
 
 #### S3 Table
+
 - `-p` - AWS profile name (optional)
 - `-b` - Bucket name prefix (required)
 - `-n` - Number of buckets to create (default: 1, max: 10)
