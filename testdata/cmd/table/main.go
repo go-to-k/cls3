@@ -99,7 +99,7 @@ func main() {
 	}
 	accountID := *identity.Account
 
-	randomSuffix := rand.Intn(65536) // $RANDOM is 0-32767, but we can use a bigger range
+	randomSuffix := rand.Intn(65536)
 	paddedStart := fmt.Sprintf("%02d", 1)
 	paddedEnd := fmt.Sprintf("%02d", numBuckets)
 	fmt.Printf("=== buckets: %s-%d-[%s-%s] ===\n", bucketPrefix, randomSuffix, paddedStart, paddedEnd)
