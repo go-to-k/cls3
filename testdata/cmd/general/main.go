@@ -138,7 +138,22 @@ func main() {
 				// Calculate how many objects to create in this iteration
 				numObjects := 100
 				if i == iterations && objectsPerBucket%(4*100) != 0 {
+					// Handle the remainder when the version count doesn't divide evenly
+					// Example: 1000 versions ÷ 4 = 250 objects
+					// Processing 400 (100 objects × 4) at a time,
+					// in the last iteration: 1000 % 400 = 200 versions = 50 objects
 					numObjects = (objectsPerBucket % (4 * 100)) / 4
+
+					// Verify that the total object count matches the expected count
+					totalObjects := (iterations-1)*100 + numObjects
+					expectedObjects := objectsPerBucket / 4
+					if totalObjects != expectedObjects {
+						// Apply correction here (to handle integer division truncation)
+						remainder := expectedObjects - totalObjects
+						if remainder > 0 {
+							numObjects += remainder
+						}
+					}
 				}
 
 				// Upload and delete files in batches directly
