@@ -146,13 +146,13 @@ func main() {
 
 				// Generate stable object keys for this iteration
 				objectKeys := make([]string, numObjects)
-				for j := 0; j < numObjects; j++ {
+				for j := range numObjects {
 					// Create stable object keys that will be used for all versions
 					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
 				}
 
 				// Create 3 versions per object
-				for v := 0; v < 3; v++ {
+				for range 3 {
 					versionWg.Add(1)
 					go func() {
 						defer versionWg.Done()
@@ -162,7 +162,7 @@ func main() {
 						uploadSem := semaphore.NewWeighted(20)
 
 						// Process each upload in parallel
-						for j := 0; j < numObjects; j++ {
+						for j := range numObjects {
 							uploadWg.Add(1)
 
 							// Acquire upload semaphore with weight 1
@@ -206,7 +206,7 @@ func main() {
 				deleteSem := semaphore.NewWeighted(20)
 
 				// Process each deletion in parallel
-				for j := 0; j < numObjects; j++ {
+				for j := range numObjects {
 					deleteWg.Add(1)
 
 					// Acquire delete semaphore with weight 1

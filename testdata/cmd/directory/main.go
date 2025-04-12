@@ -175,7 +175,7 @@ func main() {
 				objectKeys := make([]string, numObjectsThisIteration)
 
 				// Process each upload in parallel
-				for j := 0; j < numObjectsThisIteration; j++ {
+				for j := range numObjectsThisIteration {
 					// Generate object keys for this iteration
 					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
 
