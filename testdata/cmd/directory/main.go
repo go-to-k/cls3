@@ -186,9 +186,6 @@ func main() {
 
 						objectKey := objectKeys[objectIndex]
 
-						// Create a small in-memory file content
-						content := fmt.Sprintf("Test object %d-%d", i, objectIndex)
-
 						// Execute PutObject with retry configuration
 						optFn := func(o *s3.Options) {
 							o.Retryer = retryer
@@ -197,7 +194,7 @@ func main() {
 						_, err := s3Client.PutObject(ctx, &s3.PutObjectInput{
 							Bucket: aws.String(lowerBucketName),
 							Key:    aws.String(objectKey),
-							Body:   strings.NewReader(content),
+							Body:   strings.NewReader(""),
 						}, optFn)
 
 						// FIXME: Errors often occur when uploading files to S3 Express One Zone
