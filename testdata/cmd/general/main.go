@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/go-to-k/cls3/testdata/pkg/retryer"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 )
@@ -78,7 +79,9 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load AWS config")
 	}
 
+	// Create S3 client and apply retry configuration
 	s3Client := s3.NewFromConfig(cfg)
+	retryer := retryer.CreateS3Retryer()
 
 	var wg sync.WaitGroup
 	// Limit to 10 concurrent bucket processes
@@ -206,13 +209,18 @@ func main() {
 								}
 								defer file.Close()
 
-								_, relErr = s3Client.PutObject(ctx, &s3.PutObjectInput{
+								// Execute PutObject with retry configuration
+								optFn := func(o *s3.Options) {
+									o.Retryer = retryer
+								}
+
+								_, err = s3Client.PutObject(ctx, &s3.PutObjectInput{
 									Bucket: aws.String(lowerBucketName),
 									Key:    aws.String(relPath),
 									Body:   file,
-								})
-								if relErr != nil {
-									log.Error().Err(relErr).Str("file", path).Msg("Failed to upload file")
+								}, optFn)
+								if err != nil {
+									log.Error().Err(err).Str("file", path).Msg("Failed to upload file")
 								}
 							}(filePath)
 						}
@@ -262,10 +270,15 @@ func main() {
 								return
 							}
 
+							// Execute DeleteObject with retry configuration
+							optFn := func(o *s3.Options) {
+								o.Retryer = retryer
+							}
+
 							_, err = s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 								Bucket: aws.String(lowerBucketName),
 								Key:    aws.String(relPath),
-							})
+							}, optFn)
 							if err != nil {
 								log.Error().Err(err).Str("file", relPath).Msg("Failed to delete object")
 							}
