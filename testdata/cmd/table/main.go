@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/go-to-k/cls3/testdata/pkg/retryer"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/semaphore"
 )
@@ -90,7 +91,11 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load AWS config")
 	}
 
+	// Create S3 Tables client and apply retry configuration
 	s3TablesClient := s3tables.NewFromConfig(cfg)
+	s3Retryer := retryer.CreateS3Retryer()
+
+	// Configure STS client
 	stsClient := sts.NewFromConfig(cfg)
 
 	// Get AWS account ID
@@ -113,7 +118,10 @@ func main() {
 		lowerBucketName := strings.ToLower(bucketName)
 
 		// Check if bucket exists
-		listBucketsOutput, err := s3TablesClient.ListTableBuckets(ctx, &s3tables.ListTableBucketsInput{})
+		listBucketsOptFn := func(o *s3tables.Options) {
+			o.Retryer = s3Retryer
+		}
+		listBucketsOutput, err := s3TablesClient.ListTableBuckets(ctx, &s3tables.ListTableBucketsInput{}, listBucketsOptFn)
 		bucketExists := false
 		if err == nil {
 			for _, bucket := range listBucketsOutput.TableBuckets {
@@ -125,9 +133,12 @@ func main() {
 		}
 
 		if !bucketExists {
+			createBucketOptFn := func(o *s3tables.Options) {
+				o.Retryer = s3Retryer
+			}
 			_, err = s3TablesClient.CreateTableBucket(ctx, &s3tables.CreateTableBucketInput{
 				Name: aws.String(lowerBucketName),
-			})
+			}, createBucketOptFn)
 			if err != nil {
 				log.Error().Err(err).Str("bucket", lowerBucketName).Msg("Failed to create table bucket")
 				continue
@@ -141,10 +152,14 @@ func main() {
 		// NOTE: Up to 10,000 tables can be created in total per bucket
 		for i := 1; i <= namespacesPerTable; i++ {
 			namespaceName := fmt.Sprintf("my_namespace_%d", i)
+
+			createNamespaceOptFn := func(o *s3tables.Options) {
+				o.Retryer = s3Retryer
+			}
 			_, err = s3TablesClient.CreateNamespace(ctx, &s3tables.CreateNamespaceInput{
 				TableBucketARN: aws.String(tableBucketArn),
 				Namespace:      []string{namespaceName},
-			})
+			}, createNamespaceOptFn)
 			if err != nil {
 				log.Error().Err(err).Str("namespace", namespaceName).Msg("Failed to create namespace")
 				continue
@@ -189,13 +204,18 @@ func main() {
 						Value: *icebergMetadata,
 					}
 
+					// Execute CreateTable with retry configuration
+					optFn := func(o *s3tables.Options) {
+						o.Retryer = s3Retryer
+					}
+
 					_, err = s3TablesClient.CreateTable(ctx, &s3tables.CreateTableInput{
 						TableBucketARN: aws.String(tableBucketArn),
 						Namespace:      aws.String(namespaceName),
 						Name:           aws.String(tableName),
 						Metadata:       tableMetadata,
 						Format:         types.OpenTableFormatIceberg,
-					})
+					}, optFn)
 					if err != nil {
 						log.Error().Err(err).Str("table", tableName).Msg("Failed to create table")
 					}

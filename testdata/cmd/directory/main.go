@@ -119,7 +119,12 @@ func main() {
 
 			// Check if bucket exists and create if it doesn't
 			listInput := &s3.ListDirectoryBucketsInput{}
-			_, err := s3Client.ListDirectoryBuckets(ctx, listInput)
+
+			listDirBucketsOptFn := func(o *s3.Options) {
+				o.Retryer = retryer
+			}
+
+			_, err := s3Client.ListDirectoryBuckets(ctx, listInput, listDirBucketsOptFn)
 			bucketExists := false
 			if err == nil {
 				// Note: This is simplified. In real code, we'd check if the bucket is in the response
@@ -143,7 +148,11 @@ func main() {
 					},
 				}
 
-				_, err = s3Client.CreateBucket(ctx, createBucketInput)
+				createBucketOptFn := func(o *s3.Options) {
+					o.Retryer = retryer
+				}
+
+				_, err = s3Client.CreateBucket(ctx, createBucketInput, createBucketOptFn)
 				if err != nil {
 					log.Error().Err(err).Str("bucket", lowerBucketName).Msg("Failed to create directory bucket")
 					return
