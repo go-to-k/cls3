@@ -9,6 +9,8 @@
         "Unshallow",
         "unshallow",
         "gomod",
+        "gomock",
+        "testgen",
     ],
     "gopls": {
         "analyses": {
