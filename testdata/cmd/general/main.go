@@ -154,7 +154,7 @@ func main() {
 				// Create 3 versions per object
 				for v := 0; v < 3; v++ {
 					versionWg.Add(1)
-					go func(versionNum int) {
+					go func() {
 						defer versionWg.Done()
 
 						// Create a worker pool for uploads (max 20 concurrent uploads)
@@ -197,7 +197,7 @@ func main() {
 
 						// Wait for all uploads to complete
 						uploadWg.Wait()
-					}(v)
+					}()
 				}
 				versionWg.Wait()
 

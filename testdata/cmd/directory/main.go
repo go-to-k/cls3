@@ -172,14 +172,13 @@ func main() {
 				uploadSem := semaphore.NewWeighted(20)
 				var uploadWg sync.WaitGroup
 
-				// Generate object keys for this iteration
 				objectKeys := make([]string, numObjectsThisIteration)
-				for j := 0; j < numObjectsThisIteration; j++ {
-					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
-				}
 
 				// Process each upload in parallel
 				for j := 0; j < numObjectsThisIteration; j++ {
+					// Generate object keys for this iteration
+					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
+
 					uploadWg.Add(1)
 
 					// Acquire upload semaphore with weight 1
