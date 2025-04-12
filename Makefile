@@ -62,17 +62,17 @@ clean:
 # Run standard S3 bucket test data generator
 testgen_general:
 	@echo "Running standard S3 bucket test data generator..."
-	@cd testdata && go mod tidy && cd .. && go run testdata/cmd/general/main.go $(OPT)
+	@cd testdata && go mod tidy && go run cmd/general/main.go $(OPT)
 
 # Run S3 Express One Zone directory bucket test data generator
 testgen_directory:
 	@echo "Running S3 Express One Zone directory bucket test data generator..."
-	@cd testdata && go mod tidy && cd .. && go run testdata/cmd/directory/main.go $(OPT)
+	@cd testdata && go mod tidy && go run cmd/directory/main.go $(OPT)
 
 # Run S3 table test data generator
 testgen_table:
 	@echo "Running S3 table test data generator..."
-	@cd testdata && go mod tidy && cd .. && go run testdata/cmd/table/main.go $(OPT)
+	@cd testdata && go mod tidy && go run cmd/table/main.go $(OPT)
 
 # Clean test files
 testgen_clean:
