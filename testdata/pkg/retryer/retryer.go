@@ -75,5 +75,5 @@ func CreateS3Retryer() *Retryer {
 		return isRetryable
 	}
 
-	return NewRetryer(retryable, 10, 10) // 10 second delay, maximum 10 retries
+	return NewRetryer(retryable, 20, 20) // 20 second delay, maximum 20 retries
 }
