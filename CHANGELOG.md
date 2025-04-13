@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.25.4](https://github.com/go-to-k/cls3/compare/v0.25.3...v0.25.4) - 2025-04-13
+- test: create deploy scripts for tests with golang instead of shell by @go-to-k in https://github.com/go-to-k/cls3/pull/345
+- test: increase number of retries and waiting time in test script by @go-to-k in https://github.com/go-to-k/cls3/pull/347
+- revert: "refactor(wrapper): improve object deletion speed  (#342)" by @go-to-k in https://github.com/go-to-k/cls3/pull/348
+
 ## [v0.25.3](https://github.com/go-to-k/cls3/compare/v0.25.2...v0.25.3) - 2025-04-11
 - chore: migrate golangci to v2 by @go-to-k in https://github.com/go-to-k/cls3/pull/336
 - refactor(wrapper): improve object deletion speed  by @go-to-k in https://github.com/go-to-k/cls3/pull/342
