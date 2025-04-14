@@ -40,6 +40,10 @@ inputs:
     description: "Specify the number of parallel deletions (requires concurrent-mode to be true)"
     default: ""
     required: false
+  key-prefix:
+    description: "Key prefix of the objects to be deleted. Multiple prefixes are allowed with a comma."
+    default: ""
+    required: false
 runs:
   using: "composite"
   steps:
@@ -89,9 +93,13 @@ runs:
           if [ -n "${{ inputs.concurrency-number }}" ]; then
             concurrency_number="-n ${{ inputs.concurrency-number }}"
           fi
+          key_prefix=""
+          for prefix in $(echo ${{ inputs.key-prefix }} | tr ',' ' '); do
+            key_prefix="${key_prefix}-k ${prefix} "
+          done
           region=""
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"
           fi
-          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $concurrent_mode $concurrency_number $region
+          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $concurrent_mode $concurrency_number $key_prefix $region
         fi
