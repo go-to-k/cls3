@@ -121,7 +121,7 @@ func NewApp(version string) *App {
 			&cli.StringSliceFlag{
 				Name:        "keyPrefix",
 				Aliases:     []string{"k"},
-				Usage:       "Key prefix of the objects to be deleted (multiple prefixes are allowed)",
+				Usage:       "Key prefix of the objects to be deleted. Multiple prefixes are allowed.",
 				Destination: app.KeyPrefixes,
 			},
 		},
