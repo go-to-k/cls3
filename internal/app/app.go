@@ -123,7 +123,7 @@ func NewApp(version string) *App {
 			&cli.StringFlag{
 				Name:        "keyPrefix",
 				Aliases:     []string{"k"},
-				Usage:       "Key prefix of the objects to be deleted. For directory buckets, only prefixes that end in a delimiter ( / ) are supported.",
+				Usage:       "Key prefix of the objects to be deleted.",
 				Destination: &app.KeyPrefix,
 			},
 		},
