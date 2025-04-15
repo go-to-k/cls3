@@ -41,7 +41,7 @@ inputs:
     default: ""
     required: false
   key-prefix:
-    description: "Key prefix of the objects to be deleted. For directory buckets, only prefixes that end in a delimiter ( / ) are supported."
+    description: "Key prefix of the objects to be deleted. For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported. For Table Buckets, the key prefix is not supported."
     default: ""
     required: false
 runs:

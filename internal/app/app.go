@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/urfave/cli/v2"
@@ -201,6 +203,7 @@ func (a *App) initBucketProcessor() error {
 			ConcurrencyNumber: a.ConcurrencyNumber,
 			ForceMode:         a.ForceMode,
 			OldVersionsOnly:   a.OldVersionsOnly,
+			Prefix:            aws.String(a.KeyPrefix),
 		}
 		a.bucketProcessor = NewBucketProcessor(processorConfig, a.s3Wrapper)
 	}
@@ -248,6 +251,18 @@ func (a *App) validateOptions() error {
 	}
 	if a.ConcurrentMode && a.ConcurrencyNumber < UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.KeyPrefix != "" && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -t, do not specify the -k option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.KeyPrefix != "" && a.ForceMode {
+		errMsg := fmt.Sprintln("When specifying -k, do not specify the -f option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.KeyPrefix != "" && !strings.HasSuffix(a.KeyPrefix, "/") {
+		errMsg := fmt.Sprintln("When specifying -k in the Directory Buckets Mode (-d), the key prefix must end with a delimiter ( / ).")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	return nil

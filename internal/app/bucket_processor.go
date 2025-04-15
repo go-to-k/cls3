@@ -24,6 +24,7 @@ type BucketProcessorConfig struct {
 	ConcurrencyNumber int
 	ForceMode         bool
 	OldVersionsOnly   bool
+	Prefix            *string // not used for S3Tables
 }
 
 // BucketProcessor handles all bucket processing operations
@@ -56,6 +57,9 @@ func (p *BucketProcessor) Process(ctx context.Context) error {
 	concurrencyNumber := p.determineConcurrencyNumber()
 	io.Logger.Info().Msgf("Number of buckets:  %v", len(p.config.TargetBuckets))
 	io.Logger.Info().Msgf("Concurrency number: %v", concurrencyNumber)
+	if p.config.Prefix != nil {
+		io.Logger.Info().Msgf("Key prefix: %v", *p.config.Prefix)
+	}
 
 	for _, bucket := range p.config.TargetBuckets {
 		if err := p.s3Wrapper.OutputCheckingMessage(bucket); err != nil {
@@ -118,6 +122,7 @@ func (p *BucketProcessor) clearSingleBucket(ctx context.Context, bucket string) 
 		OldVersionsOnly: p.config.OldVersionsOnly,
 		QuietMode:       p.config.QuietMode,
 		ClearingCountCh: clearingCountCh,
+		Prefix:          p.config.Prefix,
 	})
 
 	close(clearingCountCh)

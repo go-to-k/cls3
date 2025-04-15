@@ -123,6 +123,38 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -c option because the throttling threshold for S3 Tables is very low.\n",
 		},
 		{
+			name: "error when key prefix specified with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				TableBucketsMode:  true,
+				KeyPrefix:         "prefix",
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -k option.\n",
+		},
+		{
+			name: "error when key prefix specified with force mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ForceMode:         true,
+				KeyPrefix:         "prefix",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -k, do not specify the -f option.\n",
+		},
+		{
+			name: "error when key prefix specified with directory buckets mode and not end with delimiter",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				DirectoryBucketsMode: true,
+				KeyPrefix:            "prefix",
+				Region:               "ap-northeast-1",
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -k in the Directory Buckets Mode (-d), the key prefix must end with a delimiter ( / ).\n",
+		},
+		{
 			name: "warn when table buckets mode without region",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -357,6 +389,46 @@ func Test_validateOptions(t *testing.T) {
 				ConcurrentMode:       true,
 				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
 				Region:               "us-east-1",
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - key prefix with directory buckets mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				DirectoryBucketsMode: true,
+				KeyPrefix:            "test-prefix/",
+				Region:               "ap-northeast-1",
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - key prefix does not end with delimiter not in directory buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				KeyPrefix:         "test-prefix",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - key prefix with interactive mode",
+			app: &App{
+				InteractiveMode:   true,
+				KeyPrefix:         "prefix",
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - key prefix with old versions only",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				OldVersionsOnly:   true,
+				KeyPrefix:         "prefix",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
 			expectedErr: "",
 		},

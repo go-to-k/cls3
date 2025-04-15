@@ -726,6 +726,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 		keyMarker            *string
 		versionIdMarker      *string
 		directoryBucketsMode bool
+		keyPrefix            *string
 		withAPIOptionsFunc   func(*middleware.Stack) error
 	}
 
@@ -750,6 +751,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 				keyMarker:            nil,
 				versionIdMarker:      nil,
 				directoryBucketsMode: true,
+				keyPrefix:            nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -800,6 +802,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 				keyMarker:            nil,
 				versionIdMarker:      nil,
 				directoryBucketsMode: false,
+				keyPrefix:            nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -858,6 +861,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 				keyMarker:            nil,
 				versionIdMarker:      nil,
 				directoryBucketsMode: true,
+				keyPrefix:            nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -888,6 +892,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 				keyMarker:            nil,
 				versionIdMarker:      nil,
 				directoryBucketsMode: false,
+				keyPrefix:            nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -924,7 +929,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client, tt.args.directoryBucketsMode)
 
-			output, err := s3Client.ListObjectsOrVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
+			output, err := s3Client.ListObjectsOrVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker, tt.args.keyPrefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -954,6 +959,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 		oldVersionsOnly    bool
 		keyMarker          *string
 		versionIdMarker    *string
+		keyPrefix          *string
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -977,6 +983,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1034,6 +1041,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1066,6 +1074,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1101,6 +1110,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1137,6 +1147,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1185,6 +1196,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1233,6 +1245,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       aws.String("NextKeyMarker"),
 				versionIdMarker: aws.String("NextVersionIdMarker"),
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1290,6 +1303,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: false,
 				keyMarker:       aws.String("NextKeyMarker"),
 				versionIdMarker: aws.String("NextVersionIdMarker"),
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1322,6 +1336,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 				oldVersionsOnly: true,
 				keyMarker:       nil,
 				versionIdMarker: nil,
+				keyPrefix:       nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1412,7 +1427,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client, false)
 
-			output, err := s3Client.listObjectVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker)
+			output, err := s3Client.listObjectVersionsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.oldVersionsOnly, tt.args.keyMarker, tt.args.versionIdMarker, tt.args.keyPrefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return
@@ -1440,6 +1455,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 		bucketName         *string
 		region             string
 		token              *string
+		keyPrefix          *string
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -1461,6 +1477,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				token:      nil,
+				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1508,6 +1525,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				token:      nil,
+				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1538,6 +1556,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				token:      nil,
+				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1571,6 +1590,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				token:      nil,
+				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1600,6 +1620,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				token:      aws.String("Token"),
+				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1647,6 +1668,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 				bucketName: aws.String("test"),
 				region:     "ap-northeast-1",
 				token:      aws.String("Token"),
+				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -1686,7 +1708,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			client := s3.NewFromConfig(cfg)
 			s3Client := NewS3(client, true)
 
-			output, err := s3Client.listObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token)
+			output, err := s3Client.listObjectsByPage(tt.args.ctx, tt.args.bucketName, tt.args.region, tt.args.token, tt.args.keyPrefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

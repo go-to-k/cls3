@@ -128,6 +128,7 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 			input.OldVersionsOnly,
 			keyMarker,
 			versionIdMarker,
+			input.Prefix,
 		)
 		if err != nil {
 			return false, err
