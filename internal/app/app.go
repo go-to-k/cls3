@@ -27,7 +27,7 @@ type App struct {
 	ConcurrencyNumber    int
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
-	KeyPrefixes          *cli.StringSlice
+	KeyPrefix            string
 	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
 	bucketSelector       IBucketSelector
 	bucketProcessor      IBucketProcessor
@@ -118,11 +118,11 @@ func NewApp(version string) *App {
 				Usage:       "Clear Table Buckets for S3 Tables. If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.",
 				Destination: &app.TableBucketsMode,
 			},
-			&cli.StringSliceFlag{
+			&cli.StringFlag{
 				Name:        "keyPrefix",
 				Aliases:     []string{"k"},
-				Usage:       "Key prefix of the objects to be deleted. Multiple prefixes are allowed.",
-				Destination: app.KeyPrefixes,
+				Usage:       "Key prefix of the objects to be deleted. For directory buckets, only prefixes that end in a delimiter ( / ) are supported.",
+				Destination: &app.KeyPrefix,
 			},
 		},
 	}

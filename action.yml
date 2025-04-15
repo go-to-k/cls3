@@ -41,7 +41,7 @@ inputs:
     default: ""
     required: false
   key-prefix:
-    description: "Key prefix of the objects to be deleted. Multiple prefixes are allowed with a comma."
+    description: "Key prefix of the objects to be deleted. For directory buckets, only prefixes that end in a delimiter ( / ) are supported."
     default: ""
     required: false
 runs:
@@ -94,9 +94,9 @@ runs:
             concurrency_number="-n ${{ inputs.concurrency-number }}"
           fi
           key_prefix=""
-          for prefix in $(echo ${{ inputs.key-prefix }} | tr ',' ' '); do
-            key_prefix="${key_prefix}-k ${prefix} "
-          done
+          if [ -n "${{ inputs.key-prefix }}" ]; then
+            key_prefix="-k ${{ inputs.key-prefix }}"
+          fi
           region=""
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"

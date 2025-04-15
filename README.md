@@ -82,7 +82,7 @@ When this occurs, cls3 responds by adding a mechanism that waits a few seconds a
 
 The `-k | --keyPrefix` option allows you to delete objects with **a specific key prefix**.
 
-Multiple prefixes are allowed.
+For directory buckets, only prefixes that end in a delimiter ( / ) are supported.
 
 ## Install
 
@@ -184,8 +184,7 @@ Multiple prefixes are allowed.
   - The default is to delete all buckets in parallel if only the -c option is specified.
 - -k, --keyPrefix: optional
   - Key prefix of the objects to be deleted.
-  - Multiple prefixes are allowed.
-    - `cls3 -b test1 -b test2 -k key-prefix1 -k key-prefix2`
+  - For directory buckets, only prefixes that end in a delimiter ( / ) are supported.
 
 ## Interactive Mode
 
@@ -252,7 +251,7 @@ jobs:
           region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone and Table Buckets Mode for S3 Tables
           concurrent-mode: true # Delete multiple buckets in parallel (default: false)
           concurrency-number: 8 # Specify the number of parallel deletions (requires concurrent-mode to be true)
-          key-prefix: test-prefix1, test-prefix2 # Key prefix of the objects to be deleted. Multiple prefixes are allowed with a comma.
+          key-prefix: test-prefix # Key prefix of the objects to be deleted. For directory buckets, only prefixes that end in a delimiter ( / ) are supported.
 ```
 
 You can also run raw commands after installing the cls3 binary.
