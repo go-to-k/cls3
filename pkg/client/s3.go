@@ -44,6 +44,7 @@ type IS3 interface {
 		oldVersionsOnly bool,
 		keyMarker *string,
 		versionIdMarker *string,
+		keyPrefix *string,
 	) (*ListObjectsOrVersionsByPageOutput, error)
 	ListBucketsOrDirectoryBuckets(ctx context.Context) ([]types.Bucket, error)
 	GetBucketLocation(ctx context.Context, bucketName *string) (string, error)
@@ -193,13 +194,14 @@ func (s *S3) ListObjectsOrVersionsByPage(
 	oldVersionsOnly bool,
 	keyMarker *string,
 	versionIdMarker *string,
+	keyPrefix *string,
 ) (*ListObjectsOrVersionsByPageOutput, error) {
 	var objectIdentifiers []types.ObjectIdentifier
 	var nextKeyMarker *string
 	var nextVersionIdMarker *string
 
 	if s.directoryBucketsMode {
-		output, err := s.listObjectsByPage(ctx, bucketName, region, keyMarker)
+		output, err := s.listObjectsByPage(ctx, bucketName, region, keyMarker, keyPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +209,7 @@ func (s *S3) ListObjectsOrVersionsByPage(
 		objectIdentifiers = output.ObjectIdentifiers
 		nextKeyMarker = output.NextToken
 	} else {
-		output, err := s.listObjectVersionsByPage(ctx, bucketName, region, oldVersionsOnly, keyMarker, versionIdMarker)
+		output, err := s.listObjectVersionsByPage(ctx, bucketName, region, oldVersionsOnly, keyMarker, versionIdMarker, keyPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -231,12 +233,14 @@ func (s *S3) listObjectVersionsByPage(
 	oldVersionsOnly bool,
 	keyMarker *string,
 	versionIdMarker *string,
+	keyPrefix *string,
 ) (*listObjectVersionsByPageOutput, error) {
 	objectIdentifiers := []types.ObjectIdentifier{}
 	input := &s3.ListObjectVersionsInput{
 		Bucket:          bucketName,
 		KeyMarker:       keyMarker,
 		VersionIdMarker: versionIdMarker,
+		Prefix:          keyPrefix,
 	}
 
 	optFn := func(o *s3.Options) {
@@ -285,11 +289,13 @@ func (s *S3) listObjectsByPage(
 	bucketName *string,
 	region string,
 	token *string,
+	keyPrefix *string,
 ) (*listObjectsByPageOutput, error) {
 	objectIdentifiers := []types.ObjectIdentifier{}
 	input := &s3.ListObjectsV2Input{
 		Bucket:            bucketName,
 		ContinuationToken: token,
+		Prefix:            keyPrefix,
 	}
 
 	optFn := func(o *s3.Options) {

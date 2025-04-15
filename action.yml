@@ -40,6 +40,10 @@ inputs:
     description: "Specify the number of parallel deletions (requires concurrent-mode to be true)"
     default: ""
     required: false
+  key-prefix:
+    description: "Key prefix of the objects to be deleted."
+    default: ""
+    required: false
 runs:
   using: "composite"
   steps:
@@ -89,9 +93,13 @@ runs:
           if [ -n "${{ inputs.concurrency-number }}" ]; then
             concurrency_number="-n ${{ inputs.concurrency-number }}"
           fi
+          key_prefix=""
+          if [ -n "${{ inputs.key-prefix }}" ]; then
+            key_prefix="-k ${{ inputs.key-prefix }}"
+          fi
           region=""
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"
           fi
-          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $concurrent_mode $concurrency_number $region
+          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $concurrent_mode $concurrency_number $key_prefix $region
         fi

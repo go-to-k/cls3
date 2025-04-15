@@ -163,7 +163,7 @@ func main() {
 				objectKeys := make([]string, numObjects)
 				for j := range numObjects {
 					// Create stable object keys that will be used for all versions
-					objectKeys[j] = fmt.Sprintf("%d_%d_%d.txt", i, j+1, rand.Intn(65536))
+					objectKeys[j] = fmt.Sprintf("%d/%d/%d.txt", i, j+1, rand.Intn(65536))
 				}
 
 				// Create 3 versions per object

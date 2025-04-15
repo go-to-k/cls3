@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
 	"github.com/urfave/cli/v2"
@@ -27,6 +29,7 @@ type App struct {
 	ConcurrencyNumber    int
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
+	KeyPrefix            string
 	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
 	bucketSelector       IBucketSelector
 	bucketProcessor      IBucketProcessor
@@ -117,6 +120,12 @@ func NewApp(version string) *App {
 				Usage:       "Clear Table Buckets for S3 Tables. If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.",
 				Destination: &app.TableBucketsMode,
 			},
+			&cli.StringFlag{
+				Name:        "keyPrefix",
+				Aliases:     []string{"k"},
+				Usage:       "Key prefix of the objects to be deleted.",
+				Destination: &app.KeyPrefix,
+			},
 		},
 	}
 
@@ -194,6 +203,7 @@ func (a *App) initBucketProcessor() error {
 			ConcurrencyNumber: a.ConcurrencyNumber,
 			ForceMode:         a.ForceMode,
 			OldVersionsOnly:   a.OldVersionsOnly,
+			Prefix:            aws.String(a.KeyPrefix),
 		}
 		a.bucketProcessor = NewBucketProcessor(processorConfig, a.s3Wrapper)
 	}
@@ -242,6 +252,18 @@ func (a *App) validateOptions() error {
 	if a.ConcurrentMode && a.ConcurrencyNumber < UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.KeyPrefix != "" && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -t, do not specify the -k option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.KeyPrefix != "" && a.ForceMode {
+		errMsg := fmt.Sprintln("When specifying -k, do not specify the -f option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.DirectoryBucketsMode && a.KeyPrefix != "" && !strings.HasSuffix(a.KeyPrefix, "/") {
+		io.Logger.Warn().Msgf("The key prefix `%s` for the Directory Buckets does not end with a delimiter ( / ). It has been added automatically.", a.KeyPrefix)
+		a.KeyPrefix = a.KeyPrefix + "/"
 	}
 	return nil
 }

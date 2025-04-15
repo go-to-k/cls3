@@ -29,6 +29,7 @@ type ClearBucketInput struct {
 	OldVersionsOnly bool
 	QuietMode       bool
 	ClearingCountCh chan int64
+	Prefix          *string // not used for S3Tables
 }
 
 type ListBucketNamesFilteredByKeywordOutput struct {
