@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/go-to-k/cls3/internal/io"
@@ -144,7 +145,7 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -k, do not specify the -f option.\n",
 		},
 		{
-			name: "error when key prefix specified with directory buckets mode and not end with delimiter",
+			name: "a delimiter is added automatically when key prefix does not end with delimiter in directory buckets mode",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
 				DirectoryBucketsMode: true,
@@ -152,7 +153,7 @@ func Test_validateOptions(t *testing.T) {
 				Region:               "ap-northeast-1",
 				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: When specifying -k in the Directory Buckets Mode (-d), the key prefix must end with a delimiter ( / ).\n",
+			expectedWarning: "{\"level\":\"warn\",\"message\":\"The key prefix `prefix` does not end with a delimiter ( / ). It has been added automatically.\"}",
 		},
 		{
 			name: "warn when table buckets mode without region",
@@ -438,7 +439,9 @@ func Test_validateOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf.Reset()
 
+			originalKeyPrefix := tt.app.KeyPrefix
 			err := tt.app.validateOptions()
+
 			if tt.expectedErr != "" {
 				assert.EqualError(t, err, tt.expectedErr)
 			} else {
@@ -449,6 +452,19 @@ func Test_validateOptions(t *testing.T) {
 				assert.Equal(t, tt.expectedWarning, buf.String()[:len(buf.String())-1])
 			} else {
 				assert.Empty(t, buf.String())
+			}
+
+			// Check if the delimiter is added automatically when the key prefix does not end with delimiter in directory buckets mode
+			if originalKeyPrefix != "" && !strings.HasSuffix(originalKeyPrefix, "/") && tt.app.DirectoryBucketsMode {
+				assert.True(t, strings.HasSuffix(tt.app.KeyPrefix, "/"))
+			}
+			// Check if the delimiter is NOT added automatically when the key prefix ends with delimiter in directory buckets mode
+			if strings.HasSuffix(originalKeyPrefix, "/") && tt.app.DirectoryBucketsMode {
+				assert.Equal(t, tt.app.KeyPrefix, originalKeyPrefix)
+			}
+			// Check if the delimiter is NOT added automatically when the key prefix is not specified
+			if originalKeyPrefix == "" {
+				assert.Equal(t, tt.app.KeyPrefix, "")
 			}
 		})
 	}

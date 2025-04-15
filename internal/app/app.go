@@ -262,8 +262,8 @@ func (a *App) validateOptions() error {
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.DirectoryBucketsMode && a.KeyPrefix != "" && !strings.HasSuffix(a.KeyPrefix, "/") {
-		errMsg := fmt.Sprintln("When specifying -k in the Directory Buckets Mode (-d), the key prefix must end with a delimiter ( / ).")
-		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+		io.Logger.Warn().Msgf("The key prefix `%s` does not end with a delimiter ( / ). It has been added automatically.", a.KeyPrefix)
+		a.KeyPrefix = a.KeyPrefix + "/"
 	}
 	return nil
 }
