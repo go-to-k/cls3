@@ -153,7 +153,7 @@ func Test_validateOptions(t *testing.T) {
 				Region:               "ap-northeast-1",
 				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
 			},
-			expectedWarning: "{\"level\":\"warn\",\"message\":\"The key prefix `prefix` does not end with a delimiter ( / ). It has been added automatically.\"}",
+			expectedWarning: "{\"level\":\"warn\",\"message\":\"The key prefix `prefix` for the Directory Buckets does not end with a delimiter ( / ). It has been added automatically.\"}",
 		},
 		{
 			name: "warn when table buckets mode without region",
