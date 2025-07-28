@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
+	"github.com/aws/aws-sdk-go-v2/service/s3vectors"
 	"github.com/go-to-k/cls3/pkg/client"
 )
 
@@ -42,6 +43,7 @@ type CreateS3WrapperInput struct {
 	Profile              string
 	TableBucketsMode     bool
 	DirectoryBucketsMode bool
+	VectorBucketsMode    bool
 }
 
 func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
@@ -58,6 +60,16 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 			}),
 		)
 		return NewS3TablesWrapper(client), nil
+	}
+
+	if input.VectorBucketsMode {
+		client := client.NewS3Vectors(
+			s3vectors.NewFromConfig(config, func(o *s3vectors.Options) {
+				o.RetryMaxAttempts = SDKRetryMaxAttempts
+				o.RetryMode = aws.RetryModeStandard
+			}),
+		)
+		return NewS3VectorsWrapper(client), nil
 	}
 
 	client := client.NewS3(

@@ -65,6 +65,26 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: You cannot specify both -d and -t options.\n",
 		},
 		{
+			name: "error when both directory buckets mode and vector buckets mode specified",
+			app: &App{
+				BucketNames:           cli.NewStringSlice("bucket1"),
+				DirectoryBucketsMode:  true,
+				VectorBucketsMode:     true,
+				ConcurrencyNumber:     UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: You cannot specify both -d and -vv options.\n",
+		},
+		{
+			name: "error when both table buckets mode and vector buckets mode specified",
+			app: &App{
+				BucketNames:        cli.NewStringSlice("bucket1"),
+				TableBucketsMode:   true,
+				VectorBucketsMode:  true,
+				ConcurrencyNumber:  UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: You cannot specify both -t and -vv options.\n",
+		},
+		{
 			name: "error when both directory buckets mode and old versions only specified",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
@@ -124,6 +144,26 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -c option because the throttling threshold for S3 Tables is very low.\n",
 		},
 		{
+			name: "error when both vector buckets mode and old versions only specified",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				OldVersionsOnly:   true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -o option.\n",
+		},
+		{
+			name: "error when vector buckets mode with concurrent mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				ConcurrentMode:    true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -c option because the throttling threshold for S3 Vectors is very low.\n",
+		},
+		{
 			name: "error when key prefix specified with table buckets mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -133,6 +173,17 @@ func Test_validateOptions(t *testing.T) {
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -k option.\n",
+		},
+		{
+			name: "error when key prefix specified with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				KeyPrefix:         "prefix",
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -k option.\n",
 		},
 		{
 			name: "error when key prefix specified with force mode",
@@ -165,6 +216,17 @@ func Test_validateOptions(t *testing.T) {
 			},
 			expectedErr:     "",
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
+		},
+		{
+			name: "warn when vector buckets mode without region",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				Region:            "",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr:     "",
+			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Vector Buckets Mode `-vv` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
 		},
 		{
 			name: "succeed with valid options - basic case",
@@ -429,6 +491,39 @@ func Test_validateOptions(t *testing.T) {
 				BucketNames:       cli.NewStringSlice("bucket1"),
 				OldVersionsOnly:   true,
 				KeyPrefix:         "prefix",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - vector buckets mode with region",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - bucket names with force mode and vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ForceMode:         true,
+				VectorBucketsMode: true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with force mode and vector buckets mode",
+			app: &App{
+				InteractiveMode:   true,
+				ForceMode:         true,
+				VectorBucketsMode: true,
+				BucketNames:       cli.NewStringSlice(),
+				Region:            "ap-northeast-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
 			expectedErr: "",

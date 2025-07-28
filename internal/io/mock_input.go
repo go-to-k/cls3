@@ -19,7 +19,6 @@ import (
 type MockIInputManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockIInputManagerMockRecorder
-	isgomock struct{}
 }
 
 // MockIInputManagerMockRecorder is the mock recorder for MockIInputManager.
