@@ -58,6 +58,12 @@ The `-t | --tableBucketsMode` option allows you to delete the Table Buckets for 
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
+### Deletion of Vector Buckets for S3 Vectors
+
+The `-vv | --vectorBucketsMode` option allows you to delete the Vector Buckets for S3 Vectors.
+
+In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
+
 ### Concurrent Deletion of Multiple Buckets
 
 The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
@@ -66,7 +72,7 @@ If you want to limit the number of parallel deletions, you can specify the `-n |
 
 **Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
 
-This option is not available in the Table Buckets Mode (`-t`) because the throttling threshold for S3 Tables is very low.
+This option is not available in the Table Buckets Mode (`-t`) and the Vector Buckets Mode (`-vv`) because the throttling threshold for S3 Tables and S3 Vectors is very low.
 
 ### Number of objects that can be deleted
 
@@ -141,7 +147,7 @@ For Table Buckets, the key prefix is not supported.
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-vv|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
   ```
 
 - -b, --bucketName: optional
@@ -160,6 +166,7 @@ For Table Buckets, the key prefix is not supported.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
+    - If you specify this option with -vv (--vectorBucketsMode), it will delete not only the indexes but also the vector bucket itself.
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
 - -o, --oldVersionsOnly: optional
@@ -174,12 +181,19 @@ For Table Buckets, the key prefix is not supported.
     - You can specify the region with the `-r` option.
 - -t, --tableBucketsMode: optional
   - Table Buckets Mode for **S3 Tables**
+  - Operation across regions is not possible, but only in **one region**.
+    - You can specify the region with the `-r` option.
   - If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.
+- -vv, --vectorBucketsMode: optional
+  - Vector Buckets Mode for **S3 Vectors**
+  - Operation across regions is not possible, but only in **one region**.
+    - You can specify the region with the `-r` option.
+  - If you specify this option WITHOUT -f (--force), it will delete ONLY the indexes without the vector bucket itself.
 - -c, --concurrentMode: optional
   - Delete multiple buckets in parallel.
   - If you want to limit the number of parallel deletions, specify the -n option.
   - **Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
-  - This option is not available in the Table Buckets Mode (-t) because the throttling threshold for S3 Tables is very low.
+  - This option is not available in the Table Buckets Mode (-t) and the Vector Buckets Mode (-vv) because the throttling threshold for S3 Tables and S3 Vectors is very low.
 - -n, --concurrencyNumber: optional
   - Specify the number of parallel deletions.
   - To specify this option, the -c option must be specified.
@@ -187,7 +201,7 @@ For Table Buckets, the key prefix is not supported.
 - -k, --keyPrefix: optional
   - Key prefix of the objects to be deleted.
   - For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported. If you do not specify the delimiter, it will be added automatically.
-  - For Table Buckets, the key prefix is not supported.
+  - For Table Buckets and Vector Buckets, the key prefix is not supported.
 
 ## Interactive Mode
 
@@ -251,6 +265,7 @@ jobs:
           old-versions-only: false # Delete old version objects only (including all delete-markers) (default: false)
           directory-buckets-mode: false # Directory Buckets Mode for S3 Express One Zone (default: false)
           table-buckets-mode: false # Table Buckets Mode for S3 Tables (default: false)
+          vector-buckets-mode: false # Vector Buckets Mode for S3 Vectors (default: false)
           region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone and Table Buckets Mode for S3 Tables
           concurrent-mode: true # Delete multiple buckets in parallel (default: false)
           concurrency-number: 8 # Specify the number of parallel deletions (requires concurrent-mode to be true)

@@ -97,7 +97,7 @@ func NewApp(version string) *App {
 				Name:        "concurrentMode",
 				Aliases:     []string{"c"},
 				Value:       false,
-				Usage:       "Delete multiple buckets in parallel. If you want to limit the number of parallel deletions, specify the -n option. This option is not available in the Table Buckets Mode -t because the throttling threshold for S3 Tables is very low.",
+				Usage:       "Delete multiple buckets in parallel. If you want to limit the number of parallel deletions, specify the -n option. This option is not available in the Table Buckets Mode -t and the Vector Buckets Mode -vv because the throttling threshold for S3 Tables and S3 Vectors is very low.",
 				Destination: &app.ConcurrentMode,
 			},
 			&cli.IntFlag{
