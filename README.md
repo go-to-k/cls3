@@ -32,7 +32,7 @@ As described below ([Interactive Mode](#interactive-mode)), you can **search for
 
 In deleting multiple buckets, you can list and delete them all at once, even if they are in multiple regions.
 
-(In the **Directory Buckets** Mode for S3 Express One Zone (`-d` option), operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.)
+(In the **Directory Buckets** Mode for S3 Express One Zone (`-d` option), the **Table Buckets** Mode for S3 Tables (`-t` option), and the **Vector Buckets** Mode for S3 Vectors (`-V` option), operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.)
 
 ### Deletion of buckets with versioning enabled
 
@@ -55,6 +55,12 @@ In this mode, operation across regions is not possible, but only in **one region
 ### Deletion of Table Buckets for S3 Tables
 
 The `-t | --tableBucketsMode` option allows you to delete the Table Buckets for S3 Tables.
+
+In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
+
+### Deletion of Vector Buckets for S3 Vectors
+
+The `-V | --vectorBucketsMode` option allows you to delete the Vector Buckets for S3 Vectors.
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
@@ -85,6 +91,8 @@ The `-k | --keyPrefix` option allows you to delete objects with **a specific key
 For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported. If you do not specify the delimiter, it will be added automatically.
 
 For Table Buckets, the key prefix is not supported.
+
+For Vector Buckets, this option allows you to delete indexes with a specific key prefix.
 
 ## Install
 
@@ -141,7 +149,7 @@ For Table Buckets, the key prefix is not supported.
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
   ```
 
 - -b, --bucketName: optional
@@ -156,10 +164,11 @@ For Table Buckets, the key prefix is not supported.
   - AWS Region
     - If this option is not specified and your AWS profile is tied to a region, the region is used instead of the default region.
   - It is not necessary to be aware of this as it can be used **across regions**.
-    - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), you should specify the region. The mode is not available across regions.
+    - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), Table Buckets Mode for **S3 Tables** (with `-t` option), and Vector Buckets Mode for **S3 Vectors** (with `-V` option), you should specify the region. The mode is not available across regions.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
+    - If you specify this option with -V (--vectorBucketsMode), it will delete not only the indexes but also the vector bucket itself.
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
 - -o, --oldVersionsOnly: optional
@@ -174,7 +183,14 @@ For Table Buckets, the key prefix is not supported.
     - You can specify the region with the `-r` option.
 - -t, --tableBucketsMode: optional
   - Table Buckets Mode for **S3 Tables**
+  - Operation across regions is not possible, but only in **one region**.
+    - You can specify the region with the `-r` option.
   - If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.
+- -V, --vectorBucketsMode: optional
+  - Vector Buckets Mode for **S3 Vectors**
+  - Operation across regions is not possible, but only in **one region**.
+    - You can specify the region with the `-r` option.
+  - If you specify this option WITHOUT -f (--force), it will delete ONLY the indexes without the vector bucket itself.
 - -c, --concurrentMode: optional
   - Delete multiple buckets in parallel.
   - If you want to limit the number of parallel deletions, specify the -n option.
@@ -188,6 +204,7 @@ For Table Buckets, the key prefix is not supported.
   - Key prefix of the objects to be deleted.
   - For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported. If you do not specify the delimiter, it will be added automatically.
   - For Table Buckets, the key prefix is not supported.
+  - For Vector Buckets, this option allows you to delete indexes with a specific key prefix.
 
 ## Interactive Mode
 
@@ -221,8 +238,8 @@ You can use cls3 in GitHub Actions Workflow.
 The `quiet` allows you to hive live display of number of deletions (**default: true in GitHub Actions ONLY**).
 
 Basically, you do not need to specify a `region` parameter, since you can delete buckets across regions. However,
-in Directory Buckets mode (`directory-buckets-mode`) for S3 Express One Zone and Table Buckets mode (`table-buckets-mode`)
-for S3 Tables, the region must be specified. These modes cannot be used across regions.
+in Directory Buckets mode (`directory-buckets-mode`) for S3 Express One Zone, Table Buckets mode (`table-buckets-mode`)
+for S3 Tables, and Vector Buckets mode (`vector-buckets-mode`) for S3 Vectors, the region must be specified. These modes cannot be used across regions.
 
 To delete multiple buckets, specify bucket names separated by commas.
 
@@ -251,7 +268,8 @@ jobs:
           old-versions-only: false # Delete old version objects only (including all delete-markers) (default: false)
           directory-buckets-mode: false # Directory Buckets Mode for S3 Express One Zone (default: false)
           table-buckets-mode: false # Table Buckets Mode for S3 Tables (default: false)
-          region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone and Table Buckets Mode for S3 Tables
+          vector-buckets-mode: false # Vector Buckets Mode for S3 Vectors (default: false)
+          region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone, Table Buckets Mode for S3 Tables, and Vector Buckets Mode for S3 Vectors.
           concurrent-mode: true # Delete multiple buckets in parallel (default: false)
           concurrency-number: 8 # Specify the number of parallel deletions (requires concurrent-mode to be true)
           key-prefix: test-prefix # Key prefix of the objects to be deleted.

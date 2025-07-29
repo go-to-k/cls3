@@ -29,8 +29,9 @@ type App struct {
 	ConcurrencyNumber    int
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
+	VectorBucketsMode    bool
 	KeyPrefix            string
-	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
+	targetBuckets        []string // bucket names for S3 and S3Vectors, bucket arns for S3Tables
 	bucketSelector       IBucketSelector
 	bucketProcessor      IBucketProcessor
 	s3Wrapper            wrapper.IWrapper
@@ -120,6 +121,13 @@ func NewApp(version string) *App {
 				Usage:       "Clear Table Buckets for S3 Tables. If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.",
 				Destination: &app.TableBucketsMode,
 			},
+			&cli.BoolFlag{
+				Name:        "vectorBucketsMode",
+				Aliases:     []string{"V"},
+				Value:       false,
+				Usage:       "Clear Vector Buckets for S3 Vectors. If you specify this option WITHOUT -f (--force), it will delete ONLY the indexes without the vector bucket itself.",
+				Destination: &app.VectorBucketsMode,
+			},
 			&cli.StringFlag{
 				Name:        "keyPrefix",
 				Aliases:     []string{"k"},
@@ -178,6 +186,7 @@ func (a *App) initS3Wrapper(ctx context.Context) error {
 			Profile:              a.Profile,
 			TableBucketsMode:     a.TableBucketsMode,
 			DirectoryBucketsMode: a.DirectoryBucketsMode,
+			VectorBucketsMode:    a.VectorBucketsMode,
 		})
 		if err != nil {
 			return err
@@ -227,6 +236,14 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("You cannot specify both -d and -t options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
+	if a.DirectoryBucketsMode && a.VectorBucketsMode {
+		errMsg := fmt.Sprintln("You cannot specify both -d and -V options.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.TableBucketsMode && a.VectorBucketsMode {
+		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
@@ -244,6 +261,13 @@ func (a *App) validateOptions() error {
 	}
 	if a.TableBucketsMode && a.Region == "" {
 		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+	}
+	if a.VectorBucketsMode && a.OldVersionsOnly {
+		errMsg := fmt.Sprintln("When specifying -V, do not specify the -o option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.VectorBucketsMode && a.Region == "" {
+		io.Logger.Warn().Msg("You are in the Vector Buckets Mode `-V` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
 	if !a.ConcurrentMode && a.ConcurrencyNumber != UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")

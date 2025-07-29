@@ -20,7 +20,7 @@ TEST_COV_RESULT := "$$(go test -race -cover -v ./... -coverpkg=./... -coverprofi
 
 FAIL_CHECK := "^[^\s\t]*FAIL[^\s\t]*$$"
 
-.PHONY: test_diff test test_view lint lint_diff mockgen deadcode shadow cognit run build install clean testgen_general testgen_directory testgen_table testgen_help
+.PHONY: test_diff test test_view lint lint_diff mockgen deadcode shadow cognit run build install clean testgen_general testgen_directory testgen_table testgen_vector testgen_help
 
 test_diff:
 	@! echo $(TEST_DIFF_RESULT) | $(COLORIZE_PASS) | $(COLORIZE_FAIL) | tee /dev/stderr | grep $(FAIL_CHECK) > /dev/null
@@ -74,14 +74,21 @@ testgen_table:
 	@echo "Running S3 table test data generator..."
 	@cd testdata && go mod tidy && go run cmd/table/main.go $(OPT)
 
+# Run S3 vector test data generator
+testgen_vector:
+	@echo "Running S3 vector test data generator..."
+	@cd testdata && go mod tidy && go run cmd/vector/main.go $(OPT)
+
 # Help for test data generation
 testgen_help:
 	@echo "Test data generation targets:"
 	@echo "  testgen_general      - Run the standard S3 bucket test data generator"
 	@echo "  testgen_directory    - Run the S3 Express One Zone directory bucket test data generator"
 	@echo "  testgen_table        - Run the S3 table test data generator"
+	@echo "  testgen_vector       - Run the S3 vector test data generator"
 	@echo ""
 	@echo "Example usage:"
 	@echo "  make testgen_general OPT=\"-b my-bucket -n 5 -o 1000\""
 	@echo "  make testgen_directory OPT=\"-b my-bucket -n 2 -o 500\""
 	@echo "  make testgen_table OPT=\"-b my-bucket -n 1 -t 50 -s 20 -r us-west-2\""
+	@echo "  make testgen_vector OPT=\"-b my-bucket -n 1 -v 50 -i 20 -r us-west-2\""

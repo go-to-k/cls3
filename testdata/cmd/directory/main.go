@@ -105,6 +105,7 @@ func main() {
 		// Acquire semaphore with weight 1
 		if err := sem.Acquire(ctx, 1); err != nil {
 			log.Error().Err(err).Msg("Failed to acquire semaphore")
+			wg.Done()
 			continue
 		}
 
