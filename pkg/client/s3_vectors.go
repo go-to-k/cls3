@@ -138,7 +138,10 @@ func (s *S3Vectors) ListIndexesByPage(ctx context.Context, vectorBucketName *str
 	input := &s3vectors.ListIndexesInput{
 		VectorBucketName: vectorBucketName,
 		NextToken:        nextToken,
-		Prefix:           keyPrefix,
+	}
+
+	if keyPrefix != nil && *keyPrefix != "" {
+		input.Prefix = keyPrefix
 	}
 
 	optFn := func(o *s3vectors.Options) {
