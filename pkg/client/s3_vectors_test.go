@@ -645,9 +645,6 @@ func TestS3Vectors_ListIndexesByPage(t *testing.T) {
 												IndexName: aws.String("test-index1"),
 											},
 											{
-												IndexName: aws.String("index2"),
-											},
-											{
 												IndexName: aws.String("test-index3"),
 											},
 										},
