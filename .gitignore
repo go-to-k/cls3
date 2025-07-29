@@ -28,7 +28,7 @@ testfiles/
 
 main
 
-testdata/bucket
+testdata/general
 testdata/directory
 testdata/table
 testdata/vector
