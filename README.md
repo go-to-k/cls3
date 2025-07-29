@@ -204,6 +204,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
   - Key prefix of the objects to be deleted.
   - For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported. If you do not specify the delimiter, it will be added automatically.
   - For Table Buckets, the key prefix is not supported.
+  - For Vector Buckets, this option allows you to delete indexes with a specific key prefix.
 
 ## Interactive Mode
 
