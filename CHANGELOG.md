@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.27.1](https://github.com/go-to-k/cls3/compare/v0.27.0...v0.27.1) - 2025-07-29
+- chore: fix .gitignore for testdata by @go-to-k in https://github.com/go-to-k/cls3/pull/358
+- refactor: early return in wrapper by @go-to-k in https://github.com/go-to-k/cls3/pull/360
+
 ## [v0.27.0](https://github.com/go-to-k/cls3/compare/v0.26.0...v0.27.0) - 2025-07-29
 - feat: support S3 Vectors by @go-to-k in https://github.com/go-to-k/cls3/pull/356
 
