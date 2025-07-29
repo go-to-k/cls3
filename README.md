@@ -92,6 +92,8 @@ For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported
 
 For Table Buckets, the key prefix is not supported.
 
+For Vector Buckets, this option allows you to delete indexes with a specific key prefix.
+
 ## Install
 
 - Homebrew
