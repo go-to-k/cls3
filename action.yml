@@ -91,7 +91,7 @@ runs:
           fi
           vector_buckets_mode=""
           if [ "${{ inputs.vector-buckets-mode }}" = "true" ]; then
-            vector_buckets_mode="-vv"
+            vector_buckets_mode="-V"
           fi
           concurrent_mode=""
           if [ "${{ inputs.concurrent-mode }}" = "true" ]; then

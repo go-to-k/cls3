@@ -123,7 +123,7 @@ func NewApp(version string) *App {
 			},
 			&cli.BoolFlag{
 				Name:        "vectorBucketsMode",
-				Aliases:     []string{"vv"},
+				Aliases:     []string{"V"},
 				Value:       false,
 				Usage:       "Clear Vector Buckets for S3 Vectors. If you specify this option WITHOUT -f (--force), it will delete ONLY the indexes without the vector bucket itself.",
 				Destination: &app.VectorBucketsMode,
@@ -237,11 +237,11 @@ func (a *App) validateOptions() error {
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.DirectoryBucketsMode && a.VectorBucketsMode {
-		errMsg := fmt.Sprintln("You cannot specify both -d and -vv options.")
+		errMsg := fmt.Sprintln("You cannot specify both -d and -V options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.TableBucketsMode && a.VectorBucketsMode {
-		errMsg := fmt.Sprintln("You cannot specify both -t and -vv options.")
+		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {
@@ -263,11 +263,11 @@ func (a *App) validateOptions() error {
 		io.Logger.Warn().Msg("You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
 	if a.VectorBucketsMode && a.OldVersionsOnly {
-		errMsg := fmt.Sprintln("When specifying -vv, do not specify the -o option.")
+		errMsg := fmt.Sprintln("When specifying -V, do not specify the -o option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.VectorBucketsMode && a.Region == "" {
-		io.Logger.Warn().Msg("You are in the Vector Buckets Mode `-vv` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
+		io.Logger.Warn().Msg("You are in the Vector Buckets Mode `-V` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.")
 	}
 	if !a.ConcurrentMode && a.ConcurrencyNumber != UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("When specifying -n, you must specify the -c option.")

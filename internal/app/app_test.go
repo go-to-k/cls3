@@ -72,7 +72,7 @@ func Test_validateOptions(t *testing.T) {
 				VectorBucketsMode:     true,
 				ConcurrencyNumber:     UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: You cannot specify both -d and -vv options.\n",
+			expectedErr: "InvalidOptionError: You cannot specify both -d and -V options.\n",
 		},
 		{
 			name: "error when both table buckets mode and vector buckets mode specified",
@@ -82,7 +82,7 @@ func Test_validateOptions(t *testing.T) {
 				VectorBucketsMode:  true,
 				ConcurrencyNumber:  UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: You cannot specify both -t and -vv options.\n",
+			expectedErr: "InvalidOptionError: You cannot specify both -t and -V options.\n",
 		},
 		{
 			name: "error when both directory buckets mode and old versions only specified",
@@ -151,7 +151,7 @@ func Test_validateOptions(t *testing.T) {
 				OldVersionsOnly:   true,
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -o option.\n",
+			expectedErr: "InvalidOptionError: When specifying -V, do not specify the -o option.\n",
 		},
 		{
 			name: "error when key prefix specified with table buckets mode",
@@ -205,7 +205,7 @@ func Test_validateOptions(t *testing.T) {
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
 			expectedErr:     "",
-			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Vector Buckets Mode `-vv` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
+			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Vector Buckets Mode `-V` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
 		},
 		{
 			name: "succeed with valid options - basic case",

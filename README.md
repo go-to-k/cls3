@@ -32,7 +32,7 @@ As described below ([Interactive Mode](#interactive-mode)), you can **search for
 
 In deleting multiple buckets, you can list and delete them all at once, even if they are in multiple regions.
 
-(In the **Directory Buckets** Mode for S3 Express One Zone (`-d` option), the **Table Buckets** Mode for S3 Tables (`-t` option), and the **Vector Buckets** Mode for S3 Vectors (`-vv` option), operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.)
+(In the **Directory Buckets** Mode for S3 Express One Zone (`-d` option), the **Table Buckets** Mode for S3 Tables (`-t` option), and the **Vector Buckets** Mode for S3 Vectors (`-V` option), operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.)
 
 ### Deletion of buckets with versioning enabled
 
@@ -60,7 +60,7 @@ In this mode, operation across regions is not possible, but only in **one region
 
 ### Deletion of Vector Buckets for S3 Vectors
 
-The `-vv | --vectorBucketsMode` option allows you to delete the Vector Buckets for S3 Vectors.
+The `-V | --vectorBucketsMode` option allows you to delete the Vector Buckets for S3 Vectors.
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
@@ -149,7 +149,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-vv|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
   ```
 
 - -b, --bucketName: optional
@@ -164,11 +164,11 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
   - AWS Region
     - If this option is not specified and your AWS profile is tied to a region, the region is used instead of the default region.
   - It is not necessary to be aware of this as it can be used **across regions**.
-    - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), Table Buckets Mode for **S3 Tables** (with `-t` option), and Vector Buckets Mode for **S3 Vectors** (with `-vv` option), you should specify the region. The mode is not available across regions.
+    - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), Table Buckets Mode for **S3 Tables** (with `-t` option), and Vector Buckets Mode for **S3 Vectors** (with `-V` option), you should specify the region. The mode is not available across regions.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
-    - If you specify this option with -vv (--vectorBucketsMode), it will delete not only the indexes but also the vector bucket itself.
+    - If you specify this option with -V (--vectorBucketsMode), it will delete not only the indexes but also the vector bucket itself.
 - -i, --interactive: optional
   - Interactive Mode for buckets selection
 - -o, --oldVersionsOnly: optional
@@ -186,7 +186,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
   - Operation across regions is not possible, but only in **one region**.
     - You can specify the region with the `-r` option.
   - If you specify this option WITHOUT -f (--force), it will delete ONLY the namespaces and the tables without the table bucket itself.
-- -vv, --vectorBucketsMode: optional
+- -V, --vectorBucketsMode: optional
   - Vector Buckets Mode for **S3 Vectors**
   - Operation across regions is not possible, but only in **one region**.
     - You can specify the region with the `-r` option.
