@@ -117,15 +117,18 @@ func (s *S3VectorsWrapper) ClearBucket(
 		}
 	}
 
-	if input.ForceMode {
-		if err := s.client.DeleteVectorBucket(ctx, aws.String(bucketName)); err != nil {
+	if !input.ForceMode {
+		return nil
+	}
+
+	if err := s.client.DeleteVectorBucket(ctx, aws.String(bucketName)); err != nil {
+		return err
+	}
+
+	if input.QuietMode {
+		// When not in quiet mode, the message is displayed along with other buckets in the app.go.
+		if err := s.OutputDeletedMessage(bucketName); err != nil {
 			return err
-		}
-		if input.QuietMode {
-			// When not in quiet mode, the message is displayed along with other buckets in the app.go.
-			if err := s.OutputDeletedMessage(bucketName); err != nil {
-				return err
-			}
 		}
 	}
 

@@ -48,10 +48,12 @@ func (s *S3Wrapper) ClearBucket(
 		return err
 	}
 
-	if input.ForceMode {
-		if err := s.deleteBucket(ctx, input.TargetBucket, bucketRegion, input.QuietMode); err != nil {
-			return err
-		}
+	if !input.ForceMode {
+		return nil
+	}
+
+	if err := s.deleteBucket(ctx, input.TargetBucket, bucketRegion, input.QuietMode); err != nil {
+		return err
 	}
 
 	return nil
