@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -15,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/go-to-k/cls3/testdata/pkg/retryer"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/sync/semaphore"
 )
 
 func main() {
@@ -142,76 +144,97 @@ func main() {
 			}
 		}
 
-		// Create indexes and vectors
+		// Create indexes and vectors in parallel
 		// NOTE: Each bucket can contain multiple indexes
 		// NOTE: Up to 10,000 indexes can be created in total per bucket
 		// see: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-limitations.html
-		for i := 1; i <= indexesPerBucket; i++ {
-			indexName := fmt.Sprintf("my-index-%d", i)
+		
+		// Process indexes in parallel with a concurrency limit of 16
+		var wg sync.WaitGroup
+		indexSem := semaphore.NewWeighted(16)
 
-			// Create vector index
-			createIndexOptFn := func(o *s3vectors.Options) {
-				o.Retryer = s3Retryer
-			}
-			_, err = s3VectorsClient.CreateIndex(ctx, &s3vectors.CreateIndexInput{
-				VectorBucketName: aws.String(lowerBucketName),
-				IndexName:        aws.String(indexName),
-				DataType:         types.DataTypeFloat32,
-				Dimension:        aws.Int32(128),
-				DistanceMetric:   types.DistanceMetricCosine,
-			}, createIndexOptFn)
-			if err != nil {
-				log.Error().Err(err).Str("index", indexName).Msg("Failed to create vector index")
+		for i := 1; i <= indexesPerBucket; i++ {
+			wg.Add(1)
+
+			if semErr := indexSem.Acquire(ctx, 1); semErr != nil {
+				log.Error().Err(semErr).Msg("Failed to acquire index semaphore")
+				wg.Done()
 				continue
 			}
 
-			// Process vectors in batches of 500 (PutVectors API limit)
-			// see: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-limitations.html
-			batchSize := 500
-			for batchStart := 1; batchStart <= vectorsPerIndex; batchStart += batchSize {
-				batchEnd := batchStart + batchSize - 1
-				if batchEnd > vectorsPerIndex {
-					batchEnd = vectorsPerIndex
-				}
+			go func(indexNum int) {
+				defer wg.Done()
+				defer indexSem.Release(1)
 
-				// Create batch of vectors
-				vectors := make([]types.PutInputVector, 0, batchEnd-batchStart+1)
-				for vector := batchStart; vector <= batchEnd; vector++ {
-					vectorId := fmt.Sprintf("vector-%d", vector)
+				indexName := fmt.Sprintf("my-index-%d", indexNum)
 
-					// Generate sample vector data (128 dimensions)
-					vectorData := make([]float32, 128)
-					for j := range vectorData {
-						vectorData[j] = rand.Float32()
-					}
-
-					vectors = append(vectors, types.PutInputVector{
-						Key:  aws.String(vectorId),
-						Data: &types.VectorDataMemberFloat32{Value: vectorData},
-					})
-				}
-
-				// Upload batch
-				optFn := func(o *s3vectors.Options) {
+				// Create vector index
+				createIndexOptFn := func(o *s3vectors.Options) {
 					o.Retryer = s3Retryer
 				}
-
-				_, err = s3VectorsClient.PutVectors(ctx, &s3vectors.PutVectorsInput{
+				_, err = s3VectorsClient.CreateIndex(ctx, &s3vectors.CreateIndexInput{
 					VectorBucketName: aws.String(lowerBucketName),
 					IndexName:        aws.String(indexName),
-					Vectors:          vectors,
-				}, optFn)
+					DataType:         types.DataTypeFloat32,
+					Dimension:        aws.Int32(128),
+					DistanceMetric:   types.DistanceMetricCosine,
+				}, createIndexOptFn)
 				if err != nil {
-					log.Error().Err(err).
-						Str("index", indexName).
-						Int("batch_start", batchStart).
-						Int("batch_end", batchEnd).
-						Msg("Failed to put vector batch")
-				} else {
-					fmt.Printf("    Uploaded batch %d-%d for index %s\n", batchStart, batchEnd, indexName)
+					log.Error().Err(err).Str("index", indexName).Msg("Failed to create vector index")
+					return
 				}
-			}
+
+				// Process vectors in batches of 500 (PutVectors API limit)
+				// see: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-limitations.html
+				batchSize := 500
+				for batchStart := 1; batchStart <= vectorsPerIndex; batchStart += batchSize {
+					batchEnd := batchStart + batchSize - 1
+					if batchEnd > vectorsPerIndex {
+						batchEnd = vectorsPerIndex
+					}
+
+					// Create batch of vectors
+					vectors := make([]types.PutInputVector, 0, batchEnd-batchStart+1)
+					for vector := batchStart; vector <= batchEnd; vector++ {
+						vectorId := fmt.Sprintf("vector-%d", vector)
+
+						// Generate sample vector data (128 dimensions)
+						vectorData := make([]float32, 128)
+						for j := range vectorData {
+							vectorData[j] = rand.Float32()
+						}
+
+						vectors = append(vectors, types.PutInputVector{
+							Key:  aws.String(vectorId),
+							Data: &types.VectorDataMemberFloat32{Value: vectorData},
+						})
+					}
+
+					// Upload batch
+					optFn := func(o *s3vectors.Options) {
+						o.Retryer = s3Retryer
+					}
+
+					_, err = s3VectorsClient.PutVectors(ctx, &s3vectors.PutVectorsInput{
+						VectorBucketName: aws.String(lowerBucketName),
+						IndexName:        aws.String(indexName),
+						Vectors:          vectors,
+					}, optFn)
+					if err != nil {
+						log.Error().Err(err).
+							Str("index", indexName).
+							Int("batch_start", batchStart).
+							Int("batch_end", batchEnd).
+							Msg("Failed to put vector batch")
+					} else {
+						fmt.Printf("    Uploaded batch %d-%d for index %s\n", batchStart, batchEnd, indexName)
+					}
+				}
+			}(i)
 		}
+
+		// Wait for all indexes to be created and their vectors to be uploaded
+		wg.Wait()
 	}
 }
 
