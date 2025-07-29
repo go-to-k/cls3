@@ -108,6 +108,7 @@ func main() {
 	paddedStart := fmt.Sprintf("%02d", 1)
 	paddedEnd := fmt.Sprintf("%02d", numBuckets)
 	fmt.Printf("=== buckets: %s-%d-[%s-%s] ===\n", bucketPrefix, randomSuffix, paddedStart, paddedEnd)
+	fmt.Printf("=== indexes: %d, vectors: %d ===\n", indexesPerBucket, vectorsPerIndex)
 
 	// Processing buckets in parallel with a concurrency limit
 	var bucketWg sync.WaitGroup
@@ -240,8 +241,6 @@ func main() {
 								Int("batch_start", batchStart).
 								Int("batch_end", batchEnd).
 								Msg("Failed to put vector batch")
-						} else {
-							fmt.Printf("    Uploaded batch %d-%d for index %s\n", batchStart, batchEnd, indexName)
 						}
 					}
 				}(i)
