@@ -125,11 +125,13 @@ func (s *S3VectorsWrapper) ClearBucket(
 		return err
 	}
 
-	if input.QuietMode {
-		// When not in quiet mode, the message is displayed along with other buckets in the app.go.
-		if err := s.OutputDeletedMessage(bucketName); err != nil {
-			return err
-		}
+	// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
+	if !input.QuietMode {
+		return nil
+	}
+
+	if err := s.OutputDeletedMessage(bucketName); err != nil {
+		return err
 	}
 
 	return nil
