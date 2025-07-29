@@ -15,7 +15,7 @@ import (
 )
 
 // Too Many Requests error often occurs, so limit the value
-const S3VectorsSemaphoreWeight = 4
+const S3VectorsSemaphoreWeight = 8
 
 var _ IWrapper = (*S3VectorsWrapper)(nil)
 

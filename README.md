@@ -72,7 +72,7 @@ If you want to limit the number of parallel deletions, you can specify the `-n |
 
 **Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
 
-This option is not available in the Table Buckets Mode (`-t`) and the Vector Buckets Mode (`-vv`) because the throttling threshold for S3 Tables and S3 Vectors is very low.
+This option is not available in the Table Buckets Mode (`-t`) because the throttling threshold for S3 Tables is very low.
 
 ### Number of objects that can be deleted
 
@@ -193,7 +193,7 @@ For Table Buckets, the key prefix is not supported.
   - Delete multiple buckets in parallel.
   - If you want to limit the number of parallel deletions, specify the -n option.
   - **Too many parallel deletions may cause S3 API errors.** If it fails, please run it again.
-  - This option is not available in the Table Buckets Mode (-t) and the Vector Buckets Mode (-vv) because the throttling threshold for S3 Tables and S3 Vectors is very low.
+  - This option is not available in the Table Buckets Mode (-t) because the throttling threshold for S3 Tables is very low.
 - -n, --concurrencyNumber: optional
   - Specify the number of parallel deletions.
   - To specify this option, the -c option must be specified.

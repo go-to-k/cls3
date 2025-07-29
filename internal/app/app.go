@@ -97,7 +97,7 @@ func NewApp(version string) *App {
 				Name:        "concurrentMode",
 				Aliases:     []string{"c"},
 				Value:       false,
-				Usage:       "Delete multiple buckets in parallel. If you want to limit the number of parallel deletions, specify the -n option. This option is not available in the Table Buckets Mode -t and the Vector Buckets Mode -vv because the throttling threshold for S3 Tables and S3 Vectors is very low.",
+				Usage:       "Delete multiple buckets in parallel. If you want to limit the number of parallel deletions, specify the -n option. This option is not available in the Table Buckets Mode -t because the throttling threshold for S3 Tables is very low.",
 				Destination: &app.ConcurrentMode,
 			},
 			&cli.IntFlag{
@@ -264,10 +264,6 @@ func (a *App) validateOptions() error {
 	}
 	if a.VectorBucketsMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -vv, do not specify the -o option.")
-		return fmt.Errorf("InvalidOptionError: %v", errMsg)
-	}
-	if a.VectorBucketsMode && a.ConcurrentMode {
-		errMsg := fmt.Sprintln("When specifying -vv, do not specify the -c option because the throttling threshold for S3 Vectors is very low.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.VectorBucketsMode && a.Region == "" {

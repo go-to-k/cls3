@@ -154,16 +154,6 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -o option.\n",
 		},
 		{
-			name: "error when vector buckets mode with concurrent mode",
-			app: &App{
-				BucketNames:       cli.NewStringSlice("bucket1"),
-				VectorBucketsMode: true,
-				ConcurrentMode:    true,
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-			},
-			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -c option because the throttling threshold for S3 Vectors is very low.\n",
-		},
-		{
 			name: "error when key prefix specified with table buckets mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -523,6 +513,17 @@ func Test_validateOptions(t *testing.T) {
 				ForceMode:         true,
 				VectorBucketsMode: true,
 				BucketNames:       cli.NewStringSlice(),
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - vector buckets mode with concurrent mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				ConcurrentMode:    true,
 				Region:            "ap-northeast-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
