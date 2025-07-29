@@ -67,8 +67,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if vectorsPerIndex*indexesPerBucket > 10000 {
-		fmt.Println("total number of vectors must be less than or equal to 10000")
+	if indexesPerBucket > 10000 {
+		fmt.Println("number of indexes (-i) must be less than or equal to 10,000 for vector buckets")
 		os.Exit(1)
 	}
 
@@ -218,14 +218,15 @@ func main() {
 func showHelp() {
 	fmt.Println("S3 Vector Bucket Test Data Generator")
 	fmt.Println("===================================")
-	fmt.Println("This tool creates S3 vector buckets with indices and vectors.")
+	fmt.Println("This tool creates S3 vector buckets with indexes and vectors.")
+	fmt.Println("NOTE: Each vector bucket can have up to 10,000 indexes.")
 	fmt.Println("")
 	fmt.Println("Options:")
 	fmt.Println("  -p string  AWS profile name (optional)")
 	fmt.Println("  -b string  Bucket name prefix (required)")
 	fmt.Println("  -n int     Number of buckets to create (default: 1, max: 10)")
 	fmt.Println("  -v int     Number of vectors per index (default: 100)")
-	fmt.Println("  -i int     Number of indexes per bucket (default: 100)")
+	fmt.Println("  -i int     Number of indexes per bucket (default: 100, max: 10,000)")
 	fmt.Println("  -r string  AWS region (default: us-east-1)")
 	fmt.Println("  -h         Show this help message")
 	fmt.Println("")
