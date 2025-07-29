@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3vectors/types"
 )
 
-var SleepTimeSecForS3Vectors = 3
+var SleepTimeSecForS3Vectors = 3 // NOTE: Because S3Tables is a serial operation, a low value is OK.
 
 type ListIndexesByPageOutput struct {
 	Indexes   []types.IndexSummary
