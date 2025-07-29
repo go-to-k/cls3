@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.27.0](https://github.com/go-to-k/cls3/compare/v0.26.0...v0.27.0) - 2025-07-29
+- feat: support S3 Vectors by @go-to-k in https://github.com/go-to-k/cls3/pull/356
+
 ## [v0.26.0](https://github.com/go-to-k/cls3/compare/v0.25.4...v0.26.0) - 2025-04-15
 - feat(app): add `-k | --keyPrefix` option to delete objects with a specific key prefix by @go-to-k in https://github.com/go-to-k/cls3/pull/350
 
