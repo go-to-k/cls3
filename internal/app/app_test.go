@@ -165,17 +165,6 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -k option.\n",
 		},
 		{
-			name: "error when key prefix specified with vector buckets mode",
-			app: &App{
-				BucketNames:       cli.NewStringSlice("bucket1"),
-				VectorBucketsMode: true,
-				KeyPrefix:         "prefix",
-				Region:            "ap-northeast-1",
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-			},
-			expectedErr: "InvalidOptionError: When specifying -vv, do not specify the -k option.\n",
-		},
-		{
 			name: "error when key prefix specified with force mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -524,6 +513,17 @@ func Test_validateOptions(t *testing.T) {
 				BucketNames:       cli.NewStringSlice("bucket1"),
 				VectorBucketsMode: true,
 				ConcurrentMode:    true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - vector buckets mode with key prefix",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				KeyPrefix:         "prefix",
 				Region:            "ap-northeast-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},

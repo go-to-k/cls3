@@ -68,6 +68,7 @@ func (s *S3VectorsWrapper) ClearBucket(
 			ctx,
 			aws.String(bucketName),
 			nextToken,
+			input.Prefix,
 		)
 		if err != nil {
 			close(progressCh)

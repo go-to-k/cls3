@@ -281,10 +281,6 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("When specifying -t, do not specify the -k option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.KeyPrefix != "" && a.VectorBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -vv, do not specify the -k option.")
-		return fmt.Errorf("InvalidOptionError: %v", errMsg)
-	}
 	if a.KeyPrefix != "" && a.ForceMode {
 		errMsg := fmt.Sprintln("When specifying -k, do not specify the -f option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)

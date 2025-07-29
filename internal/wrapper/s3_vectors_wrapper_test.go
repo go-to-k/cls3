@@ -27,6 +27,7 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 		bucketName string
 		forceMode  bool
 		quietMode  bool
+		prefix     *string
 	}
 
 	cases := []struct {
@@ -43,12 +44,14 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				bucketName: "test-vector-bucket",
 				forceMode:  false,
 				quietMode:  false,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				m.EXPECT().ListIndexesByPage(
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -86,12 +89,14 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				bucketName: "test-vector-bucket",
 				forceMode:  false,
 				quietMode:  true,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				m.EXPECT().ListIndexesByPage(
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -120,12 +125,14 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				bucketName: "test-vector-bucket",
 				forceMode:  true,
 				quietMode:  false,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				m.EXPECT().ListIndexesByPage(
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -159,12 +166,14 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				bucketName: "test-vector-bucket",
 				forceMode:  false,
 				quietMode:  false,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				m.EXPECT().ListIndexesByPage(
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(nil, fmt.Errorf("ListIndexesError"))
 			},
 			want:    fmt.Errorf("ListIndexesError"),
@@ -177,12 +186,14 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				bucketName: "test-vector-bucket",
 				forceMode:  false,
 				quietMode:  false,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				m.EXPECT().ListIndexesByPage(
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -211,12 +222,14 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				bucketName: "test-vector-bucket",
 				forceMode:  true,
 				quietMode:  false,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				m.EXPECT().ListIndexesByPage(
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -244,12 +257,58 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "clear indexes with key prefix successfully",
+			args: args{
+				ctx:        context.Background(),
+				bucketName: "test-vector-bucket",
+				forceMode:  false,
+				quietMode:  false,
+				prefix:     aws.String("test-"),
+			},
+			prepareMockFn: func(m *client.MockIS3Vectors) {
+				m.EXPECT().ListIndexesByPage(
+					gomock.Any(),
+					aws.String("test-vector-bucket"),
+					nil,
+					aws.String("test-"),
+				).Return(
+					&client.ListIndexesByPageOutput{
+						Indexes: []types.IndexSummary{
+							{
+								IndexName: aws.String("test-index1"),
+							},
+							{
+								IndexName: aws.String("test-index2"),
+							},
+						},
+						NextToken: nil,
+					},
+					nil,
+				)
+
+				m.EXPECT().DeleteIndex(
+					gomock.Any(),
+					aws.String("test-index1"),
+					aws.String("test-vector-bucket"),
+				).Return(nil)
+
+				m.EXPECT().DeleteIndex(
+					gomock.Any(),
+					aws.String("test-index2"),
+					aws.String("test-vector-bucket"),
+				).Return(nil)
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
 			name: "clear indexes with pagination successfully",
 			args: args{
 				ctx:        context.Background(),
 				bucketName: "test-vector-bucket",
 				forceMode:  false,
 				quietMode:  false,
+				prefix:     nil,
 			},
 			prepareMockFn: func(m *client.MockIS3Vectors) {
 				// First page
@@ -257,6 +316,7 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					nil,
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -277,6 +337,7 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 					gomock.Any(),
 					aws.String("test-vector-bucket"),
 					aws.String("token1"),
+					(*string)(nil),
 				).Return(
 					&client.ListIndexesByPageOutput{
 						Indexes: []types.IndexSummary{
@@ -332,6 +393,7 @@ func TestS3VectorsWrapper_ClearBucket(t *testing.T) {
 				TargetBucket:    tt.args.bucketName,
 				ForceMode:       tt.args.forceMode,
 				QuietMode:       tt.args.quietMode,
+				Prefix:          tt.args.prefix,
 				ClearingCountCh: clearingCountCh,
 			})
 

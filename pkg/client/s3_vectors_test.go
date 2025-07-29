@@ -564,6 +564,7 @@ func TestS3Vectors_ListIndexesByPage(t *testing.T) {
 		ctx                context.Context
 		vectorBucketName   *string
 		nextToken          *string
+		keyPrefix          *string
 		withAPIOptionsFunc func(*middleware.Stack) error
 	}
 
@@ -584,6 +585,104 @@ func TestS3Vectors_ListIndexesByPage(t *testing.T) {
 				ctx:              context.Background(),
 				vectorBucketName: aws.String("test-vector-bucket"),
 				nextToken:        nil,
+				keyPrefix:        nil,
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListIndexesMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3vectors.ListIndexesOutput{
+										Indexes: []types.IndexSummary{
+											{
+												IndexName: aws.String("index1"),
+											},
+											{
+												IndexName: aws.String("index2"),
+											},
+										},
+										NextToken: aws.String("token1"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: &ListIndexesByPageOutput{
+					Indexes: []types.IndexSummary{
+						{
+							IndexName: aws.String("index1"),
+						},
+						{
+							IndexName: aws.String("index2"),
+						},
+					},
+					NextToken: aws.String("token1"),
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list indexes with key prefix filter successfully",
+			args: args{
+				ctx:              context.Background(),
+				vectorBucketName: aws.String("test-vector-bucket"),
+				nextToken:        nil,
+				keyPrefix:        aws.String("test-"),
+				withAPIOptionsFunc: func(stack *middleware.Stack) error {
+					return stack.Finalize.Add(
+						middleware.FinalizeMiddlewareFunc(
+							"ListIndexesMock",
+							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+								return middleware.FinalizeOutput{
+									Result: &s3vectors.ListIndexesOutput{
+										Indexes: []types.IndexSummary{
+											{
+												IndexName: aws.String("test-index1"),
+											},
+											{
+												IndexName: aws.String("index2"),
+											},
+											{
+												IndexName: aws.String("test-index3"),
+											},
+										},
+										NextToken: aws.String("token1"),
+									},
+								}, middleware.Metadata{}, nil
+							},
+						),
+						middleware.Before,
+					)
+				},
+			},
+			want: want{
+				output: &ListIndexesByPageOutput{
+					Indexes: []types.IndexSummary{
+						{
+							IndexName: aws.String("test-index1"),
+						},
+						{
+							IndexName: aws.String("test-index3"),
+						},
+					},
+					NextToken: aws.String("token1"),
+				},
+				err: nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "list indexes with empty key prefix successfully",
+			args: args{
+				ctx:              context.Background(),
+				vectorBucketName: aws.String("test-vector-bucket"),
+				nextToken:        nil,
+				keyPrefix:        aws.String(""),
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -630,6 +729,7 @@ func TestS3Vectors_ListIndexesByPage(t *testing.T) {
 				ctx:              context.Background(),
 				vectorBucketName: aws.String("test-vector-bucket"),
 				nextToken:        nil,
+				keyPrefix:        nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -669,7 +769,7 @@ func TestS3Vectors_ListIndexesByPage(t *testing.T) {
 			client := s3vectors.NewFromConfig(cfg)
 			s3VectorsClient := NewS3Vectors(client)
 
-			output, err := s3VectorsClient.ListIndexesByPage(tt.args.ctx, tt.args.vectorBucketName, tt.args.nextToken)
+			output, err := s3VectorsClient.ListIndexesByPage(tt.args.ctx, tt.args.vectorBucketName, tt.args.nextToken, tt.args.keyPrefix)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("error = %#v, wantErr %#v", err.Error(), tt.wantErr)
 				return

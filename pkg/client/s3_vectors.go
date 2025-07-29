@@ -22,7 +22,7 @@ type IS3Vectors interface {
 	DeleteVectorBucket(ctx context.Context, vectorBucketName *string) error
 	DeleteIndex(ctx context.Context, indexName *string, vectorBucketName *string) error
 	ListVectorBuckets(ctx context.Context) ([]types.VectorBucketSummary, error)
-	ListIndexesByPage(ctx context.Context, vectorBucketName *string, nextToken *string) (*ListIndexesByPageOutput, error)
+	ListIndexesByPage(ctx context.Context, vectorBucketName *string, nextToken *string, keyPrefix *string) (*ListIndexesByPageOutput, error)
 }
 
 var _ IS3Vectors = (*S3Vectors)(nil)
@@ -134,12 +134,11 @@ func (s *S3Vectors) ListVectorBuckets(ctx context.Context) ([]types.VectorBucket
 	return buckets, nil
 }
 
-func (s *S3Vectors) ListIndexesByPage(ctx context.Context, vectorBucketName *string, nextToken *string) (*ListIndexesByPageOutput, error) {
-	indexes := []types.IndexSummary{}
-
+func (s *S3Vectors) ListIndexesByPage(ctx context.Context, vectorBucketName *string, nextToken *string, keyPrefix *string) (*ListIndexesByPageOutput, error) {
 	input := &s3vectors.ListIndexesInput{
 		VectorBucketName: vectorBucketName,
 		NextToken:        nextToken,
+		Prefix:           keyPrefix,
 	}
 
 	optFn := func(o *s3vectors.Options) {
@@ -154,10 +153,8 @@ func (s *S3Vectors) ListIndexesByPage(ctx context.Context, vectorBucketName *str
 		}
 	}
 
-	indexes = append(indexes, output.Indexes...)
-
 	return &ListIndexesByPageOutput{
-		Indexes:   indexes,
+		Indexes:   output.Indexes,
 		NextToken: output.NextToken,
 	}, nil
 }
