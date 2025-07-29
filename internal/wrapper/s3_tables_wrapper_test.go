@@ -865,7 +865,7 @@ func TestS3TablesWrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 			},
 			want: want{
 				output: []ListBucketNamesFilteredByKeywordOutput{},
-				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword ."),
+				err:    fmt.Errorf("[resource -] NotExistsError: No buckets matching the keyword."),
 			},
 			wantErr: true,
 		},

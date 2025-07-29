@@ -15,7 +15,7 @@ import (
 )
 
 // Too Many Requests error often occurs, so limit the value
-const SemaphoreWeight = 4
+const S3TablesSemaphoreWeight = 4
 
 var _ IWrapper = (*S3TablesWrapper)(nil)
 
@@ -37,7 +37,7 @@ func (s *S3TablesWrapper) deleteNamespace(
 	progressCh chan<- struct{},
 ) error {
 	eg := errgroup.Group{}
-	sem := semaphore.NewWeighted(SemaphoreWeight)
+	sem := semaphore.NewWeighted(S3TablesSemaphoreWeight)
 
 	var continuationToken *string
 	for {
@@ -110,7 +110,7 @@ func (s *S3TablesWrapper) ClearBucket(
 	}()
 
 	eg := errgroup.Group{}
-	sem := semaphore.NewWeighted(SemaphoreWeight)
+	sem := semaphore.NewWeighted(S3TablesSemaphoreWeight)
 	var continuationToken *string
 	for {
 		select {

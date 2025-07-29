@@ -25,7 +25,7 @@ type IWrapper interface {
 }
 
 type ClearBucketInput struct {
-	TargetBucket    string // bucket name for S3, bucket arn for S3Tables
+	TargetBucket    string // bucket name for S3 and S3Vectors, bucket arn for S3Tables
 	ForceMode       bool
 	OldVersionsOnly bool
 	QuietMode       bool
@@ -35,7 +35,7 @@ type ClearBucketInput struct {
 
 type ListBucketNamesFilteredByKeywordOutput struct {
 	BucketName   string
-	TargetBucket string // bucket name for S3, bucket arn for S3Tables
+	TargetBucket string // bucket name for S3 and S3Vectors, bucket arn for S3Tables
 }
 
 type CreateS3WrapperInput struct {
