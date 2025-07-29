@@ -67,6 +67,8 @@ func CreateS3Retryer() *Retryer {
 				strings.Contains(err.Error(), "lookup") && strings.Contains(err.Error(), "no such host") ||
 				// StatusCode: 0 error
 				strings.Contains(err.Error(), "https response error StatusCode: 0") ||
+				// 503 Service Unavailable error
+				strings.Contains(err.Error(), "StatusCode: 503") ||
 				// EOF error
 				strings.Contains(err.Error(), "EOF") ||
 				// Please try again error

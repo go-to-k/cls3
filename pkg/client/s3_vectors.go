@@ -38,6 +38,7 @@ func NewS3Vectors(client *s3vectors.Client) *S3Vectors {
 			strings.Contains(err.Error(), "api error SlowDown") ||
 				strings.Contains(err.Error(), "An internal error occurred. Try again.") ||
 				strings.Contains(err.Error(), "StatusCode: 429") ||
+				strings.Contains(err.Error(), "StatusCode: 503") ||
 				strings.Contains(err.Error(), "Please try again")
 
 		return isRetryable
