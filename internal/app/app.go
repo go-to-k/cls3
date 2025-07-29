@@ -31,7 +31,7 @@ type App struct {
 	TableBucketsMode     bool
 	VectorBucketsMode    bool
 	KeyPrefix            string
-	targetBuckets        []string // bucket names for S3, bucket arns for S3Tables
+	targetBuckets        []string // bucket names for S3 and S3Vectors, bucket arns for S3Tables
 	bucketSelector       IBucketSelector
 	bucketProcessor      IBucketProcessor
 	s3Wrapper            wrapper.IWrapper
