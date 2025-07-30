@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.27.2](https://github.com/go-to-k/cls3/compare/v0.27.1...v0.27.2) - 2025-07-30
+- test: modify validation in testdata script for vector by @go-to-k in https://github.com/go-to-k/cls3/pull/361
+
 ## [v0.27.1](https://github.com/go-to-k/cls3/compare/v0.27.0...v0.27.1) - 2025-07-29
 - chore: fix .gitignore for testdata by @go-to-k in https://github.com/go-to-k/cls3/pull/358
 - refactor: early return in wrapper by @go-to-k in https://github.com/go-to-k/cls3/pull/360
