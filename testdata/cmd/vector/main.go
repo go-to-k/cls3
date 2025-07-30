@@ -54,11 +54,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if numBuckets > 10 {
-		fmt.Println("number of buckets (-n) must be less than or equal to 10 for vector buckets")
-		os.Exit(1)
-	}
-
 	if vectorsPerIndex <= 0 {
 		fmt.Println("number of vectors (-v) must be a positive integer")
 		os.Exit(1)
