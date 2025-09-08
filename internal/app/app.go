@@ -21,6 +21,7 @@ type App struct {
 	BucketNames          *cli.StringSlice
 	Profile              string
 	Region               string
+	EndpointUrl          string
 	ForceMode            bool
 	InteractiveMode      bool
 	OldVersionsOnly      bool
@@ -64,6 +65,12 @@ func NewApp(version string) *App {
 				Aliases:     []string{"r"},
 				Usage:       "AWS region",
 				Destination: &app.Region,
+			},
+			&cli.StringFlag{
+				Name:        "endpointUrl",
+				Aliases:     []string{"e"},
+				Usage:       "Custom endpoint URL for S3-compatible services",
+				Destination: &app.EndpointUrl,
 			},
 			&cli.BoolFlag{
 				Name:        "force",
@@ -184,6 +191,7 @@ func (a *App) initS3Wrapper(ctx context.Context) error {
 		s3Wrapper, err := wrapper.CreateS3Wrapper(ctx, wrapper.CreateS3WrapperInput{
 			Region:               a.Region,
 			Profile:              a.Profile,
+			EndpointUrl:          a.EndpointUrl,
 			TableBucketsMode:     a.TableBucketsMode,
 			DirectoryBucketsMode: a.DirectoryBucketsMode,
 			VectorBucketsMode:    a.VectorBucketsMode,
