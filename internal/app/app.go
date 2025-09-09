@@ -252,6 +252,18 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
+	if a.EndpointUrl != "" && a.DirectoryBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -e, do not specify the -d option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.EndpointUrl != "" && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -e, do not specify the -t option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.EndpointUrl != "" && a.VectorBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -e, do not specify the -V option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
