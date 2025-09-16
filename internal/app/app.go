@@ -69,7 +69,7 @@ func NewApp(version string) *App {
 			&cli.StringFlag{
 				Name:        "endpointUrl",
 				Aliases:     []string{"e"},
-				Usage:       "Custom endpoint URL for S3-compatible services",
+				Usage:       "Custom endpoint URL",
 				Destination: &app.EndpointUrl,
 			},
 			&cli.BoolFlag{
