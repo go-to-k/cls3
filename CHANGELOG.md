@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.28.0](https://github.com/go-to-k/cls3/compare/v0.27.1...v0.28.0) - 2025-09-23
+- test: modify validation in testdata script for vector by @go-to-k in https://github.com/go-to-k/cls3/pull/361
+- test(version): comment out version tests by @go-to-k in https://github.com/go-to-k/cls3/pull/365
+- feat: custom endpoint url by @go-to-k in https://github.com/go-to-k/cls3/pull/366
+
 ## [v0.27.1](https://github.com/go-to-k/cls3/compare/v0.27.0...v0.27.1) - 2025-07-29
 - chore: fix .gitignore for testdata by @go-to-k in https://github.com/go-to-k/cls3/pull/358
 - refactor: early return in wrapper by @go-to-k in https://github.com/go-to-k/cls3/pull/360
