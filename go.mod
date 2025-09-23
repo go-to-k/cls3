@@ -1,7 +1,8 @@
 module github.com/go-to-k/cls3
 
 go 1.23
-toolchain go1.24.1
+
+toolchain go1.23.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.6
@@ -17,7 +18,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.4
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.4.0
-	golang.org/x/sync v0.14.0
+	golang.org/x/sync v0.11.0
 )
 
 require (
