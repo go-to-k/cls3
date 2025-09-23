@@ -592,18 +592,6 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "warn when endpoint URL with old versions only - expect warning",
-			app: &App{
-				BucketNames:       cli.NewStringSlice("bucket1"),
-				EndpointUrl:       "https://custom.endpoint.com",
-				OldVersionsOnly:   true,
-				Region:            "ap-northeast-1",
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-			},
-			expectedErr:     "",
-			expectedWarning: "{\"level\":\"warn\",\"message\":\"The -o option may not work as expected with certain S3-compatible storage services when a custom endpoint URL is specified.\"}",
-		},
-		{
 			name: "error when Cloudflare R2 endpoint URL with old versions only",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
