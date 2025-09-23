@@ -15,7 +15,7 @@ import (
 )
 
 // Too Many Requests error often occurs, so limit the value
-const SemaphoreWeight = 4
+const S3TablesSemaphoreWeight = 4
 
 var _ IWrapper = (*S3TablesWrapper)(nil)
 
@@ -37,7 +37,7 @@ func (s *S3TablesWrapper) deleteNamespace(
 	progressCh chan<- struct{},
 ) error {
 	eg := errgroup.Group{}
-	sem := semaphore.NewWeighted(SemaphoreWeight)
+	sem := semaphore.NewWeighted(S3TablesSemaphoreWeight)
 
 	var continuationToken *string
 	for {
@@ -110,7 +110,7 @@ func (s *S3TablesWrapper) ClearBucket(
 	}()
 
 	eg := errgroup.Group{}
-	sem := semaphore.NewWeighted(SemaphoreWeight)
+	sem := semaphore.NewWeighted(S3TablesSemaphoreWeight)
 	var continuationToken *string
 	for {
 		select {
@@ -174,16 +174,21 @@ func (s *S3TablesWrapper) ClearBucket(
 		}
 	}
 
-	if input.ForceMode {
-		if err := s.client.DeleteTableBucket(ctx, aws.String(bucketArn)); err != nil {
-			return err
-		}
-		if input.QuietMode {
-			// When not in quiet mode, the message is displayed along with other buckets in the app.go.
-			if err := s.OutputDeletedMessage(bucketArn); err != nil {
-				return err
-			}
-		}
+	if !input.ForceMode {
+		return nil
+	}
+
+	if err := s.client.DeleteTableBucket(ctx, aws.String(bucketArn)); err != nil {
+		return err
+	}
+
+	// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
+	if !input.QuietMode {
+		return nil
+	}
+
+	if err := s.OutputDeletedMessage(bucketArn); err != nil {
+		return err
 	}
 
 	return nil

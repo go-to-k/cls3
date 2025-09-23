@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
+	"github.com/aws/aws-sdk-go-v2/service/s3vectors"
 	"github.com/go-to-k/cls3/pkg/client"
 )
 
@@ -24,7 +25,7 @@ type IWrapper interface {
 }
 
 type ClearBucketInput struct {
-	TargetBucket    string // bucket name for S3, bucket arn for S3Tables
+	TargetBucket    string // bucket name for S3 and S3Vectors, bucket arn for S3Tables
 	ForceMode       bool
 	OldVersionsOnly bool
 	QuietMode       bool
@@ -34,18 +35,20 @@ type ClearBucketInput struct {
 
 type ListBucketNamesFilteredByKeywordOutput struct {
 	BucketName   string
-	TargetBucket string // bucket name for S3, bucket arn for S3Tables
+	TargetBucket string // bucket name for S3 and S3Vectors, bucket arn for S3Tables
 }
 
 type CreateS3WrapperInput struct {
 	Region               string
 	Profile              string
+	EndpointUrl          string
 	TableBucketsMode     bool
 	DirectoryBucketsMode bool
+	VectorBucketsMode    bool
 }
 
 func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
-	config, err := client.LoadAWSConfig(ctx, input.Region, input.Profile)
+	config, err := client.LoadAWSConfig(ctx, input.Region, input.Profile, input.EndpointUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +61,16 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 			}),
 		)
 		return NewS3TablesWrapper(client), nil
+	}
+
+	if input.VectorBucketsMode {
+		client := client.NewS3Vectors(
+			s3vectors.NewFromConfig(config, func(o *s3vectors.Options) {
+				o.RetryMaxAttempts = SDKRetryMaxAttempts
+				o.RetryMode = aws.RetryModeStandard
+			}),
+		)
+		return NewS3VectorsWrapper(client), nil
 	}
 
 	client := client.NewS3(

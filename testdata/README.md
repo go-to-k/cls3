@@ -4,11 +4,12 @@ This directory contains Go programs for generating test data for various types o
 
 ## Features
 
-The tool supports generating test data for the following three bucket types:
+The tool supports generating test data for the following bucket types:
 
 1. **Standard S3 Buckets** - Versioning-enabled test data generation
 2. **S3 Express One Zone (Directory Buckets)** - Test data for directory buckets
 3. **S3 Tables** - Test data for S3 tables
+4. **S3 Vectors** - Test data for S3 vectors
 
 ## Prerequisites
 
@@ -29,6 +30,9 @@ make testgen_directory OPT="-b bucket-prefix -n 2 -o 500"
 
 # S3 table
 make testgen_table OPT="-b bucket-prefix -n 1 -t 50 -s 20 -r us-west-2"
+
+# S3 vector
+make testgen_vector OPT="-b bucket-prefix -n 1 -v 50 -i 20 -r us-west-2"
 ```
 
 To display help:
@@ -60,4 +64,13 @@ make testgen_help
 - `-n` - Number of buckets to create (default: 1, max: 10)
 - `-t` - Number of tables per namespace (default: 100)
 - `-s` - Number of namespaces per table (default: 100)
+- `-r` - AWS region (default: us-east-1)
+
+#### S3 Vector
+
+- `-p` - AWS profile name (optional)
+- `-b` - Bucket name prefix (required)
+- `-n` - Number of buckets to create (default: 1, max: 10)
+- `-v` - Number of vectors per index (default: 100)
+- `-i` - Number of indexes per bucket (default: 100)
 - `-r` - AWS region (default: us-east-1)

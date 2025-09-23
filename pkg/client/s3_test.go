@@ -2737,3 +2737,112 @@ func TestS3_GetBucketLocation(t *testing.T) {
 		})
 	}
 }
+
+func TestS3_supportsVersions(t *testing.T) {
+	type fields struct {
+		directoryBucketsMode bool
+		baseEndpoint         *string
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "directory buckets mode returns false",
+			fields: fields{
+				directoryBucketsMode: true,
+				baseEndpoint:         nil,
+			},
+			want: false,
+		},
+		{
+			name: "nil endpoint with standard mode returns true",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         nil,
+			},
+			want: true,
+		},
+		{
+			name: "empty endpoint with standard mode returns true",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         aws.String(""),
+			},
+			want: true,
+		},
+		{
+			name: "Cloudflare R2 endpoint returns false",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         aws.String("https://account.r2.cloudflarestorage.com"),
+			},
+			want: false,
+		},
+		{
+			name: "AWS S3 endpoint with standard mode returns true",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         aws.String("https://s3.amazonaws.com"),
+			},
+			want: true,
+		},
+		{
+			name: "LocalStack endpoint with standard mode returns true",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         aws.String("http://localhost:4566"),
+			},
+			want: true,
+		},
+		{
+			name: "MinIO endpoint with standard mode returns true",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         aws.String("https://minio.example.com"),
+			},
+			want: true,
+		},
+		{
+			name: "Custom S3-compatible endpoint with standard mode returns true",
+			fields: fields{
+				directoryBucketsMode: false,
+				baseEndpoint:         aws.String("https://s3.custom-provider.com"),
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			// Create a mock S3 client with the specified baseEndpoint
+			cfg, err := config.LoadDefaultConfig(
+				ctx,
+				config.WithRegion("ap-northeast-1"),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var client *s3.Client
+			if tt.fields.baseEndpoint != nil {
+				client = s3.NewFromConfig(cfg, func(o *s3.Options) {
+					o.BaseEndpoint = tt.fields.baseEndpoint
+				})
+			} else {
+				client = s3.NewFromConfig(cfg)
+			}
+
+			s3Client := NewS3(client, tt.fields.directoryBucketsMode)
+
+			got := s3Client.supportsVersions()
+			if got != tt.want {
+				t.Errorf("supportsVersions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

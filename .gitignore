@@ -27,3 +27,8 @@ cover.html
 testfiles/
 
 main
+
+testdata/general
+testdata/directory
+testdata/table
+testdata/vector

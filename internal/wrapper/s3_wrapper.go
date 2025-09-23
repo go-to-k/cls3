@@ -48,10 +48,12 @@ func (s *S3Wrapper) ClearBucket(
 		return err
 	}
 
-	if input.ForceMode {
-		if err := s.deleteBucket(ctx, input.TargetBucket, bucketRegion, input.QuietMode); err != nil {
-			return err
-		}
+	if !input.ForceMode {
+		return nil
+	}
+
+	if err := s.deleteBucket(ctx, input.TargetBucket, bucketRegion, input.QuietMode); err != nil {
+		return err
 	}
 
 	return nil
@@ -94,11 +96,13 @@ func (s *S3Wrapper) clearObjects(ctx context.Context, input ClearBucketInput, bu
 		}
 	}
 
-	if input.QuietMode {
-		// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
-		if err := s.OutputClearedMessage(input.TargetBucket, state.objectsCount); err != nil {
-			return err
-		}
+	// NOTE: When not in quiet mode, the message is displayed along with other buckets in the app.go.
+	if !input.QuietMode {
+		return nil
+	}
+
+	if err := s.OutputClearedMessage(input.TargetBucket, state.objectsCount); err != nil {
+		return err
 	}
 
 	return nil

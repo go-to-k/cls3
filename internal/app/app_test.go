@@ -65,6 +65,56 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: You cannot specify both -d and -t options.\n",
 		},
 		{
+			name: "error when both directory buckets mode and vector buckets mode specified",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				DirectoryBucketsMode: true,
+				VectorBucketsMode:    true,
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: You cannot specify both -d and -V options.\n",
+		},
+		{
+			name: "error when both table buckets mode and vector buckets mode specified",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				TableBucketsMode:  true,
+				VectorBucketsMode: true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: You cannot specify both -t and -V options.\n",
+		},
+		{
+			name: "error when endpoint URL specified with directory buckets mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				EndpointUrl:          "https://custom.endpoint.com",
+				DirectoryBucketsMode: true,
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -e, do not specify the -d option.\n",
+		},
+		{
+			name: "error when endpoint URL specified with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				TableBucketsMode:  true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -e, do not specify the -t option.\n",
+		},
+		{
+			name: "error when endpoint URL specified with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				VectorBucketsMode: true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -e, do not specify the -V option.\n",
+		},
+		{
 			name: "error when both directory buckets mode and old versions only specified",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
@@ -124,6 +174,16 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -t, do not specify the -c option because the throttling threshold for S3 Tables is very low.\n",
 		},
 		{
+			name: "error when both vector buckets mode and old versions only specified",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				OldVersionsOnly:   true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -V, do not specify the -o option.\n",
+		},
+		{
 			name: "error when key prefix specified with table buckets mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -165,6 +225,17 @@ func Test_validateOptions(t *testing.T) {
 			},
 			expectedErr:     "",
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Table Buckets Mode `-t` to clear the Table Buckets for S3 Tables. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
+		},
+		{
+			name: "warn when vector buckets mode without region",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				Region:            "",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr:     "",
+			expectedWarning: "{\"level\":\"warn\",\"message\":\"You are in the Vector Buckets Mode `-V` to clear the Vector Buckets for S3 Vectors. In this mode, operation across regions is not possible, but only in one region. You can specify the region with the `-r` option.\"}",
 		},
 		{
 			name: "succeed with valid options - basic case",
@@ -429,6 +500,137 @@ func Test_validateOptions(t *testing.T) {
 				BucketNames:       cli.NewStringSlice("bucket1"),
 				OldVersionsOnly:   true,
 				KeyPrefix:         "prefix",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - vector buckets mode with region",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - bucket names with force mode and vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ForceMode:         true,
+				VectorBucketsMode: true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - interactive mode with force mode and vector buckets mode",
+			app: &App{
+				InteractiveMode:   true,
+				ForceMode:         true,
+				VectorBucketsMode: true,
+				BucketNames:       cli.NewStringSlice(),
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - vector buckets mode with concurrent mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				ConcurrentMode:    true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - vector buckets mode with key prefix",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				VectorBucketsMode: true,
+				KeyPrefix:         "prefix",
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - endpoint URL with bucket names",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - endpoint URL with interactive mode",
+			app: &App{
+				InteractiveMode:   true,
+				EndpointUrl:       "https://custom.endpoint.com",
+				Region:            "ap-northeast-1",
+				BucketNames:       cli.NewStringSlice(),
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - endpoint URL with force mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				ForceMode:         true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - endpoint URL with old versions only",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				OldVersionsOnly:   true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "error when Cloudflare R2 endpoint URL with old versions only",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://account.r2.cloudflarestorage.com",
+				OldVersionsOnly:   true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: The -o option is not supported with Cloudflare R2.\n",
+		},
+		{
+			name: "succeed with valid options - endpoint URL with concurrent mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1", "bucket2"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				ConcurrentMode:    true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - endpoint URL with key prefix",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				KeyPrefix:         "test-prefix/",
+				Region:            "ap-northeast-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
 			expectedErr: "",

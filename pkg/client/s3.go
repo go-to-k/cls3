@@ -200,7 +200,7 @@ func (s *S3) ListObjectsOrVersionsByPage(
 	var nextKeyMarker *string
 	var nextVersionIdMarker *string
 
-	if s.directoryBucketsMode {
+	if !s.supportsVersions() {
 		output, err := s.listObjectsByPage(ctx, bucketName, region, keyMarker, keyPrefix)
 		if err != nil {
 			return nil, err
@@ -453,4 +453,23 @@ func (s *S3) GetBucketLocation(ctx context.Context, bucketName *string) (string,
 	}
 
 	return string(output.LocationConstraint), nil
+}
+
+func (s *S3) supportsVersions() bool {
+	if s.directoryBucketsMode {
+		return false
+	}
+
+	baseEndpoint := s.client.Options().BaseEndpoint
+	if baseEndpoint == nil || *baseEndpoint == "" {
+		// Standard AWS S3 supports versioning
+		return true
+	}
+
+	if IsCloudflareR2Endpoint(*baseEndpoint) {
+		return false
+	}
+
+	// For other custom endpoints, assume versioning is supported
+	return true
 }

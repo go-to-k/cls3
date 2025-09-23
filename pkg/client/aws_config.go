@@ -10,18 +10,22 @@ import (
 // TODO: change to us-east-1 (and README and blogs)
 const DefaultAwsRegion = "ap-northeast-1"
 
-func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Config, error) {
+func LoadAWSConfig(ctx context.Context, region string, profile string, endpointUrl string) (aws.Config, error) {
 	var (
-		cfg aws.Config
-		err error
+		options []func(*config.LoadOptions) error
+		cfg     aws.Config
+		err     error
 	)
 
 	if profile != "" {
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(profile))
-	} else {
-		cfg, err = config.LoadDefaultConfig(ctx)
+		options = append(options, config.WithSharedConfigProfile(profile))
 	}
 
+	if endpointUrl != "" {
+		options = append(options, config.WithBaseEndpoint(endpointUrl))
+	}
+
+	cfg, err = config.LoadDefaultConfig(ctx, options...)
 	if err != nil {
 		return cfg, err
 	}
@@ -30,8 +34,19 @@ func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Conf
 		cfg.Region = region
 	}
 	if cfg.Region == "" {
-		cfg.Region = DefaultAwsRegion
+		cfg.Region = defineDefaultRegion(endpointUrl)
 	}
 
 	return cfg, nil
+}
+
+func defineDefaultRegion(endpointUrl string) string {
+	if endpointUrl == "" {
+		return DefaultAwsRegion
+	}
+
+	if IsCloudflareR2Endpoint(endpointUrl) {
+		return "auto"
+	}
+	return DefaultAwsRegion
 }
