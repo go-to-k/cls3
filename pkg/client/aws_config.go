@@ -34,8 +34,19 @@ func LoadAWSConfig(ctx context.Context, region string, profile string, endpointU
 		cfg.Region = region
 	}
 	if cfg.Region == "" {
-		cfg.Region = DefaultAwsRegion
+		cfg.Region = defineDefaultRegion(endpointUrl)
 	}
 
 	return cfg, nil
+}
+
+func defineDefaultRegion(endpointUrl string) string {
+	if endpointUrl == "" {
+		return DefaultAwsRegion
+	}
+
+	if isCloudflareR2Endpoint(endpointUrl) {
+		return "auto"
+	}
+	return DefaultAwsRegion
 }

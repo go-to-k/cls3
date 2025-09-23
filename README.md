@@ -174,8 +174,8 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
   - It is not necessary to be aware of this as it can be used **across regions**.
     - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), Table Buckets Mode for **S3 Tables** (with `-t` option), and Vector Buckets Mode for **S3 Vectors** (with `-V` option), you should specify the region. The mode is not available across regions.
 - -e, --endpointUrl: optional
-  - Custom endpoint URL to access S3-compatible storage or a specific S3 endpoint.
-  - You can use cls3 with S3-compatible storage such as MinIO, Cloudflare R2, or Google Cloud Storage by specifying the custom endpoint URL.
+  - Custom endpoint URL to access **S3-compatible storage** or a specific S3 endpoint.
+  - You can use cls3 with S3-compatible storage such as **MinIO, Cloudflare R2, or Google Cloud Storage** by specifying the custom endpoint URL.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.

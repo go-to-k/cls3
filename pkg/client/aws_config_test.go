@@ -50,6 +50,18 @@ func TestLoadAWSConfig(t *testing.T) {
 			endpointUrl: "https://s3.custom.endpoint.com",
 			wantRegion:  DefaultAwsRegion,
 		},
+		{
+			name:        "Cloudflare R2 endpoint with no region - uses auto",
+			region:      "",
+			endpointUrl: "https://account.r2.cloudflarestorage.com",
+			wantRegion:  "auto",
+		},
+		{
+			name:        "Cloudflare R2 endpoint with region - uses specified region",
+			region:      "region",
+			endpointUrl: "https://account.r2.cloudflarestorage.com",
+			wantRegion:  "region",
+		},
 	}
 
 	for _, tt := range tests {
