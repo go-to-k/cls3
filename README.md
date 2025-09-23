@@ -72,6 +72,8 @@ You can use cls3 with S3-compatible storage such as MinIO, Cloudflare R2, or Goo
 
 You can also set the endpoint URL using the `CLS3_ENDPOINT_URL` environment variable. If both the environment variable and the command-line option are specified, the command-line option takes precedence.
 
+While `AWS_ENDPOINT_URL` and `AWS_ENDPOINT_URL_S3` environment variables are also supported (via AWS SDK), we recommend using `CLS3_ENDPOINT_URL` for clarity and to avoid conflicts with other AWS tools.
+
 ### Concurrent Deletion of Multiple Buckets
 
 The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
