@@ -592,7 +592,7 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "succeed with valid options - endpoint URL with old versions only",
+			name: "warn when endpoint URL with old versions only - expect warning",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
 				EndpointUrl:       "https://custom.endpoint.com",
@@ -600,7 +600,8 @@ func Test_validateOptions(t *testing.T) {
 				Region:            "ap-northeast-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "",
+			expectedErr:     "",
+			expectedWarning: "{\"level\":\"warn\",\"message\":\"The -o option may not work as expected with certain S3-compatible storage services when a custom endpoint URL is specified.\"}",
 		},
 		{
 			name: "succeed with valid options - endpoint URL with concurrent mode",
