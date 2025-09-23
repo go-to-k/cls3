@@ -64,6 +64,14 @@ The `-V | --vectorBucketsMode` option allows you to delete the Vector Buckets fo
 
 In this mode, operation across regions is not possible, but only in **one region**. You can specify the region with the `-r` option.
 
+### Custom Endpoint URL
+
+The `-e | --endpointUrl` option allows you to specify a custom endpoint URL to access S3-compatible storage or a specific S3 endpoint.
+
+You can use cls3 with S3-compatible storage such as MinIO, Cloudflare R2, or Google Cloud Storage by specifying the custom endpoint URL.
+
+TODO: Support environment variables such as `CLS3_ENDPOINT_URL`.
+
 ### Concurrent Deletion of Multiple Buckets
 
 The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
@@ -149,7 +157,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-e|--endpointUrl <endpointUrl>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
   ```
 
 - -b, --bucketName: optional
@@ -165,6 +173,9 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
     - If this option is not specified and your AWS profile is tied to a region, the region is used instead of the default region.
   - It is not necessary to be aware of this as it can be used **across regions**.
     - But in the Directory Buckets Mode for **S3 Express One Zone** (with `-d` option), Table Buckets Mode for **S3 Tables** (with `-t` option), and Vector Buckets Mode for **S3 Vectors** (with `-V` option), you should specify the region. The mode is not available across regions.
+- -e, --endpointUrl: optional
+  - Custom endpoint URL to access S3-compatible storage or a specific S3 endpoint.
+  - You can use cls3 with S3-compatible storage such as MinIO, Cloudflare R2, or Google Cloud Storage by specifying the custom endpoint URL.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
@@ -270,6 +281,7 @@ jobs:
           table-buckets-mode: false # Table Buckets Mode for S3 Tables (default: false)
           vector-buckets-mode: false # Vector Buckets Mode for S3 Vectors (default: false)
           region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone, Table Buckets Mode for S3 Tables, and Vector Buckets Mode for S3 Vectors.
+          endpoint-url: https://s3.custom.endpoint.com # Custom endpoint URL (default: "")
           concurrent-mode: true # Delete multiple buckets in parallel (default: false)
           concurrency-number: 8 # Specify the number of parallel deletions (requires concurrent-mode to be true)
           key-prefix: test-prefix # Key prefix of the objects to be deleted.
