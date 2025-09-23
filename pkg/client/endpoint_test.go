@@ -51,8 +51,8 @@ func TestIsCloudflareR2Endpoint(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isCloudflareR2Endpoint(tt.endpointUrl)
-			assert.Equal(t, tt.want, got, "isCloudflareR2Endpoint(%v) = %v, want %v", tt.endpointUrl, got, tt.want)
+			got := IsCloudflareR2Endpoint(tt.endpointUrl)
+			assert.Equal(t, tt.want, got, "IsCloudflareR2Endpoint(%v) = %v, want %v", tt.endpointUrl, got, tt.want)
 		})
 	}
 }

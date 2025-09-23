@@ -604,6 +604,17 @@ func Test_validateOptions(t *testing.T) {
 			expectedWarning: "{\"level\":\"warn\",\"message\":\"The -o option may not work as expected with certain S3-compatible storage services when a custom endpoint URL is specified.\"}",
 		},
 		{
+			name: "error when Cloudflare R2 endpoint URL with old versions only",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://account.r2.cloudflarestorage.com",
+				OldVersionsOnly:   true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: The -o option is not supported with Cloudflare R2.\n",
+		},
+		{
 			name: "succeed with valid options - endpoint URL with concurrent mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1", "bucket2"),

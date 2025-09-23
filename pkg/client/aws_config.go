@@ -45,7 +45,7 @@ func defineDefaultRegion(endpointUrl string) string {
 		return DefaultAwsRegion
 	}
 
-	if isCloudflareR2Endpoint(endpointUrl) {
+	if IsCloudflareR2Endpoint(endpointUrl) {
 		return "auto"
 	}
 	return DefaultAwsRegion

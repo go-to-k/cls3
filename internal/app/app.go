@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
+	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
 )
 
@@ -266,6 +267,10 @@ func (a *App) validateOptions() error {
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.EndpointUrl != "" && a.OldVersionsOnly {
+		if client.IsCloudflareR2Endpoint(a.EndpointUrl) {
+			errMsg := fmt.Sprintln("The -o option is not supported with Cloudflare R2.")
+			return fmt.Errorf("InvalidOptionError: %v", errMsg)
+		}
 		io.Logger.Warn().Msg("The -o option may not work as expected with certain S3-compatible storage services when a custom endpoint URL is specified.")
 	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {

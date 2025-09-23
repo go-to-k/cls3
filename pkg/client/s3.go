@@ -466,7 +466,7 @@ func (s *S3) supportsVersions() bool {
 		return true
 	}
 
-	if isCloudflareR2Endpoint(*baseEndpoint) {
+	if IsCloudflareR2Endpoint(*baseEndpoint) {
 		return false
 	}
 
