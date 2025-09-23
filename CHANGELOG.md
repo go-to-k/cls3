@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.28.1](https://github.com/go-to-k/cls3/compare/v0.28.0...v0.28.1) - 2025-09-23
+- chore: remove warning if specifying -o and -e by @go-to-k in https://github.com/go-to-k/cls3/pull/367
+- chore(deps): bump golang.org/x/sync from 0.11.0 to 0.14.0 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/355
+- revert: chore(deps): bump golang.org/x/sync from 0.11.0 to 0.14.0 (#355) by @go-to-k in https://github.com/go-to-k/cls3/pull/369
+
 ## [v0.28.0](https://github.com/go-to-k/cls3/compare/v0.27.1...v0.28.0) - 2025-09-23
 - test: modify validation in testdata script for vector by @go-to-k in https://github.com/go-to-k/cls3/pull/361
 - test(version): comment out version tests by @go-to-k in https://github.com/go-to-k/cls3/pull/365
