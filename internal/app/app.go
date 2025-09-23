@@ -70,6 +70,7 @@ func NewApp(version string) *App {
 				Name:        "endpointUrl",
 				Aliases:     []string{"e"},
 				Usage:       "Custom endpoint URL",
+				EnvVars:     []string{"CLS3_ENDPOINT_URL"},
 				Destination: &app.EndpointUrl,
 			},
 			&cli.BoolFlag{

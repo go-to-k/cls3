@@ -70,7 +70,7 @@ The `-e | --endpointUrl` option allows you to specify a custom endpoint URL to a
 
 You can use cls3 with S3-compatible storage such as MinIO, Cloudflare R2, or Google Cloud Storage by specifying the custom endpoint URL.
 
-TODO: Support environment variables such as `CLS3_ENDPOINT_URL`.
+You can also set the endpoint URL using the `CLS3_ENDPOINT_URL` environment variable. If both the environment variable and the command-line option are specified, the command-line option takes precedence.
 
 ### Concurrent Deletion of Multiple Buckets
 
@@ -176,6 +176,9 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
 - -e, --endpointUrl: optional
   - Custom endpoint URL to access **S3-compatible storage** or a specific S3 endpoint.
   - You can use cls3 with S3-compatible storage such as **MinIO, Cloudflare R2, or Google Cloud Storage** by specifying the custom endpoint URL.
+  - This option can also be set using the `CLS3_ENDPOINT_URL` environment variable.
+    - Example: `export CLS3_ENDPOINT_URL=https://account.r2.cloudflarestorage.com`
+    - The command-line option takes precedence over the environment variable.
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
