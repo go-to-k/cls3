@@ -592,6 +592,17 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "",
 		},
 		{
+			name: "succeed with valid options - endpoint URL with old versions only",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				OldVersionsOnly:   true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
 			name: "error when Cloudflare R2 endpoint URL with old versions only",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
