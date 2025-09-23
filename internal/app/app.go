@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
+	"github.com/go-to-k/cls3/pkg/client"
 	"github.com/urfave/cli/v2"
 )
 
@@ -21,6 +22,7 @@ type App struct {
 	BucketNames          *cli.StringSlice
 	Profile              string
 	Region               string
+	EndpointUrl          string
 	ForceMode            bool
 	InteractiveMode      bool
 	OldVersionsOnly      bool
@@ -64,6 +66,13 @@ func NewApp(version string) *App {
 				Aliases:     []string{"r"},
 				Usage:       "AWS region",
 				Destination: &app.Region,
+			},
+			&cli.StringFlag{
+				Name:        "endpointUrl",
+				Aliases:     []string{"e"},
+				Usage:       "Custom endpoint URL",
+				EnvVars:     []string{"CLS3_ENDPOINT_URL"},
+				Destination: &app.EndpointUrl,
 			},
 			&cli.BoolFlag{
 				Name:        "force",
@@ -184,6 +193,7 @@ func (a *App) initS3Wrapper(ctx context.Context) error {
 		s3Wrapper, err := wrapper.CreateS3Wrapper(ctx, wrapper.CreateS3WrapperInput{
 			Region:               a.Region,
 			Profile:              a.Profile,
+			EndpointUrl:          a.EndpointUrl,
 			TableBucketsMode:     a.TableBucketsMode,
 			DirectoryBucketsMode: a.DirectoryBucketsMode,
 			VectorBucketsMode:    a.VectorBucketsMode,
@@ -243,6 +253,25 @@ func (a *App) validateOptions() error {
 	if a.TableBucketsMode && a.VectorBucketsMode {
 		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.EndpointUrl != "" && a.DirectoryBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -e, do not specify the -d option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.EndpointUrl != "" && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -e, do not specify the -t option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.EndpointUrl != "" && a.VectorBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -e, do not specify the -V option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.EndpointUrl != "" && a.OldVersionsOnly {
+		if client.IsCloudflareR2Endpoint(a.EndpointUrl) {
+			errMsg := fmt.Sprintln("The -o option is not supported with Cloudflare R2.")
+			return fmt.Errorf("InvalidOptionError: %v", errMsg)
+		}
+		io.Logger.Warn().Msg("The -o option may not work as expected with certain S3-compatible storage services when a custom endpoint URL is specified.")
 	}
 	if a.DirectoryBucketsMode && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("When specifying -d, do not specify the -o option.")

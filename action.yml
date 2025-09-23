@@ -36,6 +36,10 @@ inputs:
     description: "AWS Region"
     default: "us-east-1"
     required: false
+  endpoint-url:
+    description: "Custom endpoint URL"
+    default: ""
+    required: false
   concurrent-mode:
     description: "Delete multiple buckets in parallel"
     default: false
@@ -93,6 +97,10 @@ runs:
           if [ "${{ inputs.vector-buckets-mode }}" = "true" ]; then
             vector_buckets_mode="-V"
           fi
+          endpoint_url=""
+          if [ -n "${{ inputs.endpoint-url }}" ]; then
+            endpoint_url="-e ${{ inputs.endpoint-url }}"
+          fi
           concurrent_mode=""
           if [ "${{ inputs.concurrent-mode }}" = "true" ]; then
             concurrent_mode="-c"
@@ -109,5 +117,5 @@ runs:
           if [ -n "${{ inputs.region }}" ]; then
             region="-r ${{ inputs.region }}"
           fi
-          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $vector_buckets_mode $concurrent_mode $concurrency_number $key_prefix $region
+          cls3 $buckets $force $quiet $old_versions_only $directory_buckets_mode $table_buckets_mode $vector_buckets_mode $endpoint_url $concurrent_mode $concurrency_number $key_prefix $region
         fi

@@ -41,13 +41,14 @@ type ListBucketNamesFilteredByKeywordOutput struct {
 type CreateS3WrapperInput struct {
 	Region               string
 	Profile              string
+	EndpointUrl          string
 	TableBucketsMode     bool
 	DirectoryBucketsMode bool
 	VectorBucketsMode    bool
 }
 
 func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
-	config, err := client.LoadAWSConfig(ctx, input.Region, input.Profile)
+	config, err := client.LoadAWSConfig(ctx, input.Region, input.Profile, input.EndpointUrl)
 	if err != nil {
 		return nil, err
 	}
