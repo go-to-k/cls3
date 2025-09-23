@@ -1,176 +1,61 @@
 package wrapper
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateS3Wrapper(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name     string
 		input    CreateS3WrapperInput
-		wantErr  bool
 		wantType string
 	}{
 		{
-			name: "create S3 wrapper with endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:      "ap-northeast-1",
-				Profile:     "test-profile",
-				EndpointUrl: "https://custom.endpoint.com",
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
-		},
-		{
-			name: "create S3 wrapper without endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:  "ap-northeast-1",
-				Profile: "test-profile",
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
-		},
-		{
-			name: "create S3 wrapper with empty endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:      "ap-northeast-1",
-				Profile:     "test-profile",
-				EndpointUrl: "",
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
-		},
-		{
-			name: "create S3Tables wrapper with endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:           "ap-northeast-1",
-				Profile:          "test-profile",
-				EndpointUrl:      "https://custom.endpoint.com",
-				TableBucketsMode: true,
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3TablesWrapper",
-		},
-		{
-			name: "create S3Tables wrapper without endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:           "ap-northeast-1",
-				Profile:          "test-profile",
-				TableBucketsMode: true,
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3TablesWrapper",
-		},
-		{
-			name: "create S3Vectors wrapper with endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:            "ap-northeast-1",
-				Profile:           "test-profile",
-				EndpointUrl:       "https://custom.endpoint.com",
-				VectorBucketsMode: true,
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3VectorsWrapper",
-		},
-		{
-			name: "create S3Vectors wrapper without endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:            "ap-northeast-1",
-				Profile:           "test-profile",
-				VectorBucketsMode: true,
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3VectorsWrapper",
-		},
-		{
-			name: "create S3 wrapper for directory buckets with endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:               "ap-northeast-1",
-				Profile:              "test-profile",
-				EndpointUrl:          "https://custom.endpoint.com",
-				DirectoryBucketsMode: true,
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
-		},
-		{
-			name: "create S3 wrapper for directory buckets without endpoint URL",
-			input: CreateS3WrapperInput{
-				Region:               "ap-northeast-1",
-				Profile:              "test-profile",
-				DirectoryBucketsMode: true,
-			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
-		},
-		{
-			name:     "create S3 wrapper with all empty parameters",
+			name:     "default mode creates S3Wrapper",
 			input:    CreateS3WrapperInput{},
-			wantErr:  false,
 			wantType: "*wrapper.S3Wrapper",
 		},
 		{
-			name: "create S3 wrapper with only endpoint URL",
+			name: "TableBucketsMode creates S3TablesWrapper",
 			input: CreateS3WrapperInput{
-				EndpointUrl: "https://custom.endpoint.com",
+				TableBucketsMode: true,
 			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
+			wantType: "*wrapper.S3TablesWrapper",
 		},
 		{
-			name: "create S3 wrapper with region and endpoint URL",
+			name: "VectorBucketsMode creates S3VectorsWrapper",
 			input: CreateS3WrapperInput{
-				Region:      "us-west-2",
-				EndpointUrl: "https://custom.endpoint.com",
+				VectorBucketsMode: true,
 			},
-			wantErr:  false,
-			wantType: "*wrapper.S3Wrapper",
+			wantType: "*wrapper.S3VectorsWrapper",
 		},
 		{
-			name: "create S3 wrapper with profile and endpoint URL",
+			name: "DirectoryBucketsMode creates S3Wrapper",
 			input: CreateS3WrapperInput{
-				Profile:     "test-profile",
-				EndpointUrl: "https://custom.endpoint.com",
+				DirectoryBucketsMode: true,
 			},
-			wantErr:  false,
 			wantType: "*wrapper.S3Wrapper",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Skip actual wrapper creation to avoid AWS API calls
-			// This test is primarily checking the logic flow and parameter passing
-			// The actual AWS SDK configuration is tested in aws_config_test.go
+			wrapper, err := CreateS3Wrapper(ctx, tt.input)
 
-			// Check that the function accepts the parameters correctly
-			// Actual integration testing would require mocking AWS SDK or using localstack
-			assert.NotNil(t, tt.input)
+			// Verify no error occurred
+			require.NoError(t, err)
+			require.NotNil(t, wrapper)
 
-			// Verify that the input structure contains the expected fields
-			if tt.input.EndpointUrl != "" {
-				assert.NotEmpty(t, tt.input.EndpointUrl)
-			}
-
-			if tt.input.TableBucketsMode {
-				assert.True(t, tt.input.TableBucketsMode)
-				assert.False(t, tt.input.DirectoryBucketsMode)
-				assert.False(t, tt.input.VectorBucketsMode)
-			}
-
-			if tt.input.VectorBucketsMode {
-				assert.True(t, tt.input.VectorBucketsMode)
-				assert.False(t, tt.input.TableBucketsMode)
-				assert.False(t, tt.input.DirectoryBucketsMode)
-			}
-
-			if tt.input.DirectoryBucketsMode {
-				assert.True(t, tt.input.DirectoryBucketsMode)
-				assert.False(t, tt.input.TableBucketsMode)
-				assert.False(t, tt.input.VectorBucketsMode)
-			}
+			// Verify the correct wrapper type was created
+			wrapperType := fmt.Sprintf("%T", wrapper)
+			assert.Equal(t, tt.wantType, wrapperType)
 		})
 	}
 }
