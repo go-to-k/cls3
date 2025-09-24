@@ -85,36 +85,6 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: You cannot specify both -t and -V options.\n",
 		},
 		{
-			name: "error when endpoint URL specified with directory buckets mode",
-			app: &App{
-				BucketNames:          cli.NewStringSlice("bucket1"),
-				EndpointUrl:          "https://custom.endpoint.com",
-				DirectoryBucketsMode: true,
-				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
-			},
-			expectedErr: "InvalidOptionError: When specifying -e, do not specify the -d option.\n",
-		},
-		{
-			name: "error when endpoint URL specified with table buckets mode",
-			app: &App{
-				BucketNames:       cli.NewStringSlice("bucket1"),
-				EndpointUrl:       "https://custom.endpoint.com",
-				TableBucketsMode:  true,
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-			},
-			expectedErr: "InvalidOptionError: When specifying -e, do not specify the -t option.\n",
-		},
-		{
-			name: "error when endpoint URL specified with vector buckets mode",
-			app: &App{
-				BucketNames:       cli.NewStringSlice("bucket1"),
-				EndpointUrl:       "https://custom.endpoint.com",
-				VectorBucketsMode: true,
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-			},
-			expectedErr: "InvalidOptionError: When specifying -e, do not specify the -V option.\n",
-		},
-		{
 			name: "error when both directory buckets mode and old versions only specified",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),
@@ -603,17 +573,6 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "",
 		},
 		{
-			name: "error when Cloudflare R2 endpoint URL with old versions only",
-			app: &App{
-				BucketNames:       cli.NewStringSlice("bucket1"),
-				EndpointUrl:       "https://account.r2.cloudflarestorage.com",
-				OldVersionsOnly:   true,
-				Region:            "ap-northeast-1",
-				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
-			},
-			expectedErr: "InvalidOptionError: The -o option is not supported with Cloudflare R2.\n",
-		},
-		{
 			name: "succeed with valid options - endpoint URL with concurrent mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1", "bucket2"),
@@ -634,6 +593,113 @@ func Test_validateOptions(t *testing.T) {
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
 			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - AWS S3 endpoint with directory buckets mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				EndpointUrl:          "https://s3.us-west-2.amazonaws.com",
+				DirectoryBucketsMode: true,
+				Region:               "us-west-2",
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - AWS S3 endpoint with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://s3.amazonaws.com",
+				TableBucketsMode:  true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - AWS S3 endpoint with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://s3.eu-central-1.amazonaws.com",
+				VectorBucketsMode: true,
+				Region:            "eu-central-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - empty endpoint with directory buckets mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				EndpointUrl:          "",
+				DirectoryBucketsMode: true,
+				Region:               "us-west-2",
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - empty endpoint with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "",
+				TableBucketsMode:  true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - empty endpoint with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "",
+				VectorBucketsMode: true,
+				Region:            "eu-central-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "error when Cloudflare R2 endpoint URL with old versions only",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://account.r2.cloudflarestorage.com",
+				OldVersionsOnly:   true,
+				Region:            "ap-northeast-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: The -o option is not supported with Cloudflare R2.\n",
+		},
+		{
+			name: "error when non-AWS S3 endpoint specified with directory buckets mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				EndpointUrl:          "https://custom.endpoint.com",
+				DirectoryBucketsMode: true,
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: Directory Buckets mode (-d) is not supported with non-AWS S3 endpoints.\n",
+		},
+		{
+			name: "error when non-AWS S3 endpoint specified with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				TableBucketsMode:  true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: Table Buckets mode (-t) is not supported with non-AWS S3 endpoints.\n",
+		},
+		{
+			name: "error when non-AWS S3 endpoint specified with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://custom.endpoint.com",
+				VectorBucketsMode: true,
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: Vector Buckets mode (-V) is not supported with non-AWS S3 endpoints.\n",
 		},
 	}
 
