@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.29.0](https://github.com/go-to-k/cls3/compare/v0.28.1...v0.29.0) - 2025-09-24
+- feat: allow S3 endpoint to use -d, -t and -V options by @go-to-k in https://github.com/go-to-k/cls3/pull/370
+
 ## [v0.28.1](https://github.com/go-to-k/cls3/compare/v0.28.0...v0.28.1) - 2025-09-23
 - chore: remove warning if specifying -o and -e by @go-to-k in https://github.com/go-to-k/cls3/pull/367
 - chore(deps): bump golang.org/x/sync from 0.11.0 to 0.14.0 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/355
