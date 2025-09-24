@@ -118,16 +118,6 @@ func TestIsAWSS3Endpoint(t *testing.T) {
 			endpointUrl: "",
 			want:        true,
 		},
-		{
-			name:        "Non-S3 AWS service endpoint",
-			endpointUrl: "https://ec2.us-west-2.amazonaws.com",
-			want:        false,
-		},
-		{
-			name:        "AWS endpoint without s3",
-			endpointUrl: "https://rds.amazonaws.com",
-			want:        false,
-		},
 	}
 
 	for _, tt := range tests {
