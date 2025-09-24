@@ -41,7 +41,7 @@ func LoadAWSConfig(ctx context.Context, region string, profile string, endpointU
 }
 
 func defineDefaultRegion(endpointUrl string) string {
-	if endpointUrl == "" {
+	if IsAWSS3Endpoint(endpointUrl) {
 		return DefaultAwsRegion
 	}
 

@@ -254,19 +254,19 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.EndpointUrl != "" && a.DirectoryBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -e, do not specify the -d option.")
+	if !client.IsAWSS3Endpoint(a.EndpointUrl) && a.DirectoryBucketsMode {
+		errMsg := fmt.Sprintln("Directory Buckets mode (-d) is not supported with non-AWS S3 endpoints.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.EndpointUrl != "" && a.TableBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -e, do not specify the -t option.")
+	if !client.IsAWSS3Endpoint(a.EndpointUrl) && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("Table Buckets mode (-t) is not supported with non-AWS S3 endpoints.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.EndpointUrl != "" && a.VectorBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -e, do not specify the -V option.")
+	if !client.IsAWSS3Endpoint(a.EndpointUrl) && a.VectorBucketsMode {
+		errMsg := fmt.Sprintln("Vector Buckets mode (-V) is not supported with non-AWS S3 endpoints.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if a.OldVersionsOnly && client.IsCloudflareR2Endpoint(a.EndpointUrl) {
+	if client.IsCloudflareR2Endpoint(a.EndpointUrl) && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("The -o option is not supported with Cloudflare R2.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
