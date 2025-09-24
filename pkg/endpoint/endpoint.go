@@ -1,4 +1,4 @@
-package client
+package endpoint
 
 import "strings"
 
@@ -26,5 +26,5 @@ func IsAWSS3Endpoint(endpointUrl string) bool {
 	// - <bucket>.s3.amazonaws.com (virtual hosted-style, but we check the domain part)
 	// - <bucket>.s3.<region>.amazonaws.com (virtual hosted-style, but we check the domain part)
 	return strings.Contains(lowerUrl, ".amazonaws.com") &&
-		   (strings.Contains(lowerUrl, "s3.") || strings.Contains(lowerUrl, "s3-"))
+		(strings.Contains(lowerUrl, "s3.") || strings.Contains(lowerUrl, "s3-"))
 }

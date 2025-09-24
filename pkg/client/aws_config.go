@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/go-to-k/cls3/pkg/endpoint"
 )
 
 // TODO: change to us-east-1 (and README and blogs)
@@ -41,11 +42,11 @@ func LoadAWSConfig(ctx context.Context, region string, profile string, endpointU
 }
 
 func defineDefaultRegion(endpointUrl string) string {
-	if IsAWSS3Endpoint(endpointUrl) {
+	if endpoint.IsAWSS3Endpoint(endpointUrl) {
 		return DefaultAwsRegion
 	}
 
-	if IsCloudflareR2Endpoint(endpointUrl) {
+	if endpoint.IsCloudflareR2Endpoint(endpointUrl) {
 		return "auto"
 	}
 	return DefaultAwsRegion

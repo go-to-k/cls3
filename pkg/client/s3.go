@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/go-to-k/cls3/pkg/endpoint"
 )
 
 var SleepTimeSecForS3 = 20
@@ -461,12 +462,12 @@ func (s *S3) supportsVersions() bool {
 	}
 
 	baseEndpoint := s.client.Options().BaseEndpoint
-	if baseEndpoint == nil || *baseEndpoint == "" {
+	if baseEndpoint == nil || endpoint.IsAWSS3Endpoint(*baseEndpoint) {
 		// Standard AWS S3 supports versioning
 		return true
 	}
 
-	if IsCloudflareR2Endpoint(*baseEndpoint) {
+	if endpoint.IsCloudflareR2Endpoint(*baseEndpoint) {
 		return false
 	}
 

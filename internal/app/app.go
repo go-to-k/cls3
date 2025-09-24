@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/go-to-k/cls3/internal/io"
 	"github.com/go-to-k/cls3/internal/wrapper"
-	"github.com/go-to-k/cls3/pkg/client"
+	"github.com/go-to-k/cls3/pkg/endpoint"
 	"github.com/urfave/cli/v2"
 )
 
@@ -254,19 +254,19 @@ func (a *App) validateOptions() error {
 		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if !client.IsAWSS3Endpoint(a.EndpointUrl) && a.DirectoryBucketsMode {
+	if !endpoint.IsAWSS3Endpoint(a.EndpointUrl) && a.DirectoryBucketsMode {
 		errMsg := fmt.Sprintln("Directory Buckets mode (-d) is not supported with non-AWS S3 endpoints.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if !client.IsAWSS3Endpoint(a.EndpointUrl) && a.TableBucketsMode {
+	if !endpoint.IsAWSS3Endpoint(a.EndpointUrl) && a.TableBucketsMode {
 		errMsg := fmt.Sprintln("Table Buckets mode (-t) is not supported with non-AWS S3 endpoints.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if !client.IsAWSS3Endpoint(a.EndpointUrl) && a.VectorBucketsMode {
+	if !endpoint.IsAWSS3Endpoint(a.EndpointUrl) && a.VectorBucketsMode {
 		errMsg := fmt.Sprintln("Vector Buckets mode (-V) is not supported with non-AWS S3 endpoints.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
-	if client.IsCloudflareR2Endpoint(a.EndpointUrl) && a.OldVersionsOnly {
+	if endpoint.IsCloudflareR2Endpoint(a.EndpointUrl) && a.OldVersionsOnly {
 		errMsg := fmt.Sprintln("The -o option is not supported with Cloudflare R2.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
