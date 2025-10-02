@@ -1,4 +1,4 @@
-name: 'Lint PR'
+name: "Lint PR"
 
 on:
   pull_request:
@@ -40,6 +40,7 @@ jobs:
             version
             wrapper
             client
+            endpoint
           requireScope: false
           ignoreLabels: |
             tagpr
@@ -49,12 +50,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      MINOR_LABEL: 'minor-release'
-      MINOR_LABEL_COLOR: '#FBCA04'
-      MAJOR_LABEL: 'major-release'
-      MAJOR_LABEL_COLOR: '#D93F0B'
-      PATCH_LABEL: 'patch-release'
-      PATCH_LABEL_COLOR: '#C5DEF5'
+      MINOR_LABEL: "minor-release"
+      MINOR_LABEL_COLOR: "#FBCA04"
+      MAJOR_LABEL: "major-release"
+      MAJOR_LABEL_COLOR: "#D93F0B"
+      PATCH_LABEL: "patch-release"
+      PATCH_LABEL_COLOR: "#C5DEF5"
     steps:
       - name: Check out the repository
         uses: actions/checkout@v5
