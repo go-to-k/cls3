@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.30.0](https://github.com/go-to-k/cls3/compare/v0.29.0...v0.30.0) - 2025-10-02
+- feat: change default region to us-east-1 by @go-to-k in https://github.com/go-to-k/cls3/pull/385
+- chore(deps): bump actions/checkout from 4 to 5 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/372
+- chore(deps): bump actions/setup-go from 5 to 6 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/375
+- ci: add 'endpoint' to scopes in PR title lint by @go-to-k in https://github.com/go-to-k/cls3/pull/387
+- chore(deps): bump amannn/action-semantic-pull-request from 5 to 6 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/374
+- chore(deps): bump github.com/charmbracelet/bubbletea from 1.1.1 to 1.3.10 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/373
+- revert: "chore(deps): bump github.com/charmbracelet/bubbletea (#373)" by @go-to-k in https://github.com/go-to-k/cls3/pull/388
+- chore(deps): bump github.com/aws/aws-sdk-go-v2/service/s3vectors from 1.0.1 to 1.4.8 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/380
+
 ## [v0.29.0](https://github.com/go-to-k/cls3/compare/v0.28.1...v0.29.0) - 2025-09-24
 - feat: allow S3 endpoint to use -d, -t and -V options by @go-to-k in https://github.com/go-to-k/cls3/pull/370
 
