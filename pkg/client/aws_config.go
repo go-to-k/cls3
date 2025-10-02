@@ -8,8 +8,7 @@ import (
 	"github.com/go-to-k/cls3/pkg/endpoint"
 )
 
-// TODO: change to us-east-1 (and README and blogs)
-const DefaultAwsRegion = "ap-northeast-1"
+const DefaultAwsRegion = "us-east-1"
 
 func LoadAWSConfig(ctx context.Context, region string, profile string, endpointUrl string) (aws.Config, error) {
 	var (
