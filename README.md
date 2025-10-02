@@ -176,7 +176,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
     - `cls3 -b test1 -b test2`
 - -p, --profile: optional
   - AWS profile name
-- -r, --region: optional(default: `ap-northeast-1`)
+- -r, --region: optional(default: `us-east-1`)
   - AWS Region
     - If this option is not specified and your AWS profile is tied to a region, the region is used instead of the default region.
   - It is not necessary to be aware of this as it can be used **across regions**.

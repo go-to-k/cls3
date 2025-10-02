@@ -82,7 +82,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -105,7 +105,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -131,7 +131,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
 						middleware.FinalizeMiddlewareFunc(
@@ -161,7 +161,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -208,7 +208,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -242,7 +242,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects:    []types.ObjectIdentifier{},
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
 					return stack.Finalize.Add(
@@ -271,7 +271,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -308,7 +308,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -348,7 +348,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key"),
@@ -396,7 +396,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key1"),
@@ -470,7 +470,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key1"),
@@ -526,7 +526,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key1"),
@@ -607,7 +607,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				objects: []types.ObjectIdentifier{
 					{
 						Key:       aws.String("Key1"),
@@ -691,7 +691,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 			SleepTimeSecForS3 = 0
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -746,7 +746,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:                  context.Background(),
 				bucketName:           aws.String("test"),
-				region:               "ap-northeast-1",
+				region:               "us-east-1",
 				oldVersionsOnly:      false,
 				keyMarker:            nil,
 				versionIdMarker:      nil,
@@ -797,7 +797,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:                  context.Background(),
 				bucketName:           aws.String("test"),
-				region:               "ap-northeast-1",
+				region:               "us-east-1",
 				oldVersionsOnly:      false,
 				keyMarker:            nil,
 				versionIdMarker:      nil,
@@ -856,7 +856,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:                  context.Background(),
 				bucketName:           aws.String("test"),
-				region:               "ap-northeast-1",
+				region:               "us-east-1",
 				oldVersionsOnly:      false,
 				keyMarker:            nil,
 				versionIdMarker:      nil,
@@ -887,7 +887,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:                  context.Background(),
 				bucketName:           aws.String("test"),
-				region:               "ap-northeast-1",
+				region:               "us-east-1",
 				oldVersionsOnly:      false,
 				keyMarker:            nil,
 				versionIdMarker:      nil,
@@ -919,7 +919,7 @@ func TestS3_ListObjectsOrVersionsByPage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -979,7 +979,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1037,7 +1037,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1070,7 +1070,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1106,7 +1106,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1143,7 +1143,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1192,7 +1192,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1241,7 +1241,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       aws.String("NextKeyMarker"),
 				versionIdMarker: aws.String("NextVersionIdMarker"),
@@ -1299,7 +1299,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: false,
 				keyMarker:       aws.String("NextKeyMarker"),
 				versionIdMarker: aws.String("NextVersionIdMarker"),
@@ -1332,7 +1332,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				bucketName:      aws.String("test"),
-				region:          "ap-northeast-1",
+				region:          "us-east-1",
 				oldVersionsOnly: true,
 				keyMarker:       nil,
 				versionIdMarker: nil,
@@ -1417,7 +1417,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -1475,7 +1475,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				token:      nil,
 				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
@@ -1523,7 +1523,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				token:      nil,
 				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
@@ -1554,7 +1554,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				token:      nil,
 				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
@@ -1588,7 +1588,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				token:      nil,
 				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
@@ -1618,7 +1618,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				token:      aws.String("Token"),
 				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
@@ -1666,7 +1666,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 			args: args{
 				ctx:        context.Background(),
 				bucketName: aws.String("test"),
-				region:     "ap-northeast-1",
+				region:     "us-east-1",
 				token:      aws.String("Token"),
 				keyPrefix:  nil,
 				withAPIOptionsFunc: func(stack *middleware.Stack) error {
@@ -1698,7 +1698,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -1883,7 +1883,7 @@ func TestS3_ListBucketsOrDirectoryBuckets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -2179,7 +2179,7 @@ func TestS3_listBuckets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -2528,7 +2528,7 @@ func TestS3_listDirectoryBuckets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -2586,7 +2586,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
 									Result: &s3.GetBucketLocationOutput{
-										LocationConstraint: "ap-northeast-1",
+										LocationConstraint: "us-east-1",
 									},
 								}, middleware.Metadata{}, nil
 							},
@@ -2596,7 +2596,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 				},
 			},
 			want: want{
-				region: "ap-northeast-1",
+				region: "us-east-1",
 				err:    nil,
 			},
 			wantErr: false,
@@ -2712,7 +2712,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				tt.args.ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.args.withAPIOptionsFunc}),
 			)
 			if err != nil {
@@ -2822,7 +2822,7 @@ func TestS3_supportsVersions(t *testing.T) {
 			// Create a mock S3 client with the specified baseEndpoint
 			cfg, err := config.LoadDefaultConfig(
 				ctx,
-				config.WithRegion("ap-northeast-1"),
+				config.WithRegion("us-east-1"),
 			)
 			if err != nil {
 				t.Fatal(err)

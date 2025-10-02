@@ -45,8 +45,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -61,8 +61,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
@@ -81,8 +81,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  true,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -97,8 +97,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
@@ -117,8 +117,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -133,14 +133,14 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(nil)
+				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "us-east-1").Return(nil)
 			},
 			want:    nil,
 			wantErr: false,
@@ -168,8 +168,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(nil, fmt.Errorf("ListObjectVersionsByPageError"))
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(nil, fmt.Errorf("ListObjectVersionsByPageError"))
 			},
 			want:    fmt.Errorf("ListObjectVersionsByPageError"),
 			wantErr: true,
@@ -183,8 +183,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -199,7 +199,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, fmt.Errorf("DeleteObjectsError"))
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, fmt.Errorf("DeleteObjectsError"))
 			},
 			want:    fmt.Errorf("DeleteObjectsError"),
 			wantErr: true,
@@ -213,8 +213,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -229,7 +229,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return(
 					[]types.Error{
 						{
 							Key:       aws.String("Key"),
@@ -239,7 +239,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						},
 					}, nil,
 				)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
@@ -258,8 +258,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -274,14 +274,14 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(fmt.Errorf("DeleteBucketError"))
+				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "us-east-1").Return(fmt.Errorf("DeleteBucketError"))
 			},
 			want:    fmt.Errorf("DeleteBucketError"),
 			wantErr: true,
@@ -295,14 +295,14 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
 						NextVersionIdMarker: nil,
 					}, nil)
-				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(nil)
+				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "us-east-1").Return(nil)
 			},
 			want:    nil,
 			wantErr: false,
@@ -316,13 +316,13 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(&client.ListObjectsOrVersionsByPageOutput{
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(&client.ListObjectsOrVersionsByPageOutput{
 					ObjectIdentifiers:   []types.ObjectIdentifier{},
 					NextKeyMarker:       nil,
 					NextVersionIdMarker: nil,
 				}, nil)
-				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "ap-northeast-1").Return(fmt.Errorf("DeleteBucketError"))
+				m.EXPECT().DeleteBucket(gomock.Any(), aws.String("test"), "us-east-1").Return(fmt.Errorf("DeleteBucketError"))
 			},
 			want:    fmt.Errorf("DeleteBucketError"),
 			wantErr: true,
@@ -336,8 +336,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -353,7 +353,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().ListObjectsOrVersionsByPage(
 					gomock.Any(),
 					aws.String("test"),
-					"ap-northeast-1",
+					"us-east-1",
 					false,
 					aws.String("NextKeyMarker1"),
 					aws.String("NextVersionIdMarker1"),
@@ -374,7 +374,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().ListObjectsOrVersionsByPage(
 					gomock.Any(),
 					aws.String("test"),
-					"ap-northeast-1",
+					"us-east-1",
 					false,
 					aws.String("NextKeyMarker2"),
 					aws.String("NextVersionIdMarker2"),
@@ -392,10 +392,10 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					},
 					nil,
 				)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
@@ -414,8 +414,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -431,7 +431,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().ListObjectsOrVersionsByPage(
 					gomock.Any(),
 					aws.String("test"),
-					"ap-northeast-1",
+					"us-east-1",
 					false,
 					aws.String("NextKeyMarker1"),
 					aws.String("NextVersionIdMarker1"),
@@ -452,7 +452,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().ListObjectsOrVersionsByPage(
 					gomock.Any(),
 					aws.String("test"),
-					"ap-northeast-1",
+					"us-east-1",
 					false,
 					aws.String("NextKeyMarker2"),
 					aws.String("NextVersionIdMarker2"),
@@ -470,9 +470,9 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					},
 					nil,
 				)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return(
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return(
 					[]types.Error{
 						{
 							Key:       aws.String("Key"),
@@ -482,7 +482,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 						},
 					}, nil,
 				)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers:   []types.ObjectIdentifier{},
 						NextKeyMarker:       nil,
@@ -501,8 +501,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -518,7 +518,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().ListObjectsOrVersionsByPage(
 					gomock.Any(),
 					aws.String("test"),
-					"ap-northeast-1",
+					"us-east-1",
 					false,
 					aws.String("NextKeyMarker1"),
 					aws.String("NextVersionIdMarker1"),
@@ -539,7 +539,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				m.EXPECT().ListObjectsOrVersionsByPage(
 					gomock.Any(),
 					aws.String("test"),
-					"ap-northeast-1",
+					"us-east-1",
 					false,
 					aws.String("NextKeyMarker2"),
 					aws.String("NextVersionIdMarker2"),
@@ -557,9 +557,9 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					},
 					nil,
 				)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, fmt.Errorf("DeleteObjectsError"))
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, fmt.Errorf("DeleteObjectsError"))
 			},
 			want:    fmt.Errorf("DeleteObjectsError"),
 			wantErr: true,
@@ -573,8 +573,8 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 				quietMode:  false,
 			},
 			prepareMockFn: func(m *client.MockIS3) {
-				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("ap-northeast-1", nil)
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -587,9 +587,9 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					},
 					nil,
 				)
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
 				// retry loop
-				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "ap-northeast-1", false, nil, nil, nil).Return(
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
 					&client.ListObjectsOrVersionsByPageOutput{
 						ObjectIdentifiers: []types.ObjectIdentifier{
 							{
@@ -603,7 +603,7 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 					nil,
 				)
 				// retry deletion
-				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "ap-northeast-1").Return([]types.Error{}, nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return([]types.Error{}, nil)
 			},
 			want:    nil,
 			wantErr: false,
