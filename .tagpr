@@ -42,3 +42,4 @@
 	versionFile = -
 	majorLabels = major-release
 	minorLabels = minor-release
+	release = draft
