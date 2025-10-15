@@ -43,3 +43,5 @@ brews:
     description: cls3
     test: |
       system "#{bin}/cls3 -v"
+release:
+  use_existing_draft: true
