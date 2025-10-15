@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.30.1](https://github.com/go-to-k/cls3/compare/v0.30.0...v0.30.1) - 2025-10-15
+- ci: enable immutable releases by @go-to-k in https://github.com/go-to-k/cls3/pull/395
+
 ## [v0.30.0](https://github.com/go-to-k/cls3/compare/v0.29.0...v0.30.0) - 2025-10-02
 - feat: change default region to us-east-1 by @go-to-k in https://github.com/go-to-k/cls3/pull/385
 - chore(deps): bump actions/checkout from 4 to 5 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/372
