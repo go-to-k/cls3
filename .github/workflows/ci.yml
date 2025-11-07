@@ -51,8 +51,8 @@ jobs:
         with:
           go_version_file: go.mod
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
+          reporter: github-check
           level: error
           filter_mode: nofilter
           golangci_lint_flags: '--config=.golangci.yml'
-          fail_on_error: true
+          fail_level: error
