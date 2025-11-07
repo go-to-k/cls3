@@ -313,7 +313,7 @@ func (a *App) validateOptions() error {
 	}
 	if a.DirectoryBucketsMode && a.KeyPrefix != "" && !strings.HasSuffix(a.KeyPrefix, "/") {
 		io.Logger.Warn().Msgf("The key prefix `%s` for the Directory Buckets does not end with a delimiter ( / ). It has been added automatically.", a.KeyPrefix)
-		a.KeyPrefix = a.KeyPrefix + "/"
+		a.KeyPrefix += "/"
 	}
 	return nil
 }
