@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.31.0](https://github.com/go-to-k/cls3/compare/v0.30.1...v0.31.0) - 2025-11-29
+- chore: change reviewdog settings in CI by @go-to-k in https://github.com/go-to-k/cls3/pull/402
+- chore(deps): bump actions/checkout from 5 to 6 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/404
+- chore(deps): bump actions/upload-artifact from 4 to 5 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/400
+- chore(deps): bump go.uber.org/mock from 0.4.0 to 0.6.0 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/393
+- feat: support `aws login` by @go-to-k in https://github.com/go-to-k/cls3/pull/405
+- chore(deps): bump github.com/rs/zerolog from 1.33.0 to 1.34.0 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/391
+
 ## [v0.30.1](https://github.com/go-to-k/cls3/compare/v0.30.0...v0.30.1) - 2025-10-15
 - ci: enable immutable releases by @go-to-k in https://github.com/go-to-k/cls3/pull/395
 
