@@ -58,7 +58,7 @@ jobs:
       PATCH_LABEL_COLOR: "#C5DEF5"
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Create labels if they do not exist
         run: |
           EXISTING_LABELS=$(gh label list --json name --jq '.[].name')
