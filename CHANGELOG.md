@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.31.1](https://github.com/go-to-k/cls3/compare/v0.31.0...v0.31.1) - 2025-11-29
+- chore: change go and bubbletea version by @go-to-k in https://github.com/go-to-k/cls3/pull/406
+
 ## [v0.31.0](https://github.com/go-to-k/cls3/compare/v0.30.1...v0.31.0) - 2025-11-29
 - chore: change reviewdog settings in CI by @go-to-k in https://github.com/go-to-k/cls3/pull/402
 - chore(deps): bump actions/checkout from 5 to 6 by @dependabot[bot] in https://github.com/go-to-k/cls3/pull/404
