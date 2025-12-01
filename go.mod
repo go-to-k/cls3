@@ -6,7 +6,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.40.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.73.2
-	github.com/aws/aws-sdk-go-v2/service/s3tables v1.1.1
+	github.com/aws/aws-sdk-go-v2/service/s3tables v1.12.2
 	github.com/aws/aws-sdk-go-v2/service/s3vectors v1.4.8
 	github.com/aws/smithy-go v1.23.2
 	github.com/charmbracelet/bubbletea v1.3.10
