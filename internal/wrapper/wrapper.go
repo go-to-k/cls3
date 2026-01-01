@@ -42,6 +42,7 @@ type CreateS3WrapperInput struct {
 	Region               string
 	Profile              string
 	EndpointUrl          string
+	PathStyle            bool
 	TableBucketsMode     bool
 	DirectoryBucketsMode bool
 	VectorBucketsMode    bool
@@ -77,6 +78,7 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 		s3.NewFromConfig(config, func(o *s3.Options) {
 			o.RetryMaxAttempts = SDKRetryMaxAttempts
 			o.RetryMode = aws.RetryModeStandard
+			o.UsePathStyle = input.PathStyle
 		}),
 		input.DirectoryBucketsMode,
 	)
