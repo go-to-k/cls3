@@ -23,6 +23,7 @@ type App struct {
 	Profile              string
 	Region               string
 	EndpointUrl          string
+	PathStyle            bool
 	ForceMode            bool
 	InteractiveMode      bool
 	OldVersionsOnly      bool
@@ -73,6 +74,13 @@ func NewApp(version string) *App {
 				Usage:       "Custom endpoint URL",
 				EnvVars:     []string{"CLS3_ENDPOINT_URL"},
 				Destination: &app.EndpointUrl,
+			},
+			&cli.BoolFlag{
+				Name:        "pathStyle",
+				Aliases:     []string{"P"},
+				Value:       false,
+				Usage:       "Use path-style URL addressing (e.g., https://endpoint.com/bucket) instead of virtual-hosted-style (e.g., https://bucket.endpoint.com)",
+				Destination: &app.PathStyle,
 			},
 			&cli.BoolFlag{
 				Name:        "force",
@@ -194,6 +202,7 @@ func (a *App) initS3Wrapper(ctx context.Context) error {
 			Region:               a.Region,
 			Profile:              a.Profile,
 			EndpointUrl:          a.EndpointUrl,
+			PathStyle:            a.PathStyle,
 			TableBucketsMode:     a.TableBucketsMode,
 			DirectoryBucketsMode: a.DirectoryBucketsMode,
 			VectorBucketsMode:    a.VectorBucketsMode,
@@ -252,6 +261,18 @@ func (a *App) validateOptions() error {
 	}
 	if a.TableBucketsMode && a.VectorBucketsMode {
 		errMsg := fmt.Sprintln("You cannot specify both -t and -V options.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.PathStyle && a.DirectoryBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -P (--pathStyle), do not specify the -d option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.PathStyle && a.TableBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -P (--pathStyle), do not specify the -t option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.PathStyle && a.VectorBucketsMode {
+		errMsg := fmt.Sprintln("When specifying -P (--pathStyle), do not specify the -V option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if !endpoint.IsAWSS3Endpoint(a.EndpointUrl) && a.DirectoryBucketsMode {

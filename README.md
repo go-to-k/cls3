@@ -80,6 +80,14 @@ export CLS3_ENDPOINT_URL=https://your-account.r2.cloudflarestorage.com
 
 While `AWS_ENDPOINT_URL` and `AWS_ENDPOINT_URL_S3` environment variables are also supported (via AWS SDK), we recommend using `CLS3_ENDPOINT_URL` for clarity and to avoid conflicts with other AWS tools.
 
+### Path-Style URL Addressing
+
+The `-P | --pathStyle` option allows you to use path-style URL addressing (e.g., `https://endpoint.com/bucket`) instead of virtual-hosted-style (e.g., `https://bucket.endpoint.com`).
+
+This option is **typically used with the `-e | --endpointUrl` option** when working with S3-compatible storage systems like **Ceph** or **MinIO** that require or prefer path-style URLs.
+
+Note: This option cannot be used with Directory Buckets Mode (`-d`), Table Buckets Mode (`-t`), or Vector Buckets Mode (`-V`), as these AWS-specific features only support virtual-hosted-style URLs.
+
 ### Concurrent Deletion of Multiple Buckets
 
 The `-c | --concurrentMode` option allows you to delete **multiple buckets in parallel**. By default, when this option is specified, all buckets will be deleted in parallel.
@@ -165,7 +173,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-e|--endpointUrl <endpointUrl>] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-e|--endpointUrl <endpointUrl>] [-P|--pathStyle] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
   ```
 
 - -b, --bucketName: optional
@@ -189,6 +197,10 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
     - Example: `export CLS3_ENDPOINT_URL=https://your-account.r2.cloudflarestorage.com`
     - The command-line option takes precedence over the environment variable.
     - While `AWS_ENDPOINT_URL` and `AWS_ENDPOINT_URL_S3` environment variables are also supported (via AWS SDK), we recommend using `CLS3_ENDPOINT_URL` for clarity and to avoid conflicts with other AWS tools.
+- -P, --pathStyle: optional
+  - Use path-style URL addressing (e.g., `https://endpoint.com/bucket`) instead of virtual-hosted-style (e.g., `https://bucket.endpoint.com`)
+  - **Typically used with `-e | --endpointUrl`** when working with S3-compatible storage systems like **Ceph** or **MinIO** that require path-style URLs
+  - Cannot be used with Directory Buckets Mode (`-d`), Table Buckets Mode (`-t`), or Vector Buckets Mode (`-V`)
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
     - If you specify this option with -t (--tableBucketsMode), it will delete not only the namespaces and the tables but also the table bucket itself.
@@ -295,6 +307,7 @@ jobs:
           vector-buckets-mode: false # Vector Buckets Mode for S3 Vectors (default: false)
           region: us-east-1 # Specify the region in the Directory Buckets Mode for S3 Express One Zone, Table Buckets Mode for S3 Tables, and Vector Buckets Mode for S3 Vectors.
           endpoint-url: https://s3.custom.endpoint.com # Custom endpoint URL (default: "")
+          path-style: false # Use path-style URL addressing (default: false)
           concurrent-mode: true # Delete multiple buckets in parallel (default: false)
           concurrency-number: 8 # Specify the number of parallel deletions (requires concurrent-mode to be true)
           key-prefix: test-prefix # Key prefix of the objects to be deleted.

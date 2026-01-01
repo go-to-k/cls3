@@ -154,6 +154,39 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: When specifying -V, do not specify the -o option.\n",
 		},
 		{
+			name: "error when path style with directory buckets mode",
+			app: &App{
+				BucketNames:          cli.NewStringSlice("bucket1"),
+				PathStyle:            true,
+				DirectoryBucketsMode: true,
+				Region:               "us-east-1",
+				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -P (--pathStyle), do not specify the -d option.\n",
+		},
+		{
+			name: "error when path style with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				PathStyle:         true,
+				TableBucketsMode:  true,
+				Region:            "us-east-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -P (--pathStyle), do not specify the -t option.\n",
+		},
+		{
+			name: "error when path style with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				PathStyle:         true,
+				VectorBucketsMode: true,
+				Region:            "us-east-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "InvalidOptionError: When specifying -P (--pathStyle), do not specify the -V option.\n",
+		},
+		{
 			name: "error when key prefix specified with table buckets mode",
 			app: &App{
 				BucketNames:       cli.NewStringSlice("bucket1"),
@@ -589,6 +622,27 @@ func Test_validateOptions(t *testing.T) {
 				BucketNames:       cli.NewStringSlice("bucket1"),
 				EndpointUrl:       "https://custom.endpoint.com",
 				KeyPrefix:         "test-prefix/",
+				Region:            "us-east-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - path style with endpoint URL",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				EndpointUrl:       "https://ceph.cluster.com",
+				PathStyle:         true,
+				Region:            "us-east-1",
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+			},
+			expectedErr: "",
+		},
+		{
+			name: "succeed with valid options - path style without endpoint URL",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				PathStyle:         true,
 				Region:            "us-east-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
