@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.31.2](https://github.com/go-to-k/cls3/compare/v0.31.1...v0.31.2) - 2026-01-01
+## [v0.32.0](https://github.com/go-to-k/cls3/compare/v0.31.1...v0.32.0) - 2026-01-01
 - feat: support path-style URL by @go-to-k in https://github.com/go-to-k/cls3/pull/416
 
 ## [v0.31.1](https://github.com/go-to-k/cls3/compare/v0.31.0...v0.31.1) - 2025-11-29
