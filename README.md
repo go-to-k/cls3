@@ -84,7 +84,7 @@ While `AWS_ENDPOINT_URL` and `AWS_ENDPOINT_URL_S3` environment variables are als
 
 The `-s | --pathStyle` option allows you to use path-style URL addressing (e.g., `https://endpoint.com/bucket`) instead of virtual-hosted-style (e.g., `https://bucket.endpoint.com`).
 
-This option is useful when working with S3-compatible storage systems like **Ceph** that require path-style URLs.
+This option is **typically used with the `-e | --endpointUrl` option** when working with S3-compatible storage systems like **Ceph** or **MinIO** that require or prefer path-style URLs.
 
 Note: This option cannot be used with Directory Buckets Mode (`-d`), Table Buckets Mode (`-t`), or Vector Buckets Mode (`-V`), as these AWS-specific features only support virtual-hosted-style URLs.
 
@@ -199,7 +199,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
     - While `AWS_ENDPOINT_URL` and `AWS_ENDPOINT_URL_S3` environment variables are also supported (via AWS SDK), we recommend using `CLS3_ENDPOINT_URL` for clarity and to avoid conflicts with other AWS tools.
 - -s, --pathStyle: optional
   - Use path-style URL addressing (e.g., `https://endpoint.com/bucket`) instead of virtual-hosted-style (e.g., `https://bucket.endpoint.com`)
-  - Useful when working with S3-compatible storage systems like **Ceph** that require path-style URLs
+  - **Typically used with `-e | --endpointUrl`** when working with S3-compatible storage systems like **Ceph** or **MinIO** that require path-style URLs
   - Cannot be used with Directory Buckets Mode (`-d`), Table Buckets Mode (`-t`), or Vector Buckets Mode (`-V`)
 - -f, --force: optional
   - ForceMode (Delete the bucket together)
