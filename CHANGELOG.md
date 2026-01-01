@@ -3,9 +3,6 @@
 ## [v0.32.0](https://github.com/go-to-k/cls3/compare/v0.31.2...v0.32.0) - 2026-01-01
 - fix: mismatch for version number in changelog by @go-to-k in https://github.com/go-to-k/cls3/pull/418
 
-## [v0.32.0](https://github.com/go-to-k/cls3/compare/v0.31.2...v0.32.0) - 2026-01-01
-- fix: mismatch for version number in changelog by @go-to-k in https://github.com/go-to-k/cls3/pull/418
-
 ## [v0.31.2](https://github.com/go-to-k/cls3/compare/v0.31.1...v0.31.2) - 2026-01-01
 - feat: support path-style URL by @go-to-k in https://github.com/go-to-k/cls3/pull/416
 
