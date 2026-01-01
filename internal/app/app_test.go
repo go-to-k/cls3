@@ -162,7 +162,7 @@ func Test_validateOptions(t *testing.T) {
 				Region:               "us-east-1",
 				ConcurrencyNumber:    UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: When specifying -s (--pathStyle), do not specify the -d option.\n",
+			expectedErr: "InvalidOptionError: When specifying -P (--pathStyle), do not specify the -d option.\n",
 		},
 		{
 			name: "error when path style with table buckets mode",
@@ -173,7 +173,7 @@ func Test_validateOptions(t *testing.T) {
 				Region:            "us-east-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: When specifying -s (--pathStyle), do not specify the -t option.\n",
+			expectedErr: "InvalidOptionError: When specifying -P (--pathStyle), do not specify the -t option.\n",
 		},
 		{
 			name: "error when path style with vector buckets mode",
@@ -184,7 +184,7 @@ func Test_validateOptions(t *testing.T) {
 				Region:            "us-east-1",
 				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
 			},
-			expectedErr: "InvalidOptionError: When specifying -s (--pathStyle), do not specify the -V option.\n",
+			expectedErr: "InvalidOptionError: When specifying -P (--pathStyle), do not specify the -V option.\n",
 		},
 		{
 			name: "error when key prefix specified with table buckets mode",

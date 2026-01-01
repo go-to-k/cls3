@@ -77,7 +77,7 @@ func NewApp(version string) *App {
 			},
 			&cli.BoolFlag{
 				Name:        "pathStyle",
-				Aliases:     []string{"s"},
+				Aliases:     []string{"P"},
 				Value:       false,
 				Usage:       "Use path-style URL addressing (e.g., https://endpoint.com/bucket) instead of virtual-hosted-style (e.g., https://bucket.endpoint.com)",
 				Destination: &app.PathStyle,
@@ -264,15 +264,15 @@ func (a *App) validateOptions() error {
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.PathStyle && a.DirectoryBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -s (--pathStyle), do not specify the -d option.")
+		errMsg := fmt.Sprintln("When specifying -P (--pathStyle), do not specify the -d option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.PathStyle && a.TableBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -s (--pathStyle), do not specify the -t option.")
+		errMsg := fmt.Sprintln("When specifying -P (--pathStyle), do not specify the -t option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.PathStyle && a.VectorBucketsMode {
-		errMsg := fmt.Sprintln("When specifying -s (--pathStyle), do not specify the -V option.")
+		errMsg := fmt.Sprintln("When specifying -P (--pathStyle), do not specify the -V option.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if !endpoint.IsAWSS3Endpoint(a.EndpointUrl) && a.DirectoryBucketsMode {

@@ -107,7 +107,7 @@ runs:
           fi
           path_style=""
           if [ "${{ inputs.path-style }}" = "true" ]; then
-            path_style="-s"
+            path_style="-P"
           fi
           concurrent_mode=""
           if [ "${{ inputs.concurrent-mode }}" = "true" ]; then
