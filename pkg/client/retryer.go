@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
 )
 
-const MaxRetryCount = 20
+const MaxAttempts = 20
 
 var _ aws.RetryerV2 = (*Retryer)(nil)
 
@@ -20,7 +20,7 @@ type Retryer struct {
 
 func NewRetryer(isErrorRetryableFunc func(error) bool, delayTimeSec int) *Retryer {
 	retryer := retry.NewStandard(func(o *retry.StandardOptions) {
-		o.MaxAttempts = MaxRetryCount
+		o.MaxAttempts = MaxAttempts
 		o.Backoff = retry.BackoffDelayerFunc(backoffDelay(delayTimeSec))
 		o.Retryables = append(o.Retryables, retry.IsErrorRetryableFunc(checkErrorRetryable(isErrorRetryableFunc)))
 	})
