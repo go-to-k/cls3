@@ -56,7 +56,7 @@ var _ IS3 = (*S3)(nil)
 type S3 struct {
 	client               *s3.Client
 	directoryBucketsMode bool
-	retryer              *Retryer
+	retryer              aws.RetryerV2
 }
 
 func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {

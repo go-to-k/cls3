@@ -29,7 +29,7 @@ var _ IS3Vectors = (*S3Vectors)(nil)
 
 type S3Vectors struct {
 	client  *s3vectors.Client
-	retryer *Retryer
+	retryer aws.RetryerV2
 }
 
 func NewS3Vectors(client *s3vectors.Client) *S3Vectors {

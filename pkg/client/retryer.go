@@ -10,26 +10,14 @@ import (
 
 const MaxAttempts = 20
 
-var _ aws.RetryerV2 = (*Retryer)(nil)
-
-type Retryer struct {
-	aws.RetryerV2
-	isErrorRetryableFunc func(error) bool
-	delayTimeSec         int
-}
-
-func NewRetryer(isErrorRetryableFunc func(error) bool, delayTimeSec int) *Retryer {
+func NewRetryer(isErrorRetryableFunc func(error) bool, delayTimeSec int) aws.RetryerV2 {
 	retryer := retry.NewStandard(func(o *retry.StandardOptions) {
 		o.MaxAttempts = MaxAttempts
 		o.Backoff = retry.BackoffDelayerFunc(backoffDelay(delayTimeSec))
 		o.Retryables = append(o.Retryables, retry.IsErrorRetryableFunc(checkErrorRetryable(isErrorRetryableFunc)))
 	})
 
-	return &Retryer{
-		RetryerV2:            retryer,
-		isErrorRetryableFunc: isErrorRetryableFunc,
-		delayTimeSec:         delayTimeSec,
-	}
+	return retryer
 }
 
 func backoffDelay(delayTimeSec int) func(int, error) (time.Duration, error) {
