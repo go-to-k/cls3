@@ -21,37 +21,39 @@ type Retryer struct {
 func NewRetryer(isErrorRetryableFunc func(error) bool, delayTimeSec int) *Retryer {
 	retryer := retry.NewStandard(func(o *retry.StandardOptions) {
 		o.MaxAttempts = MaxRetryCount
-
-		o.Backoff = retry.BackoffDelayerFunc(
-			func(attempt int, err error) (time.Duration, error) {
-				waitTime := 1
-				if delayTimeSec > 1 {
-					//nolint:gosec
-					waitTime += rand.IntN(delayTimeSec)
-				}
-				return time.Duration(waitTime) * time.Second, nil
-			},
-		)
-
-		o.Retryables = append(o.Retryables, retry.IsErrorRetryableFunc(
-			func(err error) aws.Ternary {
-				if err == nil {
-					// Return UnknownTernary instead of FalseTernary to delegate the decision to other Retryable checkers
-					return aws.UnknownTernary
-				}
-
-				if isErrorRetryableFunc(err) {
-					return aws.TrueTernary
-				}
-
-				return aws.UnknownTernary
-			},
-		))
+		o.Backoff = retry.BackoffDelayerFunc(backoffDelay(delayTimeSec))
+		o.Retryables = append(o.Retryables, retry.IsErrorRetryableFunc(checkErrorRetryable(isErrorRetryableFunc)))
 	})
 
 	return &Retryer{
 		RetryerV2:            retryer,
 		isErrorRetryableFunc: isErrorRetryableFunc,
 		delayTimeSec:         delayTimeSec,
+	}
+}
+
+func backoffDelay(delayTimeSec int) func(int, error) (time.Duration, error) {
+	return func(attempt int, err error) (time.Duration, error) {
+		waitTime := 1
+		if delayTimeSec > 1 {
+			//nolint:gosec
+			waitTime += rand.IntN(delayTimeSec)
+		}
+		return time.Duration(waitTime) * time.Second, nil
+	}
+}
+
+func checkErrorRetryable(isErrorRetryableFunc func(error) bool) func(error) aws.Ternary {
+	return func(err error) aws.Ternary {
+		if err == nil {
+			// Return UnknownTernary instead of FalseTernary to delegate the decision to other Retryable checkers
+			return aws.UnknownTernary
+		}
+
+		if isErrorRetryableFunc(err) {
+			return aws.TrueTernary
+		}
+
+		return aws.UnknownTernary
 	}
 }
