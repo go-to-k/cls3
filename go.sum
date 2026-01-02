@@ -26,8 +26,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.9 h1:2aInXbh02XsbO0
 github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.9/go.mod h1:dgXS1i+HgWnYkPXqNoPIPKeUsUUYHaUbThC90aDnNiE=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.73.2 h1:F3h8VYq9ZLBXYurmwrT8W0SPhgCcU0q+0WZJfT1dFt0=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.73.2/go.mod h1:jGJ/v7FIi7Ys9t54tmEFnrxuaWeJLpwNgKp2DXAVhOU=
-github.com/aws/aws-sdk-go-v2/service/s3tables v1.1.1 h1:wMxtyauNEXnjKyRg0IfewmrgGELg52qMuO2PN/WzxnE=
-github.com/aws/aws-sdk-go-v2/service/s3tables v1.1.1/go.mod h1:3uyQpJXMLxrHVHsPPyYeKm+RhM0pUP+vwlPUhX6g0ZA=
+github.com/aws/aws-sdk-go-v2/service/s3tables v1.12.2 h1:wCt6r+YjgMJQELtdS5PlNx2MMGAnPW7PI0QD/dS0f8w=
+github.com/aws/aws-sdk-go-v2/service/s3tables v1.12.2/go.mod h1:bI6V4KDGYAuIagoD+7U9MAct+mJ4masG6XMmLJK4ha0=
 github.com/aws/aws-sdk-go-v2/service/s3vectors v1.4.8 h1:ERb8DDNjGcCkDHblpHkSNzEs1ONBk+rCITYA6z+Yd1w=
 github.com/aws/aws-sdk-go-v2/service/s3vectors v1.4.8/go.mod h1:gSvTmSFxwjt2k+U9eP8LQpR3sDYpwA/desV1WjaEGJ8=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.2 h1:MxMBdKTYBjPQChlJhi4qlEueqB1p1KcbTEa7tD5aqPs=
