@@ -36,7 +36,7 @@ var _ IS3Tables = (*S3Tables)(nil)
 
 type S3Tables struct {
 	client  *s3tables.Client
-	retryer aws.RetryerV2
+	retryer *Retryer
 }
 
 func NewS3Tables(client *s3tables.Client) *S3Tables {
