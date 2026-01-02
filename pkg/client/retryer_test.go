@@ -24,7 +24,7 @@ func TestCheckErrorRetryable(t *testing.T) {
 		},
 		{
 			name:                 "retryable error returns TrueTernary",
-			isErrorRetryableFunc: func(err error) bool { return err == testErr },
+			isErrorRetryableFunc: func(err error) bool { return errors.Is(err, testErr) },
 			inputErr:             testErr,
 			expected:             aws.TrueTernary,
 		},
