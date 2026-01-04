@@ -106,7 +106,7 @@ func TestS3Tables_DeleteTableBucket(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: nil,
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
