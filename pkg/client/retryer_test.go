@@ -184,6 +184,7 @@ func TestCheckErrorRetryable_Integration(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				context.Background(),
 				config.WithRegion("us-east-1"),
+				config.WithCredentialsProvider(aws.AnonymousCredentials{}),
 				config.WithRetryer(func() aws.Retryer { return retryer }),
 				config.WithAPIOptions([]func(*middleware.Stack) error{tt.withAPIOptionsFunc}),
 			)
