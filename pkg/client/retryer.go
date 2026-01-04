@@ -22,7 +22,7 @@ func NewRetryer(isErrorRetryableFunc func(error) bool, delayTimeSec int) *Retrye
 	})
 
 	return &Retryer{
-		RetryerV2: retryer,
+		retryer,
 	}
 }
 
