@@ -58,11 +58,11 @@ func TestCheckErrorRetryable_Integration(t *testing.T) {
 	attemptCount := 0
 
 	cases := []struct {
-		name              string
+		name               string
 		withAPIOptionsFunc func(*middleware.Stack) error
-		expectedAttempts  int
-		wantErr           bool
-		expectedErrString string
+		expectedAttempts   int
+		wantErr            bool
+		expectedErrString  string
 	}{
 		{
 			name: "retry with custom retryable error logic",
