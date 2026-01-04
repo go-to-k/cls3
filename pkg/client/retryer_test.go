@@ -149,7 +149,7 @@ func TestCheckErrorRetryable_Integration(t *testing.T) {
 			wantErr:          false,
 		},
 		{
-			name: "retry with default retryable error code RequestTimeout",
+			name: "retry with default retryable error code defined in SDK",
 			withAPIOptionsFunc: func(stack *middleware.Stack) error {
 				return stack.Finalize.Add(
 					middleware.FinalizeMiddlewareFunc(
