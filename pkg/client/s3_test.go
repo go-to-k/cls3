@@ -140,7 +140,7 @@ func TestS3_DeleteBucket(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: nil,
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
@@ -325,7 +325,7 @@ func TestS3_DeleteObjects(t *testing.T) {
 											Errors: []types.Error{},
 										},
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
@@ -1083,7 +1083,7 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: &s3.ListObjectVersionsOutput{},
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
@@ -1565,7 +1565,7 @@ func TestS3_listObjectsByPage(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: &s3.ListObjectsV2Output{},
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
@@ -2030,7 +2030,7 @@ func TestS3_listBuckets(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: nil,
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
@@ -2378,7 +2378,7 @@ func TestS3_listDirectoryBuckets(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: nil,
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
@@ -2688,7 +2688,7 @@ func TestS3_GetBucketLocation(t *testing.T) {
 								return middleware.FinalizeOutput{
 										Result: nil,
 									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
+										Attempt: MaxRetryCount,
 										Err:     fmt.Errorf("api error SlowDown"),
 									}
 							},
