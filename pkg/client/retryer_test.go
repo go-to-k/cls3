@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/middleware"
 )
 
@@ -146,6 +147,29 @@ func TestCheckErrorRetryable_Integration(t *testing.T) {
 			},
 			expectedAttempts: 3,
 			wantErr:          false,
+		},
+		{
+			name: "retry with default retryable error code RequestTimeout",
+			withAPIOptionsFunc: func(stack *middleware.Stack) error {
+				return stack.Finalize.Add(
+					middleware.FinalizeMiddlewareFunc(
+						"RequestTimeoutMock",
+						func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
+							attemptCount++
+							return middleware.FinalizeOutput{
+								Result: nil,
+							}, middleware.Metadata{}, &smithy.GenericAPIError{
+								Code:    "RequestTimeout",
+								Message: "Request timeout",
+							}
+						},
+					),
+					middleware.After,
+				)
+			},
+			expectedAttempts:  MaxAttempts,
+			wantErr:           true,
+			expectedErrString: "RequestTimeout",
 		},
 	}
 
