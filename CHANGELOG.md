@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.32.2](https://github.com/go-to-k/cls3/compare/v0.32.1...v0.32.2) - 2026-01-04
+- chore(client): improve retryer by @go-to-k in https://github.com/go-to-k/cls3/pull/425
+
 ## [v0.32.1](https://github.com/go-to-k/cls3/compare/v0.32.0...v0.32.1) - 2026-01-02
 - chore: fix mismatch for version number in changelog by @go-to-k in https://github.com/go-to-k/cls3/pull/421
 - fix: deserialization failed by @go-to-k in https://github.com/go-to-k/cls3/pull/424
