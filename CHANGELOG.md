@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.32.3](https://github.com/go-to-k/cls3/compare/v0.32.2...v0.32.3) - 2026-01-04
+- revert: "chore(client): improve retryer (#425)" by @go-to-k in https://github.com/go-to-k/cls3/pull/428
+
 ## [v0.32.2](https://github.com/go-to-k/cls3/compare/v0.32.1...v0.32.2) - 2026-01-04
 - chore(client): improve retryer by @go-to-k in https://github.com/go-to-k/cls3/pull/425
 
