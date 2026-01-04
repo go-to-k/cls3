@@ -157,11 +157,11 @@ func TestCheckErrorRetryable_Integration(t *testing.T) {
 						func(ctx context.Context, input middleware.FinalizeInput, handler middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 							attemptCount++
 							return middleware.FinalizeOutput{
-								Result: nil,
-							}, middleware.Metadata{}, &smithy.GenericAPIError{
-								Code:    "RequestTimeout",
-								Message: "Request timeout",
-							}
+									Result: nil,
+								}, middleware.Metadata{}, &smithy.GenericAPIError{
+									Code:    "RequestTimeout",
+									Message: "Request timeout",
+								}
 						},
 					),
 					middleware.After,
