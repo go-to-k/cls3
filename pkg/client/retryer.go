@@ -1,54 +1,55 @@
 package client
 
 import (
-	"context"
 	"math/rand/v2"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/ratelimit"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
 )
 
-const MaxRetryCount = 20
-
-var _ aws.RetryerV2 = (*Retryer)(nil)
+const MaxAttempts = 20
 
 type Retryer struct {
-	isErrorRetryableFunc func(error) bool
-	delayTimeSec         int
+	aws.RetryerV2
 }
 
 func NewRetryer(isErrorRetryableFunc func(error) bool, delayTimeSec int) *Retryer {
+	retryer := retry.NewStandard(func(o *retry.StandardOptions) {
+		o.MaxAttempts = MaxAttempts
+		o.Backoff = retry.BackoffDelayerFunc(backoffDelay(delayTimeSec))
+		o.Retryables = append(o.Retryables, retry.IsErrorRetryableFunc(checkErrorRetryable(isErrorRetryableFunc)))
+		o.RateLimiter = ratelimit.None
+	})
+
 	return &Retryer{
-		isErrorRetryableFunc: isErrorRetryableFunc,
-		delayTimeSec:         delayTimeSec,
+		retryer,
 	}
 }
 
-func (r *Retryer) IsErrorRetryable(err error) bool {
-	return r.isErrorRetryableFunc(err)
-}
-
-func (r *Retryer) MaxAttempts() int {
-	return MaxRetryCount
-}
-
-func (r *Retryer) RetryDelay(int, error) (time.Duration, error) {
-	waitTime := 1
-	if r.delayTimeSec > 1 {
-		//nolint:gosec
-		waitTime += rand.IntN(r.delayTimeSec)
+func backoffDelay(delayTimeSec int) func(int, error) (time.Duration, error) {
+	return func(attempt int, err error) (time.Duration, error) {
+		waitTime := 1
+		if delayTimeSec > 1 {
+			//nolint:gosec
+			waitTime += rand.IntN(delayTimeSec)
+		}
+		return time.Duration(waitTime) * time.Second, nil
 	}
-	return time.Duration(waitTime) * time.Second, nil
 }
 
-func (r *Retryer) GetRetryToken(context.Context, error) (func(error) error, error) {
-	return func(error) error { return nil }, nil
-}
+func checkErrorRetryable(isErrorRetryableFunc func(error) bool) func(error) aws.Ternary {
+	return func(err error) aws.Ternary {
+		if err == nil {
+			// Return UnknownTernary instead of FalseTernary to delegate the decision to other Retryable checkers
+			return aws.UnknownTernary
+		}
 
-func (r *Retryer) GetInitialToken() func(error) error {
-	return func(error) error { return nil }
-}
+		if isErrorRetryableFunc(err) {
+			return aws.TrueTernary
+		}
 
-func (r *Retryer) GetAttemptToken(context.Context) (func(error) error, error) {
-	return func(error) error { return nil }, nil
+		return aws.UnknownTernary
+	}
 }
