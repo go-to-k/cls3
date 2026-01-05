@@ -2,6 +2,10 @@
 
 ## [v0.32.4](https://github.com/go-to-k/cls3/compare/v0.32.3...v0.32.4) - 2026-01-05
 - chore: improve retryer with ratelimit none by @go-to-k in https://github.com/go-to-k/cls3/pull/430
+- chore: fix changelog by @go-to-k in https://github.com/go-to-k/cls3/pull/434
+
+## [v0.32.4](https://github.com/go-to-k/cls3/compare/v0.32.3...v0.32.4) - 2026-01-05
+- chore: improve retryer with ratelimit none by @go-to-k in https://github.com/go-to-k/cls3/pull/430
 
 ## [v0.32.3](https://github.com/go-to-k/cls3/compare/v0.32.2...v0.32.3) - 2026-01-04
 - revert: "chore(client): improve retryer (#425)" by @go-to-k in https://github.com/go-to-k/cls3/pull/428
