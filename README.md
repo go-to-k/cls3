@@ -144,6 +144,12 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
   aqua g -i go-to-k/cls3
   ```
 
+- mise
+
+  ```bash
+  mise use -g aqua:go-to-k/cls3
+  ```
+
 - asdf
 
   ```bash
