@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.32.5](https://github.com/go-to-k/cls3/compare/v0.32.4...v0.32.5) - 2026-10-23
+
+- docs: add mise installation instructions by @go-to-k in https://github.com/go-to-k/cls3/pull/441
+- ci: fix branch filter to match branches with slashes by @go-to-k in https://github.com/go-to-k/cls3/pull/443
+- chore: build with Go 1.27.3 to distrust compromised eMudhra CAs by @go-to-k in https://github.com/go-to-k/cls3/pull/444
+
 ## [v0.32.4](https://github.com/go-to-k/cls3/compare/v0.32.3...v0.32.4) - 2026-01-05
 - chore: improve retryer with ratelimit none by @go-to-k in https://github.com/go-to-k/cls3/pull/430
 - chore: fix changelog by @go-to-k in https://github.com/go-to-k/cls3/pull/434
