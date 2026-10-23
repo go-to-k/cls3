@@ -138,11 +138,11 @@ func TestS3_DeleteBucket(t *testing.T) {
 							"DeleteBucketApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: nil,
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: nil,
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
@@ -321,13 +321,13 @@ func TestS3_DeleteObjects(t *testing.T) {
 							"DeleteObjectsApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: &s3.DeleteObjectsOutput{
-											Errors: []types.Error{},
-										},
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: &s3.DeleteObjectsOutput{
+										Errors: []types.Error{},
+									},
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
@@ -1081,11 +1081,11 @@ func TestS3_listObjectVersionsByPage(t *testing.T) {
 							"ListObjectVersionsApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: &s3.ListObjectVersionsOutput{},
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: &s3.ListObjectVersionsOutput{},
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
@@ -1563,11 +1563,11 @@ func TestS3_listObjectsByPage(t *testing.T) {
 							"ListObjectsV2ApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: &s3.ListObjectsV2Output{},
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: &s3.ListObjectsV2Output{},
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
@@ -2028,11 +2028,11 @@ func TestS3_listBuckets(t *testing.T) {
 							"ListBucketsApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: nil,
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: nil,
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
@@ -2376,11 +2376,11 @@ func TestS3_listDirectoryBuckets(t *testing.T) {
 							"ListDirectoryBucketsApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: nil,
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: nil,
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
@@ -2686,11 +2686,11 @@ func TestS3_GetBucketLocation(t *testing.T) {
 							"GetBucketLocationApiErrorMock",
 							func(context.Context, middleware.FinalizeInput, middleware.FinalizeHandler) (middleware.FinalizeOutput, middleware.Metadata, error) {
 								return middleware.FinalizeOutput{
-										Result: nil,
-									}, middleware.Metadata{}, &retry.MaxAttemptsError{
-										Attempt: MaxAttempts,
-										Err:     fmt.Errorf("api error SlowDown"),
-									}
+									Result: nil,
+								}, middleware.Metadata{}, &retry.MaxAttemptsError{
+									Attempt: MaxAttempts,
+									Err:     fmt.Errorf("api error SlowDown"),
+								}
 							},
 						),
 						middleware.Before,
