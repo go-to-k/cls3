@@ -2,10 +2,19 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    # Hold a new release back for 7 days (14 for a major) before proposing it,
+    # so a hijacked version is usually yanked before it reaches a PR.
+    # Security updates are exempt and still open immediately.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     schedule:
       interval: "daily"
   - package-ecosystem: "gomod"
     directory: "/"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     schedule:
       interval: "daily"
     ignore:
