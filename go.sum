@@ -28,8 +28,8 @@ github.com/aws/aws-sdk-go-v2/service/s3 v1.73.2 h1:F3h8VYq9ZLBXYurmwrT8W0SPhgCcU
 github.com/aws/aws-sdk-go-v2/service/s3 v1.73.2/go.mod h1:jGJ/v7FIi7Ys9t54tmEFnrxuaWeJLpwNgKp2DXAVhOU=
 github.com/aws/aws-sdk-go-v2/service/s3tables v1.1.1 h1:wMxtyauNEXnjKyRg0IfewmrgGELg52qMuO2PN/WzxnE=
 github.com/aws/aws-sdk-go-v2/service/s3tables v1.1.1/go.mod h1:3uyQpJXMLxrHVHsPPyYeKm+RhM0pUP+vwlPUhX6g0ZA=
-github.com/aws/aws-sdk-go-v2/service/s3vectors v1.4.8 h1:ERb8DDNjGcCkDHblpHkSNzEs1ONBk+rCITYA6z+Yd1w=
-github.com/aws/aws-sdk-go-v2/service/s3vectors v1.4.8/go.mod h1:gSvTmSFxwjt2k+U9eP8LQpR3sDYpwA/desV1WjaEGJ8=
+github.com/aws/aws-sdk-go-v2/service/s3vectors v1.5.4 h1:cMXitSwjM8IgzTDVnWH5pohPRSMtX0dhoJvT5M1euHQ=
+github.com/aws/aws-sdk-go-v2/service/s3vectors v1.5.4/go.mod h1:R4L5tr5WAgywKPxVoRSbZMG32y2RLyVJvcZ2FHD5Jog=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.2 h1:MxMBdKTYBjPQChlJhi4qlEueqB1p1KcbTEa7tD5aqPs=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.2/go.mod h1:iS6EPmNeqCsGo+xQmXv0jIMjyYtQfnwg36zl2FwEouk=
 github.com/aws/aws-sdk-go-v2/service/sso v1.30.5 h1:ksUT5KtgpZd3SAiFJNJ0AFEJVva3gjBmN7eXUZjzUwQ=
