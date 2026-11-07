@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.32.6](https://github.com/go-to-k/cls3/compare/v0.32.5...v0.32.6) - 2026-11-07
+
+- ci: hold Dependabot version updates back for 7 days after a release by @go-to-k in https://github.com/go-to-k/cls3/pull/445
+- chore: pin mockgen and golangci-lint versions in the repository by @go-to-k in https://github.com/go-to-k/cls3/pull/450
+
 ## [v0.32.5](https://github.com/go-to-k/cls3/compare/v0.32.4...v0.32.5) - 2026-10-23
 
 - docs: add mise installation instructions by @go-to-k in https://github.com/go-to-k/cls3/pull/441
