@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.33.0](https://github.com/go-to-k/cls3/compare/v0.32.6...v0.33.0) - 2026-11-17
+
+- feat: limit error details in quiet mode to avoid OOM on many deletion errors by @go-to-k in https://github.com/go-to-k/cls3/pull/453
+
 ## [v0.32.6](https://github.com/go-to-k/cls3/compare/v0.32.5...v0.32.6) - 2026-11-11
 
 - ci: hold Dependabot version updates back for 7 days after a release by @go-to-k in https://github.com/go-to-k/cls3/pull/445
