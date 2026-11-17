@@ -755,6 +755,99 @@ func TestS3Wrapper_ClearBucket_ErrorDetails(t *testing.T) {
 	}
 }
 
+func TestS3Wrapper_ClearBucket_ErrorDetailsAcrossPagesAndAttempts(t *testing.T) {
+	io.NewLogger(false)
+
+	newErrors := func(n int) []types.Error {
+		errors := make([]types.Error, 0, n)
+		for i := 0; i < n; i++ {
+			errors = append(errors, types.Error{
+				Key:       aws.String(fmt.Sprintf("Key%d", i)),
+				Code:      aws.String("AccessDenied"),
+				Message:   aws.String("Message"),
+				VersionId: aws.String("VersionId"),
+			})
+		}
+		return errors
+	}
+
+	page := func(next *string) *client.ListObjectsOrVersionsByPageOutput {
+		return &client.ListObjectsOrVersionsByPageOutput{
+			ObjectIdentifiers: []types.ObjectIdentifier{
+				{
+					Key:       aws.String("Key"),
+					VersionId: aws.String("VersionId"),
+				},
+			},
+			NextKeyMarker:       next,
+			NextVersionIdMarker: next,
+		}
+	}
+
+	cases := []struct {
+		name          string
+		prepareMockFn func(m *client.MockIS3)
+		wantCount     int
+		wantOmitted   int
+	}{
+		{
+			name: "errors across multiple pages are capped in total",
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(page(aws.String("next")), nil)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, aws.String("next"), aws.String("next"), nil).Return(page(nil), nil)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return(newErrors(60), nil).Times(2)
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
+					&client.ListObjectsOrVersionsByPageOutput{ObjectIdentifiers: []types.ObjectIdentifier{}}, nil)
+			},
+			wantCount:   120,
+			wantOmitted: 20,
+		},
+		{
+			name: "errors of the previous attempt are reset on retry",
+			prepareMockFn: func(m *client.MockIS3) {
+				m.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(page(nil), nil).Times(2)
+				m.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return(newErrors(101), nil).Times(2)
+			},
+			wantCount:   101,
+			wantOmitted: 1,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			s3Mock := client.NewMockIS3(ctrl)
+			s3Mock.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+			tt.prepareMockFn(s3Mock)
+
+			s3 := NewS3Wrapper(s3Mock)
+
+			err := s3.ClearBucket(context.Background(), ClearBucketInput{
+				TargetBucket:    "test",
+				QuietMode:       true,
+				ClearingCountCh: make(chan int64),
+			})
+
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			got := err.Error()
+			if want := fmt.Sprintf("DeleteObjectsError: %d objects with errors were found.", tt.wantCount); !strings.Contains(got, want) {
+				t.Errorf("err = %#v, want to contain %#v", got, want)
+			}
+			if gotDetails := strings.Count(got, "\nKey: "); gotDetails != maxQuietModeErrorDetails {
+				t.Errorf("number of error details = %d, want %d", gotDetails, maxQuietModeErrorDetails)
+			}
+			if want := fmt.Sprintf("... and %d more errors", tt.wantOmitted); !strings.Contains(got, want) {
+				t.Errorf("err = %#v, want to contain %#v", got, want)
+			}
+			if want := fmt.Sprintf("AccessDenied: %d\n", tt.wantCount); !strings.Contains(got, want) {
+				t.Errorf("err = %#v, want to contain %#v", got, want)
+			}
+		})
+	}
+}
+
 func TestS3Wrapper_ListBucketNamesFilteredByKeyword(t *testing.T) {
 	io.NewLogger(false)
 
