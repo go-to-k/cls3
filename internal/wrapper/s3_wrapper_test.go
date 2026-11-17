@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -642,6 +643,113 @@ func TestS3Wrapper_ClearBucket(t *testing.T) {
 			if tt.wantErr && err.Error() != tt.want.Error() {
 				t.Errorf("err = %#v, want %#v", err.Error(), tt.want.Error())
 				return
+			}
+		})
+	}
+}
+
+func TestS3Wrapper_ClearBucket_ErrorDetails(t *testing.T) {
+	io.NewLogger(false)
+
+	newErrors := func(n int) []types.Error {
+		errors := make([]types.Error, 0, n)
+		for i := 0; i < n; i++ {
+			code := "AccessDenied"
+			if i%2 == 1 {
+				code = "InternalError"
+			}
+			errors = append(errors, types.Error{
+				Key:       aws.String(fmt.Sprintf("Key%d", i)),
+				Code:      aws.String(code),
+				Message:   aws.String("Message"),
+				VersionId: aws.String("VersionId"),
+			})
+		}
+		return errors
+	}
+
+	details := func(errors []types.Error) string {
+		var b strings.Builder
+		for _, e := range errors {
+			fmt.Fprintf(&b, "\nCode: %v\nKey: %v\nVersionId: %v\nMessage: %v\n", *e.Code, *e.Key, *e.VersionId, *e.Message)
+		}
+		return b.String()
+	}
+
+	errors100 := newErrors(maxQuietModeErrorDetails)
+	errors101 := newErrors(maxQuietModeErrorDetails + 1)
+
+	cases := []struct {
+		name      string
+		quietMode bool
+		gotErrors []types.Error
+		want      string
+	}{
+		{
+			name:      "all error details are kept on quiet mode when errors do not exceed the limit",
+			quietMode: true,
+			gotErrors: errors100,
+			want:      "[resource test] DeleteObjectsError: 100 objects with errors were found. " + details(errors100),
+		},
+		{
+			name:      "error details are omitted on quiet mode when errors exceed the limit",
+			quietMode: true,
+			gotErrors: errors101,
+			want: "[resource test] DeleteObjectsError: 101 objects with errors were found. " + details(errors101[:maxQuietModeErrorDetails]) +
+				"\n... and 1 more errors (details omitted in quiet mode)\n" +
+				"\nError counts by code:\nAccessDenied: 51\nInternalError: 50\n",
+		},
+		{
+			name:      "all error details are kept on non-quiet mode even when errors exceed the limit",
+			quietMode: false,
+			gotErrors: errors101,
+			want:      "[resource test] DeleteObjectsError: 101 objects with errors were found. " + details(errors101),
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			s3Mock := client.NewMockIS3(ctrl)
+			s3Mock.EXPECT().GetBucketLocation(gomock.Any(), aws.String("test")).Return("us-east-1", nil)
+			s3Mock.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
+				&client.ListObjectsOrVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{
+						{
+							Key:       aws.String("Key"),
+							VersionId: aws.String("VersionId"),
+						},
+					},
+				}, nil)
+			s3Mock.EXPECT().DeleteObjects(gomock.Any(), aws.String("test"), gomock.Any(), "us-east-1").Return(tt.gotErrors, nil)
+			s3Mock.EXPECT().ListObjectsOrVersionsByPage(gomock.Any(), aws.String("test"), "us-east-1", false, nil, nil, nil).Return(
+				&client.ListObjectsOrVersionsByPageOutput{
+					ObjectIdentifiers: []types.ObjectIdentifier{},
+				}, nil)
+
+			s3 := NewS3Wrapper(s3Mock)
+
+			clearingCountCh := make(chan int64)
+			if !tt.quietMode {
+				go func() {
+					for range clearingCountCh {
+					}
+				}()
+			}
+
+			err := s3.ClearBucket(context.Background(), ClearBucketInput{
+				TargetBucket:    "test",
+				QuietMode:       tt.quietMode,
+				ClearingCountCh: clearingCountCh,
+			})
+
+			close(clearingCountCh)
+
+			if err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if err.Error() != tt.want {
+				t.Errorf("err = %#v, want %#v", err.Error(), tt.want)
 			}
 		})
 	}

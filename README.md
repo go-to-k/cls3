@@ -219,6 +219,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
 - -q, --quietMode: optional
   - Hide live display of number of deletions
   - It would be good to use in CI
+  - If more than 100 objects fail to be deleted, only the first 100 error details are shown, followed by error counts by code
 - -d, --directoryBucketsMode: optional
   - Directory Buckets Mode for **S3 Express One Zone**
   - Operation across regions is not possible, but only in **one region**.

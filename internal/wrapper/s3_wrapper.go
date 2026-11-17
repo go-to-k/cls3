@@ -3,6 +3,7 @@ package wrapper
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -24,9 +25,15 @@ func NewS3Wrapper(client client.IS3) *S3Wrapper {
 	}
 }
 
+// NOTE: In quiet mode, only the first maxQuietModeErrorDetails errors are kept in detail, and the rest
+// are only counted by error code. This avoids unbounded memory growth when a huge number of objects
+// fail to be deleted (e.g. a bucket with Object Lock).
+const maxQuietModeErrorDetails = 100
+
 type objectDeletionState struct {
-	errorStr        string
+	errorStr        strings.Builder
 	errorsCount     int
+	errorCodeCounts map[string]int
 	errorsMtx       sync.Mutex
 	objectsCount    int64
 	objectsCountMtx sync.Mutex
@@ -92,7 +99,7 @@ func (s *S3Wrapper) clearObjects(ctx context.Context, input ClearBucketInput, bu
 		// However, we want to treat it as an error, so we use `client.ClientError`.
 		return &client.ClientError{
 			ResourceName: aws.String(input.TargetBucket),
-			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", state.errorsCount, state.errorStr),
+			Err:          fmt.Errorf("DeleteObjectsError: %v objects with errors were found. %v", state.errorsCount, state.errorDetails(input.QuietMode)),
 		}
 	}
 
@@ -106,6 +113,27 @@ func (s *S3Wrapper) clearObjects(ctx context.Context, input ClearBucketInput, bu
 	}
 
 	return nil
+}
+
+func (state *objectDeletionState) errorDetails(quietMode bool) string {
+	if !quietMode || state.errorsCount <= maxQuietModeErrorDetails {
+		return state.errorStr.String()
+	}
+
+	codes := make([]string, 0, len(state.errorCodeCounts))
+	for code := range state.errorCodeCounts {
+		codes = append(codes, code)
+	}
+	sort.Strings(codes)
+
+	var b strings.Builder
+	b.WriteString(state.errorStr.String())
+	fmt.Fprintf(&b, "\n... and %v more errors (details omitted in quiet mode)\n", state.errorsCount-maxQuietModeErrorDetails)
+	b.WriteString("\nError counts by code:\n")
+	for _, code := range codes {
+		fmt.Fprintf(&b, "%v: %v\n", code, state.errorCodeCounts[code])
+	}
+	return b.String()
 }
 
 func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input ClearBucketInput, bucketRegion string, state *objectDeletionState, attempt int) (bool, error) {
@@ -146,8 +174,9 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 			}
 			break
 		} else if isFirstPage && attempt > 0 {
-			state.errorStr = ""
+			state.errorStr.Reset()
 			state.errorsCount = 0
+			state.errorCodeCounts = nil
 			io.Logger.Debug().Msgf("%s: Retry attempt %d", input.TargetBucket, attempt)
 		}
 
@@ -175,12 +204,21 @@ func (s *S3Wrapper) processObjectDeletionAttempt(ctx context.Context, input Clea
 
 			if len(gotErrors) > 0 {
 				state.errorsMtx.Lock()
-				state.errorsCount += len(gotErrors)
 				for _, error := range gotErrors {
-					state.errorStr += fmt.Sprintf("\nCode: %v\n", *error.Code)
-					state.errorStr += fmt.Sprintf("Key: %v\n", *error.Key)
-					state.errorStr += fmt.Sprintf("VersionId: %v\n", *error.VersionId)
-					state.errorStr += fmt.Sprintf("Message: %v\n", *error.Message)
+					state.errorsCount++
+					if input.QuietMode {
+						if state.errorCodeCounts == nil {
+							state.errorCodeCounts = map[string]int{}
+						}
+						state.errorCodeCounts[*error.Code]++
+						if state.errorsCount > maxQuietModeErrorDetails {
+							continue
+						}
+					}
+					fmt.Fprintf(&state.errorStr, "\nCode: %v\n", *error.Code)
+					fmt.Fprintf(&state.errorStr, "Key: %v\n", *error.Key)
+					fmt.Fprintf(&state.errorStr, "VersionId: %v\n", *error.VersionId)
+					fmt.Fprintf(&state.errorStr, "Message: %v\n", *error.Message)
 				}
 				state.errorsMtx.Unlock()
 			}
