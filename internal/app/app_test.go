@@ -113,6 +113,46 @@ func Test_validateOptions(t *testing.T) {
 			expectedErr: "InvalidOptionError: You must specify a positive number for the -n option when specifying the -c option.\n",
 		},
 		{
+			name: "error when negative rate limit specified",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+				RateLimit:         -1,
+			},
+			expectedErr: "InvalidOptionError: You must specify a positive number for the -l option.\n",
+		},
+		{
+			name: "error when rate limit specified with table buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+				Region:            "us-east-1",
+				TableBucketsMode:  true,
+				RateLimit:         10,
+			},
+			expectedErr: "InvalidOptionError: The -l option is only available for S3 buckets. Do not specify it with -t or -V.\n",
+		},
+		{
+			name: "error when rate limit specified with vector buckets mode",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+				Region:            "us-east-1",
+				VectorBucketsMode: true,
+				RateLimit:         10,
+			},
+			expectedErr: "InvalidOptionError: The -l option is only available for S3 buckets. Do not specify it with -t or -V.\n",
+		},
+		{
+			name: "no error when positive rate limit specified",
+			app: &App{
+				BucketNames:       cli.NewStringSlice("bucket1"),
+				ConcurrencyNumber: UnspecifiedConcurrencyNumber,
+				RateLimit:         10,
+			},
+			expectedErr: "",
+		},
+		{
 			name: "warn when directory buckets mode without region",
 			app: &App{
 				BucketNames:          cli.NewStringSlice("bucket1"),

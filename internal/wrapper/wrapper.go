@@ -46,6 +46,7 @@ type CreateS3WrapperInput struct {
 	TableBucketsMode     bool
 	DirectoryBucketsMode bool
 	VectorBucketsMode    bool
+	RateLimit            int // max S3 API requests per second. 0 means unlimited. Applies to S3 only.
 }
 
 func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper, error) {
@@ -79,6 +80,7 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 			o.RetryMaxAttempts = SDKRetryMaxAttempts
 			o.RetryMode = aws.RetryModeStandard
 			o.UsePathStyle = input.PathStyle
+			o.APIOptions = append(o.APIOptions, client.NewRateLimitAPIOptions(input.RateLimit)...)
 		}),
 		input.DirectoryBucketsMode,
 	)
