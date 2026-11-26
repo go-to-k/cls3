@@ -15,6 +15,7 @@ import (
 
 const (
 	UnspecifiedConcurrencyNumber = 0
+	UnspecifiedRateLimit         = 0
 )
 
 type App struct {
@@ -30,6 +31,7 @@ type App struct {
 	QuietMode            bool
 	ConcurrentMode       bool
 	ConcurrencyNumber    int
+	RateLimit            int
 	DirectoryBucketsMode bool
 	TableBucketsMode     bool
 	VectorBucketsMode    bool
@@ -124,6 +126,13 @@ func NewApp(version string) *App {
 				Usage:       "Specify the number of parallel deletions. To specify this option, the -c option must be specified. The default is to delete all buckets in parallel if only the -c option is specified.",
 				Destination: &app.ConcurrencyNumber,
 			},
+			&cli.IntFlag{
+				Name:        "rateLimit",
+				Aliases:     []string{"l"},
+				Value:       UnspecifiedRateLimit,
+				Usage:       "Limit the number of S3 objects deleted per second (including retries). The default is unlimited. This option is not available in the Table Buckets Mode -t or the Vector Buckets Mode -V.",
+				Destination: &app.RateLimit,
+			},
 			&cli.BoolFlag{
 				Name:        "directoryBucketsMode",
 				Aliases:     []string{"d"},
@@ -206,6 +215,7 @@ func (a *App) initS3Wrapper(ctx context.Context) error {
 			TableBucketsMode:     a.TableBucketsMode,
 			DirectoryBucketsMode: a.DirectoryBucketsMode,
 			VectorBucketsMode:    a.VectorBucketsMode,
+			RateLimit:            a.RateLimit,
 		})
 		if err != nil {
 			return err
@@ -322,6 +332,14 @@ func (a *App) validateOptions() error {
 	}
 	if a.ConcurrentMode && a.ConcurrencyNumber < UnspecifiedConcurrencyNumber {
 		errMsg := fmt.Sprintln("You must specify a positive number for the -n option when specifying the -c option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.RateLimit < UnspecifiedRateLimit {
+		errMsg := fmt.Sprintln("You must specify a positive number for the -l option.")
+		return fmt.Errorf("InvalidOptionError: %v", errMsg)
+	}
+	if a.RateLimit != UnspecifiedRateLimit && (a.TableBucketsMode || a.VectorBucketsMode) {
+		errMsg := fmt.Sprintln("The -l option is only available for S3 buckets. Do not specify it with -t or -V.")
 		return fmt.Errorf("InvalidOptionError: %v", errMsg)
 	}
 	if a.KeyPrefix != "" && a.TableBucketsMode {

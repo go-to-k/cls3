@@ -179,7 +179,7 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
 ## How to use
 
   ```bash
-  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-e|--endpointUrl <endpointUrl>] [-P|--pathStyle] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>]
+  cls3 -b <bucketName> [-b <bucketName>] [-p <profile>] [-r <region>] [-e|--endpointUrl <endpointUrl>] [-P|--pathStyle] [-f|--force] [-i|--interactive] [-o|--oldVersionsOnly] [-q|--quietMode] [-d|--directoryBucketsMode] [-t|--tableBucketsMode] [-V|--vectorBucketsMode] [-c|--concurrentMode] [-n|--concurrencyNumber <number>] [-k|--keyPrefix <keyPrefix>] [-l|--rateLimit <requestsPerSecond>]
   ```
 
 - -b, --bucketName: optional
@@ -248,6 +248,12 @@ For Vector Buckets, this option allows you to delete indexes with a specific key
   - For Directory Buckets, only prefixes that end in a delimiter ( / ) are supported. If you do not specify the delimiter, it will be added automatically.
   - For Table Buckets, the key prefix is not supported.
   - For Vector Buckets, this option allows you to delete indexes with a specific key prefix.
+- -l, --rateLimit: optional (objects per second)
+  - Limit the number of S3 objects deleted per second. Objects in retried deletions are counted again.
+  - Only object deletions are counted. Listing objects and deleting buckets are not limited.
+  - The default is unlimited.
+  - The limit is shared by all buckets, including with the -c option.
+  - Only available for S3 buckets. It cannot be used with the Table Buckets Mode (-t) or the Vector Buckets Mode (-V).
 
 ## Interactive Mode
 
