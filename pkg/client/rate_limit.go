@@ -11,7 +11,20 @@ import (
 const (
 	objectCountMiddlewareID = "Cls3ObjectCount"
 	rateLimitMiddlewareID   = "Cls3RateLimit"
+
+	// maxDeleteObjectsPerRequest is the DeleteObjects limit of S3.
+	maxDeleteObjectsPerRequest = 1000
 )
+
+// DeleteBatchSizeForRateLimit returns the number of objects per DeleteObjects request that
+// spreads deletions evenly under objectsPerSecond. Each request then needs about one second
+// of tokens or less. It returns 0 (no splitting) when the rate is unlimited.
+func DeleteBatchSizeForRateLimit(objectsPerSecond int) int {
+	if objectsPerSecond <= 0 {
+		return 0
+	}
+	return min(objectsPerSecond, maxDeleteObjectsPerRequest)
+}
 
 type objectCountContextKey struct{}
 

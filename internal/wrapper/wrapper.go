@@ -75,7 +75,7 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 		return NewS3VectorsWrapper(client), nil
 	}
 
-	client := client.NewS3(
+	s3Client := client.NewS3(
 		s3.NewFromConfig(config, func(o *s3.Options) {
 			o.RetryMaxAttempts = SDKRetryMaxAttempts
 			o.RetryMode = aws.RetryModeStandard
@@ -84,5 +84,7 @@ func CreateS3Wrapper(ctx context.Context, input CreateS3WrapperInput) (IWrapper,
 		}),
 		input.DirectoryBucketsMode,
 	)
-	return NewS3Wrapper(client), nil
+	// Split deletions into small requests so they are paced evenly under the rate limit.
+	s3Client.SetDeleteBatchSize(client.DeleteBatchSizeForRateLimit(input.RateLimit))
+	return NewS3Wrapper(s3Client), nil
 }

@@ -57,6 +57,9 @@ type S3 struct {
 	client               *s3.Client
 	directoryBucketsMode bool
 	retryer              *Retryer
+	// deleteBatchSize is the max number of objects sent in one DeleteObjects request.
+	// 0 means the whole slice passed to DeleteObjects is sent in one request.
+	deleteBatchSize int
 }
 
 func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
@@ -78,10 +81,16 @@ func NewS3(client *s3.Client, directoryBucketsMode bool) *S3 {
 	retryer := NewRetryer(retryable, SleepTimeSecForS3)
 
 	return &S3{
-		client,
-		directoryBucketsMode,
-		retryer,
+		client:               client,
+		directoryBucketsMode: directoryBucketsMode,
+		retryer:              retryer,
 	}
+}
+
+// SetDeleteBatchSize sets the max number of objects sent in one DeleteObjects request.
+// 0 disables splitting. Call it before the client is used.
+func (s *S3) SetDeleteBatchSize(size int) {
+	s.deleteBatchSize = size
 }
 
 func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string) error {
@@ -107,6 +116,32 @@ func (s *S3) DeleteBucket(ctx context.Context, bucketName *string, region string
 }
 
 func (s *S3) DeleteObjects(
+	ctx context.Context,
+	bucketName *string,
+	objects []types.ObjectIdentifier,
+	region string,
+) ([]types.Error, error) {
+	batchSize := s.deleteBatchSize
+	if batchSize <= 0 {
+		batchSize = len(objects)
+	}
+
+	errors := []types.Error{}
+	for start := 0; start < len(objects); start += batchSize {
+		end := min(start+batchSize, len(objects))
+
+		batchErrors, err := s.deleteObjectsBatch(ctx, bucketName, objects[start:end], region)
+		errors = append(errors, batchErrors...)
+		if err != nil {
+			return errors, err
+		}
+	}
+	return errors, nil
+}
+
+// deleteObjectsBatch sends one DeleteObjects request and retries the objects that failed with
+// an InternalError. The objects must not exceed the 1000-object limit of DeleteObjects.
+func (s *S3) deleteObjectsBatch(
 	ctx context.Context,
 	bucketName *string,
 	objects []types.ObjectIdentifier,

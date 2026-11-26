@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,9 +24,15 @@ const (
 )
 
 func newFakeS3Client(objectsPerSecond int) *s3.Client {
+	return newCountingFakeS3Client(objectsPerSecond, &atomic.Int32{})
+}
+
+// newCountingFakeS3Client counts DeleteObjects requests in deleteRequests.
+func newCountingFakeS3Client(objectsPerSecond int, deleteRequests *atomic.Int32) *s3.Client {
 	httpClient := smithyhttp.ClientDoFunc(func(r *http.Request) (*http.Response, error) {
 		body := listObjectsV2EmptyBody
 		if r.Method == http.MethodPost {
+			deleteRequests.Add(1)
 			body = deleteObjectsEmptyBody
 		}
 		return &http.Response{
@@ -110,6 +117,65 @@ func TestRateLimitAPIOptions_LargeDeleteBatchIsChunked(t *testing.T) {
 	}
 	if elapsed := time.Since(start); elapsed < 1400*time.Millisecond {
 		t.Errorf("25 objects at 10/s were not throttled: took %v, expected at least ~1.5s", elapsed)
+	}
+}
+
+func TestDeleteBatchSizeForRateLimit(t *testing.T) {
+	tests := []struct {
+		name             string
+		objectsPerSecond int
+		expected         int
+	}{
+		{name: "unlimited", objectsPerSecond: 0, expected: 0},
+		{name: "negative is unlimited", objectsPerSecond: -1, expected: 0},
+		{name: "batch equals rate", objectsPerSecond: 2, expected: 2},
+		{name: "capped at DeleteObjects limit", objectsPerSecond: 5000, expected: 1000},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DeleteBatchSizeForRateLimit(tt.objectsPerSecond); got != tt.expected {
+				t.Errorf("expected %d, got %d", tt.expected, got)
+			}
+		})
+	}
+}
+
+func TestDeleteObjects_SplitsIntoPacedBatches(t *testing.T) {
+	const objectsPerSecond = 2
+	var deleteRequests atomic.Int32
+	client := newCountingFakeS3Client(objectsPerSecond, &deleteRequests)
+
+	s3Client := NewS3(client, false)
+	s3Client.SetDeleteBatchSize(DeleteBatchSizeForRateLimit(objectsPerSecond))
+
+	// 5 objects in batches of 2 -> requests of 2, 2, 1 objects.
+	// Tokens: 2 from the burst, then 2 more after 1s, then 1 more after 0.5s. Total about 1.5s.
+	start := time.Now()
+	if _, err := s3Client.DeleteObjects(context.Background(), aws.String("bucket"), deleteObjectsInput(5).Delete.Objects, ""); err != nil {
+		t.Fatalf("delete failed: %v", err)
+	}
+	elapsed := time.Since(start)
+
+	if got := deleteRequests.Load(); got != 3 {
+		t.Errorf("expected 3 DeleteObjects requests, got %d", got)
+	}
+	if elapsed < 1400*time.Millisecond {
+		t.Errorf("5 objects at 2/s were not paced: took %v, expected at least ~1.5s", elapsed)
+	}
+}
+
+func TestDeleteObjects_NoSplitWhenUnlimited(t *testing.T) {
+	var deleteRequests atomic.Int32
+	client := newCountingFakeS3Client(0, &deleteRequests)
+
+	s3Client := NewS3(client, false)
+	s3Client.SetDeleteBatchSize(DeleteBatchSizeForRateLimit(0))
+
+	if _, err := s3Client.DeleteObjects(context.Background(), aws.String("bucket"), deleteObjectsInput(5).Delete.Objects, ""); err != nil {
+		t.Fatalf("delete failed: %v", err)
+	}
+	if got := deleteRequests.Load(); got != 1 {
+		t.Errorf("expected 1 DeleteObjects request when unlimited, got %d", got)
 	}
 }
 
