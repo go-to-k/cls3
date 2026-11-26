@@ -130,7 +130,7 @@ func NewApp(version string) *App {
 				Name:        "rateLimit",
 				Aliases:     []string{"l"},
 				Value:       UnspecifiedRateLimit,
-				Usage:       "Limit the number of S3 API requests sent per second (including retries). The default is unlimited. This option is not available in the Table Buckets Mode -t or the Vector Buckets Mode -V.",
+				Usage:       "Limit the number of S3 objects deleted per second (including retries). The default is unlimited. This option is not available in the Table Buckets Mode -t or the Vector Buckets Mode -V.",
 				Destination: &app.RateLimit,
 			},
 			&cli.BoolFlag{
